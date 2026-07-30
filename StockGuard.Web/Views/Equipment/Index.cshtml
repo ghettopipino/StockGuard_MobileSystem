@@ -1,0 +1,493 @@
+﻿@{
+    ViewData["Title"] = "Equipment Catalog";
+}
+
+<!-- Success/Error alerts -->
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success
+                    alert-dismissible fade show"
+         role="alert">
+        ✅ @TempData["Success"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger
+                    alert-dismissible fade show"
+         role="alert">
+        ⚠️ @TempData["Error"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert">
+        </button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalCatalogs
+            </div>
+            <div class="stat-label">Catalogs</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">🔧</div>
+            <div class="stat-number text-warning">
+                @ViewBag.TotalTools
+            </div>
+            <div class="stat-label">Total Tools</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-success">
+                @ViewBag.AvailableTools
+            </div>
+            <div class="stat-label">Available</div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Catalog Button -->
+<div class="d-flex justify-content-between
+            align-items-center mb-3">
+    <h6 class="fw-bold mb-0">Equipment Catalogs</h6>
+    <button class="btn btn-primary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#createModal">
+        ➕ Create Catalog
+    </button>
+</div>
+
+<!-- Catalog List -->
+@if (ViewBag.CatalogDisplay != null)
+{
+    <div class="row g-3">
+        @foreach (var item in ViewBag.CatalogDisplay)
+        {
+            <div class="col-12 col-md-6">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex
+                                            justify-content-between
+                                            align-items-start mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-1">
+                                    @item.Catalog.CatalogName
+                                </h6>
+                                <span class="text-secondary"
+                                      style="font-size:12px">
+                                    Prefix: @item.Catalog.Prefix
+                                    ·
+                                    @item.Catalog.Quantity tools
+                                </span>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <a href="/Tool?catalogId=@item.Catalog.CatalogId"
+                                   class="btn btn-sm
+                                                  btn-outline-primary">
+                                    🔧 Tools
+                                </a>
+                                <button class="btn btn-sm btn-outline-success"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#addToolsModal-@item.Catalog.CatalogId">
+                                    ➕ Tools
+                                </button>
+                                <a href="/Tool/PrintAll?catalogId=@item.Catalog.CatalogId"
+                                   class="btn btn-sm btn-outline-secondary">
+                                    📱 QR Codes
+                                </a>
+                                <form method="post"
+                                      action="/Equipment/Delete"
+                                      style="display:inline">
+                                    <input type="hidden"
+                                           name="catalogId"
+                                           value="@item.Catalog.CatalogId" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                           btn-outline-danger"
+                                            onclick="return confirm('Delete this catalog?')">
+                                        🗑
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+
+                        <!-- Stats row -->
+                        <div class="row g-2 text-center">
+                            <div class="col-4">
+                                <div class="p-2"
+                                     style="background:#0a2a1e;
+                                                    border-radius:8px">
+                                    <div class="fw-bold
+                                                        text-success">
+                                        @item.Available
+                                    </div>
+                                    <div style="font-size:10px;
+                                                        color:#94a3b8">
+                                        Available
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2"
+                                     style="background:#0f1c35;
+                                                    border-radius:8px">
+                                    <div class="fw-bold
+                                                        text-primary">
+                                        @item.Borrowed
+                                    </div>
+                                    <div style="font-size:10px;
+                                                        color:#94a3b8">
+                                        Borrowed
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-4">
+                                <div class="p-2"
+                                     style="background:#2a0a0a;
+                                                    border-radius:8px">
+                                    <div class="fw-bold
+                                                        text-danger">
+                                        @item.Damaged
+                                    </div>
+                                    <div style="font-size:10px;
+                                                        color:#94a3b8">
+                                        Damaged
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div style="font-size:48px">📦</div>
+            <h6 class="mt-3">No catalogs yet</h6>
+            <p class="text-secondary"
+               style="font-size:13px">
+                Create your first equipment catalog
+            </p>
+        </div>
+    </div>
+}
+
+<!-- Create Modal -->
+<div class="modal fade"
+     id="createModal"
+     tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content"
+             style="background:#0d1526;
+                    border-color:#1e3a5f">
+            <div class="modal-header"
+                 style="border-color:#1e3a5f">
+                <h5 class="modal-title fw-bold">
+                    ➕ Create Equipment Catalog
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal">
+                </button>
+            </div>
+            <form method="post" action="/Equipment/Create" id="createCatalogForm">
+                <div class="modal-body">
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Tool/Equipment Name *
+                        </label>
+                        <input type="text"
+                               name="catalogName"
+                               id="catalogName"
+                               class="form-control"
+                               placeholder="e.g. Power Drill" />
+                        <span id="catalogNameError" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            ID Prefix * (max 5 chars)
+                        </label>
+                        <input type="text"
+                               name="prefix"
+                               id="catalogPrefix"
+                               class="form-control"
+                               placeholder="e.g. PD"
+                               maxlength="5" />
+                        <span id="prefixError" class="text-danger small"></span>
+                        <div class="form-text" style="color:#475569; font-size:11px">
+                            Tools will be named: PD-001, PD-002...
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Quantity *
+                        </label>
+                        <input type="number"
+                               name="quantity"
+                               id="catalogQuantity"
+                               class="form-control"
+                               placeholder="e.g. 5"
+                               min="1"
+                               max="100" />
+                        <span id="quantityError" class="text-danger small"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Description (optional)
+                        </label>
+                        <textarea name="description"
+                                  class="form-control"
+                                  rows="2"
+                                  placeholder="Brief description...">
+            </textarea>
+                    </div>
+
+                </div>
+                <div class="modal-footer" style="border-color:#1e3a5f">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Create Catalog
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@if (ViewBag.CatalogDisplay != null)
+{
+    @foreach (var item in ViewBag.CatalogDisplay)
+    {
+        <div class="modal fade"
+             id="addToolsModal-@item.Catalog.CatalogId"
+             tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content"
+                     style="background:#0d1526;
+                                    border-color:#1e3a5f">
+
+                    <div class="modal-header"
+                         style="border-color:#1e3a5f">
+                        <h5 class="modal-title fw-bold">
+                            ➕ Add Tools —
+                            @item.Catalog.CatalogName
+                        </h5>
+                        <button type="button"
+                                class="btn-close btn-close-white"
+                                data-bs-dismiss="modal">
+                        </button>
+                    </div>
+
+                    <form method="post"
+                          action="/Equipment/AddTools">
+                        <input type="hidden"
+                               name="catalogId"
+                               value="@item.Catalog.CatalogId" />
+
+                        <div class="modal-body">
+
+                            <div class="d-flex
+                                                justify-content-between
+                                                align-items-center mb-3">
+                                <span class="text-secondary"
+                                      style="font-size:12px">
+                                    Prefix:
+                                    <strong>
+                                        @item.Catalog.Prefix
+                                    </strong>
+                                    · IDs continue from
+                                    <strong>
+                                        @item.Catalog.Prefix-@((item.Catalog.Quantity + 1).ToString().PadLeft(3, '0'))
+                                    </strong>
+                                </span>
+                                <button type="button"
+                                        class="btn btn-sm
+                                                       btn-outline-success"
+                                        onclick="addToolRow(
+                                                    '@item.Catalog.CatalogId',
+                                                    '@item.Catalog.CatalogName')">
+                                    + Add Row
+                                </button>
+                            </div>
+
+                            <!-- Column headers -->
+                            <div class="row g-2 mb-1">
+                                <div class="col-7">
+                                    <span style="font-size:11px;
+                                                         color:#94a3b8">
+                                        Tool Name
+                                    </span>
+                                </div>
+                                <div class="col-4">
+                                    <span style="font-size:11px;
+                                                         color:#94a3b8">
+                                        Condition
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- Rows container -->
+                            <div id="toolRows-@item.Catalog.CatalogId">
+                                <!-- First row (cannot be removed) -->
+                                <div class="row g-2 mb-2 tool-row">
+                                    <div class="col-7">
+                                        <input type="text"
+                                               name="toolNames"
+                                               class="form-control
+                                                              form-control-sm"
+                                               value="@item.Catalog.CatalogName"
+                                               placeholder="Tool name"
+                                               required />
+                                    </div>
+                                    <div class="col-4">
+                                        <select name="conditions"
+                                                class="form-select
+                                                               form-select-sm">
+                                            <option value="Good">
+                                                Good
+                                            </option>
+                                            <option value="Fair">
+                                                Fair
+                                            </option>
+                                            <option value="Damaged">
+                                                Damaged
+                                            </option>
+                                        </select>
+                                    </div>
+                                    <div class="col-1"></div>
+                                </div>
+                            </div>
+
+                            <p class="mt-2 mb-0"
+                               style="font-size:11px;
+                                              color:#475569">
+                                💡 Each row = one new tool.
+                                Name defaults to catalog name
+                                but you can change each one.
+                            </p>
+
+                        </div>
+
+                        <div class="modal-footer"
+                             style="border-color:#1e3a5f">
+                            <button type="button"
+                                    class="btn btn-outline-secondary"
+                                    data-bs-dismiss="modal">
+                                Cancel
+                            </button>
+                            <button type="submit"
+                                    class="btn btn-success">
+                                ✅ Save Tools
+                            </button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    }
+}
+
+<script>
+    function addToolRow(catalogId, defaultName) {
+        const container =
+            document.getElementById('toolRows-' + catalogId);
+        const row = document.createElement('div');
+        row.className = 'row g-2 mb-2 tool-row';
+        row.innerHTML = `
+            <div class="col-7">
+                <input type="text"
+                       name="toolNames"
+                       class="form-control form-control-sm"
+                       placeholder="Tool name"
+                       value="${defaultName}"
+                       required />
+            </div>
+            <div class="col-4">
+                <select name="conditions"
+                        class="form-select form-select-sm">
+                    <option value="Good">Good</option>
+                    <option value="Fair">Fair</option>
+                    <option value="Damaged">Damaged</option>
+                </select>
+            </div>
+            <div class="col-1 d-flex align-items-center">
+                <button type="button"
+                        class="btn btn-sm btn-outline-danger"
+                        onclick="this.closest('.tool-row').remove()">
+                    ✕
+                </button>
+            </div>`;
+        container.appendChild(row);
+    }
+
+    // ── Catalog form validation ──────────────────────────
+    document.getElementById('createCatalogForm')
+        .addEventListener('submit', function (e) {
+
+        const catalogName = document.getElementById('catalogName').value.trim();
+        const prefix = document.getElementById('catalogPrefix').value.trim();
+        const quantity = document.getElementById('catalogQuantity').value.trim();
+
+        let valid = true;
+
+        // Reset errors
+        document.getElementById('catalogNameError').textContent = '';
+        document.getElementById('prefixError').textContent = '';
+        document.getElementById('quantityError').textContent = '';
+
+        if (catalogName === '') {
+            document.getElementById('catalogNameError').textContent = 'Tool/Equipment name is required.';
+            valid = false;
+        } else if (catalogName.length < 2) {
+            document.getElementById('catalogNameError').textContent = 'Name must be at least 2 characters.';
+            valid = false;
+        }
+
+        if (prefix === '') {
+            document.getElementById('prefixError').textContent = 'Prefix is required.';
+            valid = false;
+        } else if (prefix.length < 1) {
+            document.getElementById('prefixError').textContent = 'Prefix must be at least 1 character.';
+            valid = false;
+        }
+
+        if (quantity === '' || quantity == 0) {
+            document.getElementById('quantityError').textContent = 'Quantity is required and must be at least 1.';
+            valid = false;
+        } else if (parseInt(quantity) < 1) {
+            document.getElementById('quantityError').textContent = 'Quantity must be at least 1.';
+            valid = false;
+        } else if (parseInt(quantity) > 100) {
+            document.getElementById('quantityError').textContent = 'Quantity cannot exceed 100.';
+            valid = false;
+        }
+
+        if (!valid) e.preventDefault();
+    });
+</script>

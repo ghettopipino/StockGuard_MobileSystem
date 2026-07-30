@@ -1,0 +1,397 @@
+﻿@using StockGuard.Web.Models
+@{
+    ViewData["Title"] = "Pause Requests";
+    var pending = ViewBag.PendingRequests as List<PauseRequest> ?? new();
+    var processed = ViewBag.ProcessedRequests as List<PauseRequest> ?? new();
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        ✅ @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        ⚠️ @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- ── Hidden form for mass/approve-all submission ──────────────── -->
+<!-- This is the ONLY form that handles mass actions.              -->
+<!-- Individual approve/reject cards have their OWN separate forms -->
+<form id="massForm"
+      method="post"
+      action="/Pause/ApproveSelected">
+    @Html.AntiForgeryToken()
+    <div id="hiddenInputs"></div>
+</form>
+
+<form id="approveAllForm"
+      method="post"
+      action="/Pause/ApproveAll">
+    @Html.AntiForgeryToken()
+</form>
+
+<!-- ── Page Header ─────────────────────────────────────────────── -->
+<div class="d-flex align-items-center
+            justify-content-between mb-4 gap-3 flex-wrap">
+    <div>
+        <h5 class="sg-page-title mb-1">
+            <i class="bi bi-pause-circle me-2"></i>Pause Requests
+        </h5>
+        <p class="sg-page-subtitle mb-0">
+            Review and approve worker tool pause requests
+        </p>
+    </div>
+</div>
+
+<!-- ── Stats ────────────────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="sg-stat sg-stat-orange">
+            <i class="bi bi-hourglass-split sg-stat-icon"></i>
+            <div class="sg-stat-body">
+                <div class="sg-stat-value">@ViewBag.PendingCount</div>
+                <div class="sg-stat-label">Pending</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="sg-stat sg-stat-green">
+            <i class="bi bi-check-circle sg-stat-icon"></i>
+            <div class="sg-stat-body">
+                <div class="sg-stat-value">@ViewBag.ApprovedCount</div>
+                <div class="sg-stat-label">Approved</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Warning Banner ───────────────────────────────────────────── -->
+<div class="p-3 mb-4 rounded"
+     style="background:var(--amber-bg);
+            border:1px solid var(--amber)">
+    <div class="d-flex align-items-center gap-2">
+        <i class="bi bi-exclamation-triangle-fill"
+           style="color:var(--amber);font-size:18px"></i>
+        <div>
+            <div class="fw-bold"
+                 style="color:var(--amber);font-size:13px">
+                Physical Verification Required
+            </div>
+            <div style="font-size:12px;color:var(--text-2)">
+                Physically verify the tool is in project site
+                storage before approving any pause request.
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ── Pending Section ──────────────────────────────────────────── -->
+@if (pending.Count > 0)
+{
+    <!-- Toolbar — NOT inside any form -->
+    <div class="d-flex align-items-center
+                    justify-content-between mb-3 flex-wrap gap-2">
+        <h6 class="fw-bold mb-0">
+            ⏳ Pending Verification
+            <span class="badge bg-warning ms-1"
+                  style="font-size:11px">
+                @pending.Count
+            </span>
+        </h6>
+
+        <div class="d-flex gap-2 flex-wrap">
+            <button type="button"
+                    class="btn btn-outline-secondary btn-sm"
+                    onclick="toggleSelectAll()">
+                <i class="bi bi-check2-square me-1"></i>
+                Select All
+            </button>
+
+            <button type="button"
+                    class="btn btn-success btn-sm"
+                    id="approveSelectedBtn"
+                    disabled
+                    onclick="submitSelected()">
+                <i class="bi bi-check-circle me-1"></i>
+                Approve Selected
+                (<span id="selectedCount">0</span>)
+            </button>
+
+            <button type="button"
+                    class="btn btn-warning btn-sm"
+                    onclick="submitApproveAll()">
+                <i class="bi bi-check-all me-1"></i>
+                Approve All (@pending.Count)
+            </button>
+        </div>
+    </div>
+
+    <!-- Cards — each has its OWN standalone form, no nesting -->
+    <div class="row g-3 mb-4">
+        @foreach (var req in pending)
+        {
+            <div class="col-12 col-md-6 col-xl-4">
+                <div class="card h-100"
+                     style="border-color:var(--amber);
+                                    max-width:460px">
+                    <div class="card-body p-3">
+
+                        <!-- Checkbox + Tool name -->
+                        <div class="d-flex align-items-start
+                                            gap-2 mb-2">
+                            <input type="checkbox"
+                                   class="form-check-input
+                                                  mt-1 select-cb"
+                                   data-key="@req.RequestId"
+                                   data-tool="@req.ToolId"
+                                   onchange="updateCount()" />
+                            <div class="flex-grow-1 min-w-0">
+                                <div class="fw-bold text-truncate"
+                                     style="font-size:13px">
+                                    @req.ToolName
+                                </div>
+                                <code style="color:var(--blue-light);
+                                                     font-size:11px">
+                                    @req.ToolId
+                                </code>
+                            </div>
+                            <span class="@req.StatusBadgeClass
+                                                 flex-shrink-0"
+                                  style="font-size:10px">
+                                @req.Status
+                            </span>
+                        </div>
+
+                        <!-- Info -->
+                        <div class="mb-1" style="font-size:12px">
+                            👷 <strong>@req.WorkerName</strong>
+                        </div>
+                        <div class="mb-2"
+                             style="font-size:11px;
+                                            color:var(--text-2)">
+                            📍 @req.ProjectName
+                        </div>
+
+                        <!-- Reason -->
+                        <div class="p-2 mb-2 rounded"
+                             style="background:var(--bg-elevated);
+                                            font-size:12px;
+                                            line-height:1.4">
+                            <div style="font-size:10px;
+                                                color:var(--text-3);
+                                                margin-bottom:3px;
+                                                text-transform:uppercase;
+                                                letter-spacing:.5px">
+                                Reason
+                            </div>
+                            @req.Reason
+                        </div>
+
+                        <div class="mb-3"
+                             style="font-size:10px;
+                                            color:var(--text-3)">
+                            Requested: @req.DateLabel
+                        </div>
+
+                        <!-- ── Standalone Approve form ── -->
+                        <div class="d-flex gap-2">
+                            <form method="post"
+                                  action="/Pause/Approve"
+                                  class="flex-grow-1">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden"
+                                       name="requestKey"
+                                       value="@req.RequestId" />
+                                <input type="hidden"
+                                       name="toolId"
+                                       value="@req.ToolId" />
+                                <button type="submit"
+                                        class="btn btn-success
+                                                       btn-sm w-100"
+                                        onclick="return confirm('Physically verified the tool is in storage?\nApprove pause for @Html.Raw(req.ToolName)?')">
+                                    ✅ Approve
+                                </button>
+                            </form>
+
+                            <!-- ── Standalone Reject form ── -->
+                            <form method="post"
+                                  action="/Pause/Reject">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden"
+                                       name="requestKey"
+                                       value="@req.RequestId" />
+                                <input type="hidden"
+                                       name="toolId"
+                                       value="@req.ToolId" />
+                                <button type="submit"
+                                        class="btn btn-outline-danger
+                                                       btn-sm">
+                                    ❌ Reject
+                                </button>
+                            </form>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card mb-4">
+        <div class="card-body text-center py-4">
+            <div style="font-size:40px">✅</div>
+            <h6 class="mt-2">No pending pause requests</h6>
+            <p class="text-secondary" style="font-size:13px">
+                All pause requests have been processed
+            </p>
+        </div>
+    </div>
+}
+
+<!-- ── Processed Table ───────────────────────────────────────────── -->
+<h6 class="fw-bold mb-3 mt-2">📋 Recently Processed</h6>
+
+@if (processed.Count > 0)
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0"
+                       style="font-size:13px">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Worker</th>
+                            <th>Reason</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var req in processed)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold">
+                                        @req.ToolName
+                                    </div>
+                                    <code style="font-size:11px">
+                                        @req.ToolId
+                                    </code>
+                                </td>
+                                <td>@req.WorkerName</td>
+                                <td style="color:var(--text-2);
+                                                   max-width:160px;
+                                                   white-space:normal">
+                                    @req.Reason
+                                </td>
+                                <td>
+                                    <span class="@req.StatusBadgeClass"
+                                          style="font-size:11px">
+                                        @req.Status
+                                    </span>
+                                </td>
+                                <td style="color:var(--text-2);
+                                                   white-space:nowrap;
+                                                   font-size:11px">
+                                    @req.DateLabel
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-3"
+             style="font-size:13px;color:var(--text-2)">
+            No processed requests yet
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        // ── Update selected count and button state ─────────────────
+        function updateCount() {
+            const checked = document.querySelectorAll(
+                '.select-cb:checked');
+            const btn  = document.getElementById(
+                'approveSelectedBtn');
+            const span = document.getElementById('selectedCount');
+
+            span.textContent = checked.length;
+            btn.disabled     = checked.length === 0;
+        }
+
+        // ── Toggle all checkboxes ──────────────────────────────────
+        function toggleSelectAll() {
+            const cbs      = document.querySelectorAll('.select-cb');
+            const allChecked = [...cbs].every(cb => cb.checked);
+            cbs.forEach(cb => cb.checked = !allChecked);
+            updateCount();
+        }
+
+        // ── Submit selected via hidden massForm ────────────────────
+        function submitSelected() {
+            const checked = document.querySelectorAll(
+                '.select-cb:checked');
+
+            if (checked.length === 0) {
+                alert('Please select at least one request.');
+                return;
+            }
+
+            if (!confirm(
+                `Approve ${checked.length} selected pause request(s)?\n` +
+                `Make sure you have physically verified all tools.`
+            )) return;
+
+            const container = document.getElementById('hiddenInputs');
+            container.innerHTML = ''; // clear previous
+
+            checked.forEach(cb => {
+                // selectedKeys[]
+                const k = document.createElement('input');
+                k.type  = 'hidden';
+                k.name  = 'selectedKeys';
+                k.value = cb.dataset.key;
+                container.appendChild(k);
+
+                // selectedToolIds[]
+                const t = document.createElement('input');
+                t.type  = 'hidden';
+                t.name  = 'selectedToolIds';
+                t.value = cb.dataset.tool;
+                container.appendChild(t);
+            });
+
+            document.getElementById('massForm').submit();
+        }
+
+        // ── Approve All via approveAllForm ─────────────────────────
+        function submitApproveAll() {
+            const total = document.querySelectorAll(
+                '.select-cb').length;
+
+            if (!confirm(
+                `Approve ALL ${total} pending pause requests?\n` +
+                `Make sure you have physically verified all tools.`
+            )) return;
+
+            document.getElementById('approveAllForm').submit();
+        }
+    </script>
+}

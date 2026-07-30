@@ -1,0 +1,243 @@
+﻿@using StockGuard.Web.Models
+@{
+    ViewData["Title"] = "Damage Reports";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success
+                    alert-dismissible fade show">
+        ✅ @TempData["Success"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalReports
+            </div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-number text-warning">
+                @ViewBag.PendingReports
+            </div>
+            <div class="stat-label">Pending</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-success">
+                @ViewBag.ResolvedReports
+            </div>
+            <div class="stat-label">Resolved</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="d-flex gap-2 mb-3 flex-wrap">
+    <a href="/Damage/Index"
+       class="btn btn-sm @(ViewBag.SelectedStatus == null
+                  ? "btn-primary"
+                  : "btn-outline-secondary")">
+        All
+    </a>
+    <a href="/Damage/Index?status=Pending"
+       class="btn btn-sm @(ViewBag.SelectedStatus
+                  == "Pending"
+                  ? "btn-warning"
+                  : "btn-outline-secondary")">
+        Pending
+    </a>
+    <a href="/Damage/Index?status=UnderRepair"
+       class="btn btn-sm @(ViewBag.SelectedStatus
+                  == "UnderRepair"
+                  ? "btn-primary"
+                  : "btn-outline-secondary")">
+        Under Repair
+    </a>
+    <a href="/Damage/Index?status=Resolved"
+       class="btn btn-sm @(ViewBag.SelectedStatus
+                  == "Resolved"
+                  ? "btn-success"
+                  : "btn-outline-secondary")">
+        Resolved
+    </a>
+    <a href="/Damage/Index?status=Lost"
+       class="btn btn-sm @(ViewBag.SelectedStatus
+                  == "Lost"
+                  ? "btn-danger"
+                  : "btn-outline-secondary")">
+        Lost
+    </a>
+</div>
+
+<!-- Reports -->
+@{
+    var reports =
+        ViewBag.Reports as
+        List<DamageReportResult>;
+}
+
+@if (reports != null && reports.Count > 0)
+{
+    <div class="row g-3">
+        @foreach (var item in reports)
+        {
+            <div class="col-12 col-md-6">
+                <div class="card"
+                     style="border-color:
+                             @(item.Report.Status == "Pending"
+                                              ? "#ef4444"
+                                              : "#1e3a5f")">
+            <div class="card-body">
+
+                        <!-- Header -->
+                        <div class="d-flex
+                                            justify-content-between
+                                            align-items-start mb-2">
+                            <div>
+                                <h6 class="fw-bold mb-1">
+                                    @item.Report.ToolName
+                                </h6>
+                                <code style="color:#60a5fa;
+                                                     font-size:12px">
+                                    @item.Report.ToolId
+                                </code>
+                            </div>
+                            <div class="d-flex
+                                                flex-column
+                                                gap-1 text-end">
+                                <span class="@item.Report
+                                            .StatusBadgeClass">
+                                    @item.Report.Status
+                                </span>
+                                <span class="@item.Report
+                                            .SeverityBadgeClass">
+                                    @item.Report.Severity
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Worker and date -->
+                        <div class="mb-2"
+                             style="font-size:12px;
+                                            color:#94a3b8">
+                    @{
+                                string reportDate = item.Report
+                                .ReportDate
+                                .ToString("MMM d, yyyy h:mm tt");
+                            }
+                            👷 @item.Report.WorkerName · @reportDate
+                        </div>
+
+                        <!-- Description -->
+                        <div class="p-2 mb-3"
+                             style="background:#111d33;
+                                            border-radius:8px;
+                                            font-size:13px">
+                            @item.Report.Description
+                        </div>
+
+                        <!-- Actions -->
+                @if (item.Report.Status == "Pending")
+                        {
+                            <div class="d-flex gap-2
+                                                    flex-wrap">
+
+                                <form method="post"
+                                      action="/Damage/Handle">
+                                    <input type="hidden"
+                                           name="reportKey"
+                                           value="@item.Key" />
+                                    <input type="hidden"
+                                           name="toolId"
+                                           value="@item.Report.ToolId" />
+                                    <input type="hidden"
+                                           name="action"
+                                           value="resolve" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                               btn-success">
+                                        ✅ Resolve
+                                    </button>
+                                </form>
+
+                                <form method="post"
+                                      action="/Damage/Handle">
+                                    <input type="hidden"
+                                           name="reportKey"
+                                           value="@item.Key" />
+                                    <input type="hidden"
+                                           name="toolId"
+                                           value="@item.Report.ToolId" />
+                                    <input type="hidden"
+                                           name="action"
+                                           value="repair" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                               btn-primary">
+                                        🔨 Send to Repair
+                                    </button>
+                                </form>
+
+                                <form method="post"
+                                      action="/Damage/Handle">
+                                    <input type="hidden"
+                                           name="reportKey"
+                                           value="@item.Key" />
+                                    <input type="hidden"
+                                           name="toolId"
+                                           value="@item.Report.ToolId" />
+                                    <input type="hidden"
+                                           name="action"
+                                           value="lost" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                               btn-danger"
+                                            onclick="return confirm(
+                                                            'Mark as lost?')">
+                                        ❌ Mark Lost
+                                    </button>
+                                </form>
+
+                            </div>
+                        }
+                        else
+                        {
+                            <div style="font-size:12px;
+                                                    color:#10b981">
+                                ✅ Already handled
+                            </div>
+                        }
+
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div style="font-size:48px">✅</div>
+            <h6 class="mt-3">No damage reports</h6>
+            <p class="text-secondary"
+               style="font-size:13px">
+                All tools are in good condition
+            </p>
+        </div>
+    </div>
+}

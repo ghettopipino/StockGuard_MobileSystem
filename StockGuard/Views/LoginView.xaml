@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StockGuard.ViewModels"
+             x:Class="StockGuard.Views.LoginView"
+             x:DataType="vm:LoginViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <ScrollView>
+        <VerticalStackLayout Padding="28,60,28,40" Spacing="24"
+                             VerticalOptions="Center">
+
+            <!-- Simple header -->
+            <VerticalStackLayout Spacing="4" HorizontalOptions="Center">
+                <Label Text="StockGuard"
+                       FontSize="24" FontAttributes="Bold"
+                       TextColor="{DynamicResource Text1}"
+                       HorizontalOptions="Center"/>
+                <Label Text="Sign in to continue"
+                       FontSize="13"
+                       TextColor="{DynamicResource Text3}"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+
+            <!-- Error message (plain text, no card) -->
+            <Label Text="{Binding ErrorMessage}"
+                   IsVisible="{Binding HasError}"
+                   TextColor="{DynamicResource Red}"
+                   FontSize="12"
+                   HorizontalOptions="Center"/>
+
+            <!-- Email -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Email" FontSize="12" FontAttributes="Bold"
+                       TextColor="{DynamicResource Text2}"/>
+                <Entry Text="{Binding Email}"
+                       Placeholder="you@example.com"
+                       Keyboard="Email"
+                       BackgroundColor="{DynamicResource InputBg}"
+                       TextColor="{DynamicResource Text1}"
+                       PlaceholderColor="{DynamicResource Text3}"
+                       HeightRequest="46"/>
+            </VerticalStackLayout>
+
+            <!-- Password -->
+            <VerticalStackLayout Spacing="6">
+                <Label Text="Password" FontSize="12" FontAttributes="Bold"
+                       TextColor="{DynamicResource Text2}"/>
+                <Grid ColumnDefinitions="*,Auto">
+                    <Entry Grid.Column="0"
+                           Text="{Binding Password}"
+                           Placeholder="Enter your password"
+                           IsPassword="{Binding ShowPassword,
+                               Converter={StaticResource InvertBoolConverter}}"
+                           BackgroundColor="{DynamicResource InputBg}"
+                           TextColor="{DynamicResource Text1}"
+                           PlaceholderColor="{DynamicResource Text3}"
+                           HeightRequest="46"/>
+                    <Button Grid.Column="1" Text="Show"
+                            Command="{Binding TogglePasswordCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource Blue}"
+                            FontSize="12"/>
+                </Grid>
+            </VerticalStackLayout>
+
+            <!-- Login button -->
+            <Button Text="Sign In"
+                    Command="{Binding LoginCommand}"
+                    BackgroundColor="{DynamicResource Blue}"
+                    TextColor="White"
+                    FontAttributes="Bold"
+                    HeightRequest="46"
+                    CornerRadius="8"/>
+
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{DynamicResource Blue}"
+                               HorizontalOptions="Center"/>
+
+            <!-- Register link -->
+            <HorizontalStackLayout HorizontalOptions="Center" Spacing="4">
+                <Label Text="No account yet?"
+                       FontSize="13" TextColor="{DynamicResource Text2}"/>
+                <Button Text="Register"
+                        Command="{Binding GoToRegisterCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource Blue}"
+                        FontAttributes="Bold"
+                        FontSize="13" Padding="4,0"/>
+            </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+    </ScrollView>
+
+</ContentPage>

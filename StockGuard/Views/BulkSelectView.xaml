@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StockGuard.ViewModels"
+             xmlns:models="clr-namespace:StockGuard.Models"
+             x:Class="StockGuard.Views.BulkSelectView"
+             x:DataType="vm:BulkSelectViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Padding="20,52,20,10">
+            <Button Grid.Column="0" Text="←"
+                    Command="{Binding GoBackCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{DynamicResource Text2}"
+                    FontSize="18"/>
+            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
+                <Label Text="{Binding PageTitle}" FontSize="16" FontAttributes="Bold"
+                       TextColor="{DynamicResource Text1}"/>
+                <Label Text="{Binding PageSubtitle}" FontSize="11" TextColor="{DynamicResource Text3}"/>
+            </VerticalStackLayout>
+        </Grid>
+
+        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Padding="20,0,20,10">
+            <Label Grid.Column="0" Text="{Binding SelectedLabel}" FontSize="13" FontAttributes="Bold"
+                   TextColor="{DynamicResource Blue}" VerticalOptions="Center"/>
+            <Button Grid.Column="1" Text="Select All"
+                    Command="{Binding SelectAllCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{DynamicResource Text2}" FontSize="12"/>
+            <Button Grid.Column="2" Text="Clear"
+                    Command="{Binding ClearAllCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{DynamicResource Text2}" FontSize="12"/>
+        </Grid>
+
+        <Grid Grid.Row="2">
+            <ActivityIndicator IsRunning="{Binding IsBusy}"
+                               IsVisible="{Binding IsBusy}"
+                               Color="{DynamicResource Blue}"
+                               HorizontalOptions="Center"
+                               VerticalOptions="Start" Margin="0,20"/>
+
+            <Label Text="{Binding EmptyMessage}"
+                   IsVisible="{Binding NoItems}"
+                   FontSize="13" TextColor="{DynamicResource Text3}"
+                   HorizontalOptions="Center" VerticalOptions="Start" Margin="0,20"/>
+
+            <ScrollView>
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Padding="20,4" Spacing="8">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:SelectableItem">
+                            <Border Stroke="{Binding CardBorderColor}"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{Binding CardBackground}"
+                                    Padding="14">
+                                <Border.GestureRecognizers>
+                                    <TapGestureRecognizer
+                                        CommandParameter="{Binding .}"
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BulkSelectViewModel}}, Path=ToggleItemCommand}"/>
+                                </Border.GestureRecognizers>
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <VerticalStackLayout Grid.Column="0">
+                                        <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"
+                                               TextColor="{DynamicResource Text1}"/>
+                                        <Label Text="{Binding SubTitle}" FontSize="12" TextColor="{DynamicResource Text3}"/>
+                                    </VerticalStackLayout>
+                                    <Label Grid.Column="1" Text="{Binding CheckIcon}"
+                                           FontSize="20" VerticalOptions="Center"/>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+            </ScrollView>
+        </Grid>
+
+        <Button Grid.Row="3"
+                Text="{Binding SelectedLabel, StringFormat='Confirm ({0})'}"
+                Command="{Binding ConfirmCommand}"
+                BackgroundColor="{DynamicResource Blue}"
+                TextColor="White"
+                FontAttributes="Bold"
+                HeightRequest="52"
+                IsEnabled="{Binding HasSelection}"/>
+
+    </Grid>
+
+</ContentPage>

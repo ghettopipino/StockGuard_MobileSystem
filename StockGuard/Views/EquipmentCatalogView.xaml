@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StockGuard.ViewModels"
+             xmlns:models="clr-namespace:StockGuard.Models"
+             x:Class="StockGuard.Views.EquipmentCatalogView"
+             x:DataType="vm:EquipmentCatalogViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}"
+                 RefreshColor="{DynamicResource Blue}">
+        <ScrollView>
+            <VerticalStackLayout Padding="20,52,20,40" Spacing="16">
+
+                <!-- Header -->
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Button Grid.Column="0" Text="☰"
+                            Command="{Binding OpenFlyoutCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"/>
+                    <Label Grid.Column="1" Text="Equipment Catalog"
+                           FontSize="18" FontAttributes="Bold"
+                           TextColor="{DynamicResource Text1}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                    <Button Grid.Column="2" Text="🔄"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="16"/>
+                </Grid>
+
+                <!-- Stats -->
+                <Label FontSize="13" TextColor="{DynamicResource Text2}">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="{Binding TotalCatalogs}" FontAttributes="Bold"/>
+                            <Span Text=" catalogs  ·  "/>
+                            <Span Text="{Binding TotalTools}" FontAttributes="Bold"/>
+                            <Span Text=" tools  ·  "/>
+                            <Span Text="{Binding AvailableTools}" FontAttributes="Bold"/>
+                            <Span Text=" available"/>
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+
+                <!-- Search + Add -->
+                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                    <Entry Grid.Column="0"
+                           Text="{Binding SearchText}"
+                           Placeholder="Search catalog..."
+                           BackgroundColor="{DynamicResource InputBg}"
+                           TextColor="{DynamicResource Text1}"
+                           HeightRequest="44"/>
+                    <Button Grid.Column="1" Text="Add"
+                            Command="{Binding AddCatalogCommand}"
+                            BackgroundColor="{DynamicResource Blue}"
+                            TextColor="White"
+                            FontAttributes="Bold"
+                            HeightRequest="44"/>
+                </Grid>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   Color="{DynamicResource Blue}"
+                                   HorizontalOptions="Center"/>
+
+                <Label Text="No equipment catalog yet"
+                       IsVisible="{Binding NoCatalogs}"
+                       FontSize="14"
+                       TextColor="{DynamicResource Text3}"
+                       HorizontalOptions="Center"
+                       Margin="0,20"/>
+
+                <!-- Catalog list -->
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Catalogs}" Spacing="10">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:CatalogDisplayItem">
+                            <Border Stroke="{DynamicResource BorderColor}"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{DynamicResource BgCard}"
+                                    Padding="14">
+                                <VerticalStackLayout Spacing="6">
+                                    <Label Text="{Binding CatalogName}"
+                                           FontSize="15" FontAttributes="Bold"
+                                           TextColor="{DynamicResource Text1}"/>
+                                    <Label FontSize="12" TextColor="{DynamicResource Text3}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding TotalLabel}"/>
+                                                <Span Text="  ·  Prefix: "/>
+                                                <Span Text="{Binding Prefix}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                    <Label Text="{Binding StatusSummary}"
+                                           FontSize="12" TextColor="{DynamicResource Text2}"/>
+
+                                    <Grid ColumnDefinitions="*,*,*" Margin="0,6,0,0">
+                                        <Label Grid.Column="0" HorizontalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding AvailableTools}" FontAttributes="Bold" TextColor="{DynamicResource Green}"/>
+                                                    <Span Text=" Available" FontSize="10"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Column="1" HorizontalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding BorrowedTools}" FontAttributes="Bold" TextColor="{DynamicResource Amber}"/>
+                                                    <Span Text=" Borrowed" FontSize="10"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Column="2" HorizontalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding DamagedTools}" FontAttributes="Bold" TextColor="{DynamicResource Red}"/>
+                                                    <Span Text=" Damaged" FontSize="10"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                    </Grid>
+
+                                    <Grid ColumnDefinitions="*,*,Auto" ColumnSpacing="8" Margin="0,8,0,0">
+                                        <Button Grid.Column="0" Text="View Tools"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EquipmentCatalogViewModel}}, Path=ViewToolsCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Blue}"
+                                                FontSize="12"/>
+                                        <Button Grid.Column="1" Text="Add Tools"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EquipmentCatalogViewModel}}, Path=AddToolsCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Green}"
+                                                FontSize="12"/>
+                                        <Button Grid.Column="2" Text="Delete"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:EquipmentCatalogViewModel}}, Path=DeleteCatalogCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Red}"
+                                                FontSize="12"/>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>

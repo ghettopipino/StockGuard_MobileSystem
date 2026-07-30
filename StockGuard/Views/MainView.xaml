@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             x:Class="StockGuard.Views.MainView"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <VerticalStackLayout VerticalOptions="Center"
+                         HorizontalOptions="Center"
+                         Spacing="16"
+                         Padding="40">
+        <Label Text="🛡" FontSize="52" HorizontalOptions="Center"/>
+        <Label Text="Project Engineer Dashboard"
+               FontSize="20" FontAttributes="Bold"
+               TextColor="{DynamicResource Text1}"
+               HorizontalOptions="Center"
+               HorizontalTextAlignment="Center"/>
+        <Label Text="Coming in Day 2"
+               FontSize="13"
+               TextColor="{DynamicResource Text3}"
+               HorizontalOptions="Center"/>
+    </VerticalStackLayout>
+
+</ContentPage>

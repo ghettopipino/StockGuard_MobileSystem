@@ -1,0 +1,32 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.14.36414.22
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockGuard", "StockGuard\StockGuard.csproj", "{49B80639-79E0-4F91-888F-8786935278DD}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockGuard.Web", "StockGuard.Web\StockGuard.Web.csproj", "{63C2ABA2-E778-4998-979A-D60B0BBCCF71}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{49B80639-79E0-4F91-888F-8786935278DD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{49B80639-79E0-4F91-888F-8786935278DD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{49B80639-79E0-4F91-888F-8786935278DD}.Debug|Any CPU.Deploy.0 = Debug|Any CPU
+		{49B80639-79E0-4F91-888F-8786935278DD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{49B80639-79E0-4F91-888F-8786935278DD}.Release|Any CPU.Build.0 = Release|Any CPU
+		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D7B6915-7D4B-4241-BC59-BAFD2DDE1552}
+	EndGlobalSection
+EndGlobal

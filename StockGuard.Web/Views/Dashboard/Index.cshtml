@@ -1,0 +1,336 @@
+﻿@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- ── ACTIVE PROJECT BANNER ───────────────────────────────── -->
+@if (ViewBag.ActiveProject != null)
+{
+    <div class="active-project-banner mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size:28px">📍</span>
+            <div>
+                <div style="font-size:11px;
+                                color:#93c5fd">
+                    Active Project
+                </div>
+                <div class="fw-bold fs-5">
+                    @ViewBag.ActiveProject.ProjectName
+                </div>
+                <div style="font-size:12px;
+                                color:#bfdbfe">
+                    @ViewBag.ActiveProject.Location
+                    ·
+                    Started
+                    @ViewBag.ActiveProject.StartDateLabel
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ── STATS ROW ──────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">🔧</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalTools
+            </div>
+            <div class="stat-label">Total Tools</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-success">
+                @ViewBag.AvailableTools
+            </div>
+            <div class="stat-label">Available</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-number text-warning">
+                @ViewBag.BorrowedTools
+            </div>
+            <div class="stat-label">Borrowed</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div class="stat-number text-danger">
+                @ViewBag.DamagedTools
+            </div>
+            <div class="stat-label">Damaged</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">👷</div>
+            <div class="stat-number text-info">
+                @ViewBag.TotalWorkers
+            </div>
+            <div class="stat-label">Workers</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-number text-warning">
+                @ViewBag.PendingWorkers
+            </div>
+            <div class="stat-label">Pending Approval</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-number text-danger">
+                @ViewBag.PendingReports
+            </div>
+            <div class="stat-label">Damage Reports</div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">📁</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalProjects
+            </div>
+            <div class="stat-label">Projects</div>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── QUICK ACCESS ────────────────────────────────────────── -->
+<div class="row g-3 mb-4">
+
+    <div class="col-12">
+        <h6 class="fw-bold mb-3">Quick Access</h6>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <a href="/Equipment"
+           class="text-decoration-none">
+            <div class="stat-card"
+                 style="cursor:pointer;
+                        border-color:#3b82f6">
+                <div class="stat-icon">📦</div>
+                <div class="fw-bold"
+                     style="font-size:13px">
+                    Equipment Catalog
+                </div>
+                <div class="stat-label">
+                    Manage tools
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <a href="/Tool"
+           class="text-decoration-none">
+            <div class="stat-card"
+                 style="cursor:pointer">
+                <div class="stat-icon">📱</div>
+                <div class="fw-bold"
+                     style="font-size:13px">
+                    QR Codes
+                </div>
+                <div class="stat-label">
+                    Generate and print
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <a href="/Worker"
+           class="text-decoration-none">
+            <div class="stat-card"
+                 style="cursor:pointer">
+                <div class="stat-icon">👷</div>
+                <div class="fw-bold"
+                     style="font-size:13px">
+                    Workers
+                </div>
+                <div class="stat-label">
+                    @ViewBag.PendingWorkers pending
+                </div>
+            </div>
+        </a>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <a href="/Damage"
+           class="text-decoration-none">
+            <div class="stat-card"
+                 style="cursor:pointer">
+                <div class="stat-icon">⚠️</div>
+                <div class="fw-bold"
+                     style="font-size:13px">
+                    Damage Reports
+                </div>
+                <div class="stat-label">
+                    @ViewBag.PendingReports pending
+                </div>
+            </div>
+        </a>
+    </div>
+</div>
+
+<!-- ── BOTTOM ROW ─────────────────────────────────────────── -->
+<div class="row g-3">
+
+    <!-- Currently Borrowed Tools -->
+    <div class="col-12 col-md-6">
+        <div class="card">
+            <div class="card-header d-flex
+                        justify-content-between
+                        align-items-center">
+                <span class="fw-bold"
+                      style="font-size:14px">
+                    📦 Currently Borrowed
+                </span>
+                <a href="/Tool"
+                   class="btn btn-sm
+                          btn-outline-secondary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if (ViewBag.BorrowedToolsList != null &&
+                                ((List<StockGuard.Web.Models.Tool>)
+                                ViewBag.BorrowedToolsList).Count > 0)
+                {
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>Worker</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var tool in
+                                                    (List<StockGuard.Web.Models.Tool>)
+                                                    ViewBag.BorrowedToolsList)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold"
+                                             style="font-size:13px">
+                                            @tool.ToolName
+                                        </div>
+                                        <div class="text-secondary"
+                                             style="font-size:11px">
+                                            @tool.ToolId
+                                        </div>
+                                    </td>
+                                    <td style="font-size:13px">
+                                        @tool.AssignedWorkerName
+                                    </td>
+                                    <td>
+                                        <span class="@tool.StatusBadgeClass">
+                                            @tool.Status
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="p-4 text-center
+                                    text-secondary"
+                         style="font-size:13px">
+                        No tools currently borrowed
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Pending Damage Reports -->
+    <div class="col-12 col-md-6">
+        <div class="card">
+            <div class="card-header d-flex
+                        justify-content-between
+                        align-items-center">
+                <span class="fw-bold"
+                      style="font-size:14px">
+                    🚨 Pending Damage Reports
+                </span>
+                <a href="/Damage"
+                   class="btn btn-sm
+                          btn-outline-secondary">
+                    View All
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if (ViewBag.PendingReportsList != null &&
+                                ((List<StockGuard.Web.Models.DamageReport>)
+                                ViewBag.PendingReportsList).Count > 0)
+                {
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>Worker</th>
+                                <th>Severity</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var report in
+                                                    (List<StockGuard.Web.Models.DamageReport>)
+                                                    ViewBag.PendingReportsList)
+                            {
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold"
+                                             style="font-size:13px">
+                                            @report.ToolName
+                                        </div>
+                                        <div class="text-secondary"
+                                             style="font-size:11px">
+                                            @report.ToolId
+                                        </div>
+                                    </td>
+                                    <td style="font-size:13px">
+                                        @report.WorkerName
+                                    </td>
+                                    <td>
+                                        <span class="@report.SeverityBadgeClass">
+                                            @report.Severity
+                                        </span>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                }
+                else
+                {
+                    <div class="p-4 text-center
+                                    text-secondary"
+                         style="font-size:13px">
+                        No pending damage reports
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+</div>

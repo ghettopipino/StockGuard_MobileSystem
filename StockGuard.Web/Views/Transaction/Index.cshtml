@@ -1,0 +1,426 @@
+﻿@using StockGuard.Web.Models
+@model TransactionViewModel
+@{
+    ViewData["Title"] = "Transaction History";
+}
+
+<!-- Stats — always reflect full unfiltered totals -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">📋</div>
+            <div id="tx-total-count" class="stat-number text-primary">
+                @Model.TotalCount
+            </div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div id="tx-borrow-count" class="stat-number text-warning">
+                @Model.BorrowCount
+            </div>
+            <div class="stat-label">Borrowed</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div id="tx-return-count" class="stat-number text-success">
+                @Model.ReturnCount
+            </div>
+            <div class="stat-label">Returned</div>
+        </div>
+    </div>
+    <div class="col-6 col-md-3">
+        <div class="stat-card">
+            <div class="stat-icon">⚠️</div>
+            <div id="tx-damage-count" class="stat-number text-danger">
+                @Model.DamageCount
+            </div>
+            <div class="stat-label">Damaged</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filter -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" action="/Transaction/Index"
+              class="d-flex gap-2 flex-wrap align-items-center">
+
+            <input type="text"
+                   id="searchInput"
+                   name="search"
+                   class="form-control form-control-sm"
+                   style="max-width:200px"
+                   placeholder="Search tool or worker..."
+                   value="@Model.SearchText" />
+
+            <select id="filterSelect"
+                    name="filter"
+                    class="form-select form-select-sm"
+                    style="max-width:160px">
+                <option value="">All Actions</option>
+                @foreach (var act in new[] { "Borrowed", "Returned", "Transferred", "Damaged", "Repaired" })
+                {
+                    if (Model.SelectedAction == act)
+                    {
+                        <option value="@act" selected>@act</option>
+                    }
+                    else
+                    {
+                        <option value="@act">@act</option>
+                    }
+                }
+            </select>
+
+            <!-- page is intentionally omitted — filtering always resets to page 1 -->
+
+            <button type="submit" class="btn btn-primary btn-sm">
+                🔍 Filter
+            </button>
+
+            <a href="/Transaction/Index"
+               class="btn btn-outline-secondary btn-sm">
+                Clear
+            </a>
+
+            <span class="text-secondary ms-auto" style="font-size:12px">
+                @if (Model.TotalFiltered > 0)
+                {
+                    <span>
+                        Showing @Model.FirstItemIndex–@Model.LastItemIndex
+                        of @Model.TotalFiltered result(s)
+                    </span>
+                }
+                else
+                {
+                    <span>No results</span>
+                }
+            </span>
+
+        </form>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span class="fw-bold" style="font-size:14px">
+            Transaction History
+            <span class="badge bg-primary ms-2">@Model.TotalFiltered</span>
+        </span>
+        <span class="text-secondary" style="font-size:12px">
+            Page @Model.CurrentPage of @Model.TotalPages
+        </span>
+    </div>
+    <div class="card-body p-0">
+
+        @if (Model.Transactions.Count > 0)
+        {
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tool</th>
+                            <th>Worker</th>
+                            <th>Action</th>
+                            <th>Description</th>
+                            <th>Condition</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tx-table-body">
+                        @foreach (var tx in Model.Transactions)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-bold" style="font-size:13px">
+                                        @tx.ToolName
+                                    </div>
+                                    <code style="font-size:11px; color:#60a5fa">
+                                        @tx.ToolId
+                                    </code>
+                                </td>
+                                <td style="font-size:13px">@tx.WorkerName</td>
+                                <td>
+                                    <span class="@tx.ActionBadgeClass">
+                                        @tx.Action
+                                    </span>
+                                </td>
+                                <td style="font-size:12px; color:#94a3b8; max-width:180px">
+                                    @tx.Description
+                                </td>
+                                <td style="font-size:12px; color:#94a3b8">
+                                    @tx.Condition
+                                </td>
+                                <td style="font-size:11px; color:#94a3b8; white-space:nowrap">
+                                    @tx.DateLabel
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="p-5 text-center text-secondary">
+                <div style="font-size:40px">📋</div>
+                <h6 class="mt-3 fw-bold">No transactions found</h6>
+                <p style="font-size:13px">
+                    @if (!string.IsNullOrEmpty(Model.SelectedAction) ||
+                         !string.IsNullOrEmpty(Model.SearchText))
+                    {
+                        <span>No results for current filter.</span>
+                        <br />
+                        <a href="/Transaction/Index"
+                           class="btn btn-sm btn-outline-primary mt-2">
+                            Clear Filter
+                        </a>
+                    }
+                    else
+                    {
+                        <span>Transactions will appear here once workers borrow tools.</span>
+                    }
+                </p>
+            </div>
+        }
+
+    </div>
+
+    <!-- ── PAGINATION BAR ─────────────────────────────────────────────────── -->
+    @if (Model.TotalPages > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center py-2">
+
+            <span class="text-secondary" style="font-size:12px">
+                Showing @Model.FirstItemIndex–@Model.LastItemIndex
+                of @Model.TotalFiltered
+            </span>
+
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+
+                    <!-- Previous -->
+                    <li class="page-item @(!Model.HasPreviousPage ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", "Transaction", new {
+                               page   = Model.CurrentPage - 1,
+                               filter = Model.SelectedAction,
+                               search = Model.SearchText
+                           })">
+                            &laquo;
+                        </a>
+                    </li>
+
+                    <!-- First page shortcut when not in range -->
+                    @if (!Model.PageRange.Contains(1))
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Transaction", new {
+                                   page   = 1,
+                                   filter = Model.SelectedAction,
+                                   search = Model.SearchText
+                               })">1</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                    }
+
+                    <!-- Page number window (max 5 pages) -->
+                    @foreach (var p in Model.PageRange)
+                    {
+                        <li class="page-item @(p == Model.CurrentPage ? "active" : "")">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Transaction", new {
+                                   page   = p,
+                                   filter = Model.SelectedAction,
+                                   search = Model.SearchText
+                               })">@p</a>
+                        </li>
+                    }
+
+                    <!-- Last page shortcut when not in range -->
+                    @if (!Model.PageRange.Contains(Model.TotalPages))
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Transaction", new {
+                                   page   = Model.TotalPages,
+                                   filter = Model.SelectedAction,
+                                   search = Model.SearchText
+                               })">@Model.TotalPages</a>
+                        </li>
+                    }
+
+                    <!-- Next -->
+                    <li class="page-item @(!Model.HasNextPage ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", "Transaction", new {
+                               page   = Model.CurrentPage + 1,
+                               filter = Model.SelectedAction,
+                               search = Model.SearchText
+                           })">
+                            &raquo;
+                        </a>
+                    </li>
+
+                </ul>
+            </nav>
+
+        </div>
+    }
+
+</div>
+
+@section Scripts {
+    <script>
+        // ── Live sync: listens to Firebase and refreshes page 1 only ─────────
+        // When a new transaction arrives, the table auto-refreshes IF the user
+        // is on page 1. On any other page, a toast notifies them to go to page 1.
+
+        const CURRENT_PAGE = @Model.CurrentPage;
+        const FIREBASE_URL = "https://stockguard-e781c-default-rtdb.firebaseio.com";
+
+        function listenToTransactions() {
+            const source = new EventSource(`${FIREBASE_URL}/transactions.json`);
+            let isFirstEvent = true;
+
+            source.addEventListener("put", (e) => {
+                if (isFirstEvent) { isFirstEvent = false; return; }
+                handleLiveUpdate();
+            });
+
+            source.addEventListener("patch", () => handleLiveUpdate());
+
+            source.onerror = () => {
+                source.close();
+                setTimeout(listenToTransactions, 5000);
+            };
+        }
+
+        function handleLiveUpdate() {
+            if (CURRENT_PAGE === 1) {
+                refreshTransactionTable();
+            } else {
+                // Don't disrupt the user mid-page — just notify
+                showTxToast("New transaction recorded — go to page 1 to see it");
+            }
+        }
+
+        async function refreshTransactionTable() {
+            try {
+                const search = document.getElementById("searchInput")?.value ?? "";
+                const filter = document.getElementById("filterSelect")?.value ?? "";
+
+                let url = "/api/transactions-full";
+                const params = new URLSearchParams();
+                if (search) params.append("search", search);
+                if (filter) params.append("filter", filter);
+                if (params.toString()) url += "?" + params.toString();
+
+                const res = await fetch(url);
+                if (!res.ok) return;
+                const data = await res.json();
+
+                // Update stat cards
+                updateTxEl("tx-total-count",  data.totalCount);
+                updateTxEl("tx-borrow-count", data.borrowCount);
+                updateTxEl("tx-return-count", data.returnCount);
+                updateTxEl("tx-damage-count", data.damageCount);
+
+                // Update table rows (first page only)
+                const tbody = document.getElementById("tx-table-body");
+                if (!tbody) return;
+
+                if (data.items.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="6" class="text-center p-4 text-secondary">
+                                No transactions found
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = data.items.map(tx => `
+                    <tr>
+                        <td>
+                            <div class="fw-bold" style="font-size:13px">${tx.toolName}</div>
+                            <code style="font-size:11px; color:#60a5fa">${tx.toolId}</code>
+                        </td>
+                        <td style="font-size:13px">${tx.workerName}</td>
+                        <td><span class="${tx.actionBadgeClass}">${tx.action}</span></td>
+                        <td style="font-size:12px; color:#94a3b8; max-width:180px">${tx.description}</td>
+                        <td style="font-size:12px; color:#94a3b8">${tx.condition}</td>
+                        <td style="font-size:11px; color:#94a3b8; white-space:nowrap">${tx.date}</td>
+                    </tr>`).join("");
+
+                // Flash newest row
+                const firstRow = tbody.querySelector("tr");
+                if (firstRow) {
+                    firstRow.style.background = "#0a2a1e";
+                    setTimeout(() => firstRow.style.background = "", 2000);
+                }
+
+                showTxToast("Transaction list updated");
+            } catch (err) {
+                console.log("Transaction refresh error:", err);
+            }
+        }
+
+        function updateTxEl(id, value) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            const newVal = String(value);
+            if (el.textContent.trim() !== newVal) {
+                el.textContent = newVal;
+                el.style.color = "#10b981";
+                setTimeout(() => el.style.color = "", 1000);
+            }
+        }
+
+        function showTxToast(message) {
+            let container = document.getElementById("txToastContainer");
+            if (!container) {
+                container = document.createElement("div");
+                container.id = "txToastContainer";
+                container.style.cssText = `
+                    position: fixed; bottom: 20px; right: 20px;
+                    z-index: 9999; display: flex;
+                    flex-direction: column; gap: 8px;`;
+                document.body.appendChild(container);
+            }
+
+            const toast = document.createElement("div");
+            toast.style.cssText = `
+                background: #0d1526; border: 1px solid #10b981;
+                border-radius: 10px; padding: 12px 16px;
+                color: #f0f4ff; font-size: 13px;
+                display: flex; align-items: center; gap: 8px;
+                min-width: 200px; box-shadow: 0 4px 12px rgba(0,0,0,0.3);`;
+            toast.innerHTML = `<span style="color:#10b981">🟢</span><span>${message}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity    = "0";
+                toast.style.transition = "opacity 0.3s";
+                setTimeout(() => {
+                    if (container.contains(toast)) container.removeChild(toast);
+                }, 300);
+            }, 3000);
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            listenToTransactions();
+        });
+    </script>
+}

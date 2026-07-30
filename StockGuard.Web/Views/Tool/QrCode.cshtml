@@ -1,0 +1,133 @@
+﻿@{
+    ViewData["Title"] = "QR Code";
+    Layout = "_Layout";
+
+    var qrBase64 =
+        ViewBag.QrCodeBase64?.ToString() ?? "";
+}
+
+<div class="row justify-content-center">
+    <div class="col-12 col-md-5 col-lg-4">
+        <div class="card text-center">
+            <div class="card-body p-4">
+
+                <h5 class="fw-bold mb-1">
+                    @ViewBag.Tool?.ToolName
+                </h5>
+                <p class="text-secondary mb-4"
+                   style="font-size:13px">
+                    @ViewBag.CatalogName
+                </p>
+
+                @if (!string.IsNullOrEmpty(qrBase64))
+                {
+                    <div class="p-3 mb-3
+                                    d-inline-block"
+                         style="background:white;
+                                    border-radius:12px">
+                        <img src="data:image/png;base64,@qrBase64"
+                             alt="QR Code"
+                             style="width:200px;
+                                        height:200px;
+                                        display:block" />
+                    </div>
+                }
+                else
+                {
+                    <div class="p-4 mb-3"
+                         style="background:#111d33;
+                                    border-radius:12px;
+                                    color:#ef4444;
+                                    font-size:13px">
+                        ⚠️ QR Code generation failed
+                    </div>
+                }
+
+                <!-- Tool ID -->
+                <div class="p-2 mb-4"
+                     style="background:#0f1c35;
+                            border:1px solid #1e3a5f;
+                            border-radius:8px;
+                            font-size:20px;
+                            font-weight:700;
+                            color:#3b82f6;
+                            letter-spacing:3px">
+                    @ViewBag.Tool?.ToolId
+                </div>
+
+                <!-- Info -->
+                <div class="row g-2 mb-4 text-start">
+                    <div class="col-6">
+                        <div style="font-size:10px;
+                                    color:#94a3b8">
+                            Status
+                        </div>
+                        <div class="fw-bold"
+                             style="font-size:13px">
+                            @ViewBag.Tool?.Status
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div style="font-size:10px;
+                                    color:#94a3b8">
+                            Condition
+                        </div>
+                        <div class="fw-bold"
+                             style="font-size:13px">
+                            @ViewBag.Tool?.Condition
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Buttons -->
+                <div class="d-flex gap-2
+                            justify-content-center
+                            flex-wrap">
+                    <a href="/Tool/DownloadQr?toolId=@ViewBag.Tool?.ToolId"
+                       class="btn btn-primary">
+                        ⬇️ Download PNG
+                    </a>
+                    <button onclick="window.print()"
+                            class="btn btn-outline-secondary">
+                        🖨️ Print
+                    </button>
+                    <a href="/Tool/Index"
+                       class="btn btn-outline-secondary">
+                        ← Back
+                    </a>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .sidebar {
+            display: none !important;
+        }
+
+        .top-bar {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .btn {
+            display: none !important;
+        }
+
+        body {
+            background: white !important;
+            color: black !important;
+        }
+
+        .card {
+            border: 1px solid #ccc !important;
+            background: white !important;
+        }
+    }
+</style>

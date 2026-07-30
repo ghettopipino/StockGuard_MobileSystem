@@ -1,0 +1,1181 @@
+﻿@{
+    ViewData["Title"] = "Home";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StockGuard — Equipment Monitoring Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #060d1a;
+            --bg-card: #0b1628;
+            --bg-card2: #0d1f3a;
+            --border: rgba(59,130,246,0.12);
+            --border-hard: rgba(255,255,255,0.07);
+            --accent: #3b82f6;
+            --accent-dark: #1d4ed8;
+            --accent-glow: rgba(59,130,246,0.2);
+            --green: #10b981;
+            --text1: #f0f4ff;
+            --text2: #94a3b8;
+            --text3: #3d5278;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text1);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   NAV
+                ════════════════════════════════════════════════════ */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 200;
+            height: 66px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 2.5rem;
+            background: rgba(6,13,26,0.7);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--border-hard);
+            transition: background 0.3s;
+        }
+
+        .nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .nav-brand-icon {
+            width: 38px;
+            height: 38px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 18px rgba(59,130,246,0.4);
+            transition: box-shadow 0.3s;
+        }
+
+        .nav-brand:hover .nav-brand-icon {
+            box-shadow: 0 0 28px rgba(59,130,246,0.6);
+        }
+
+        .nav-brand-text {
+            font-size: 14px;
+            font-weight: 800;
+            letter-spacing: 2.5px;
+            color: #e2e8f0;
+        }
+
+        .btn-nav {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            padding: 9px 22px;
+            font-size: 13px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 4px 16px rgba(29,78,216,0.4);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+            .btn-nav:hover {
+                color: #fff;
+                transform: translateY(-1px);
+                box-shadow: 0 6px 22px rgba(29,78,216,0.55);
+            }
+
+        /* ════════════════════════════════════════════════════
+                   HERO
+                ════════════════════════════════════════════════════ */
+        .hero {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 120px 20px 80px;
+            position: relative;
+            overflow: hidden;
+        }
+
+            /* Animated dot grid */
+            .hero::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: radial-gradient(rgba(59,130,246,0.18) 1px, transparent 1px);
+                background-size: 36px 36px;
+                mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 0%, transparent 80%);
+                pointer-events: none;
+                animation: grid-drift 20s linear infinite;
+            }
+
+        @@keyframes grid-drift {
+            0%
+
+        {
+            background-position: 0 0;
+        }
+
+        100% {
+            background-position: 36px 36px;
+        }
+
+        }
+
+        /* Top glow */
+        .hero::after {
+            content: '';
+            position: absolute;
+            top: -200px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 600px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(59,130,246,0.1) 0%, transparent 65%);
+            pointer-events: none;
+            animation: hero-pulse 8s ease-in-out infinite;
+        }
+
+        @@keyframes hero-pulse {
+            0%, 100%
+
+        {
+            opacity: 0.5;
+            transform: translateX(-50%) scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 2;
+            max-width: 780px;
+        }
+
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 999px;
+            padding: 6px 16px;
+            font-size: 12px;
+            font-weight: 600;
+            color: #93c5fd;
+            letter-spacing: 0.5px;
+            margin-bottom: 36px;
+            animation: fade-up 0.6s ease both;
+        }
+
+        .hero-badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--green);
+            box-shadow: 0 0 8px var(--green);
+            animation: blink 2s ease-in-out infinite;
+        }
+
+        @@keyframes blink {
+            0%, 100%
+
+        {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.3;
+        }
+
+        }
+
+        .hero h1 {
+            font-size: clamp(2.8rem, 7vw, 5rem);
+            font-weight: 900;
+            line-height: 1.08;
+            letter-spacing: -2px;
+            margin-bottom: 28px;
+            color: #f8faff;
+            animation: fade-up 0.6s 0.1s ease both;
+        }
+
+            .hero h1 .accent {
+                color: var(--accent);
+                position: relative;
+            }
+
+        .hero-sub {
+            font-size: 17px;
+            color: var(--text2);
+            max-width: 520px;
+            margin: 0 auto 48px;
+            line-height: 1.75;
+            animation: fade-up 0.6s 0.2s ease both;
+        }
+
+        .hero-actions {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            animation: fade-up 0.6s 0.3s ease both;
+        }
+
+        .btn-hero-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: linear-gradient(135deg, #1d4ed8, #2563eb);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            padding: 15px 34px;
+            font-size: 15px;
+            font-weight: 700;
+            text-decoration: none;
+            box-shadow: 0 6px 24px rgba(29,78,216,0.45);
+            transition: transform 0.15s, box-shadow 0.2s;
+        }
+
+            .btn-hero-primary:hover {
+                color: #fff;
+                transform: translateY(-2px);
+                box-shadow: 0 10px 32px rgba(29,78,216,0.6);
+            }
+
+        .btn-hero-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255,255,255,0.05);
+            color: var(--text2);
+            border: 1px solid var(--border-hard);
+            border-radius: 12px;
+            padding: 15px 28px;
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s, border-color 0.2s;
+        }
+
+            .btn-hero-secondary:hover {
+                background: rgba(255,255,255,0.08);
+                color: var(--text1);
+                border-color: rgba(255,255,255,0.15);
+            }
+
+        @@keyframes fade-up {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(18px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        /* Scroll indicator */
+        .scroll-hint {
+            position: absolute;
+            bottom: 36px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: var(--text3);
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            animation: fade-up 0.6s 0.8s ease both;
+            z-index: 2;
+        }
+
+            .scroll-hint svg {
+                animation: bounce 2s ease-in-out infinite;
+            }
+
+        @@keyframes bounce {
+            0%, 100%
+
+        {
+            transform: translateY(0);
+        }
+
+        50% {
+            transform: translateY(5px);
+        }
+
+        }
+
+        /* ════════════════════════════════════════════════════
+                   STATS BAR
+                ════════════════════════════════════════════════════ */
+        .stats-bar {
+            border-top: 1px solid var(--border-hard);
+            border-bottom: 1px solid var(--border-hard);
+            background: var(--bg-card);
+            display: flex;
+            justify-content: center;
+        }
+
+        .stat-cell {
+            flex: 1;
+            max-width: 240px;
+            padding: 30px 24px;
+            text-align: center;
+            border-right: 1px solid var(--border-hard);
+            transition: background 0.2s;
+        }
+
+            .stat-cell:last-child {
+                border-right: none;
+            }
+
+            .stat-cell:hover {
+                background: rgba(59,130,246,0.04);
+            }
+
+        .stat-num {
+            font-size: 30px;
+            font-weight: 900;
+            color: var(--accent);
+            line-height: 1;
+            margin-bottom: 7px;
+            letter-spacing: -1px;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text3);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   SECTIONS
+                ════════════════════════════════════════════════════ */
+        .section {
+            padding: 100px 0;
+        }
+
+        .section-pt0 {
+            padding-top: 0;
+        }
+
+        .section-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 2px;
+            color: var(--accent);
+            text-transform: uppercase;
+            margin-bottom: 18px;
+            padding: 5px 12px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.18);
+            border-radius: 999px;
+        }
+
+        .section-title {
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-weight: 900;
+            line-height: 1.15;
+            margin-bottom: 16px;
+            letter-spacing: -0.8px;
+            color: #f8faff;
+        }
+
+        .section-sub {
+            color: var(--text2);
+            font-size: 15px;
+            line-height: 1.8;
+            max-width: 460px;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   FEATURE CARDS
+                ════════════════════════════════════════════════════ */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 14px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hard);
+            border-radius: 16px;
+            padding: 28px 26px;
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.25s, transform 0.2s, box-shadow 0.25s;
+        }
+
+            .feature-card::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, var(--accent-dark), var(--accent));
+                opacity: 0;
+                transition: opacity 0.25s;
+            }
+
+            .feature-card:hover {
+                border-color: rgba(59,130,246,0.3);
+                transform: translateY(-3px);
+                box-shadow: 0 12px 40px rgba(0,0,0,0.4);
+            }
+
+                .feature-card:hover::before {
+                    opacity: 1;
+                }
+
+        .feature-icon-wrap {
+            width: 48px;
+            height: 48px;
+            background: rgba(59,130,246,0.1);
+            border: 1px solid rgba(59,130,246,0.18);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 20px;
+            transition: background 0.2s;
+        }
+
+        .feature-card:hover .feature-icon-wrap {
+            background: rgba(59,130,246,0.18);
+        }
+
+        .feature-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text1);
+        }
+
+        .feature-desc {
+            font-size: 13.5px;
+            color: var(--text2);
+            line-height: 1.65;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   HOW IT WORKS
+                ════════════════════════════════════════════════════ */
+        .steps-wrap {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hard);
+            border-radius: 20px;
+            overflow: hidden;
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+        }
+
+        .step-item {
+            padding: 36px 30px;
+            border-right: 1px solid var(--border-hard);
+            position: relative;
+            transition: background 0.2s;
+        }
+
+            .step-item:last-child {
+                border-right: none;
+            }
+
+            .step-item:hover {
+                background: rgba(59,130,246,0.04);
+            }
+
+        .step-num-wrap {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .step-num {
+            width: 32px;
+            height: 32px;
+            border-radius: 9px;
+            background: rgba(59,130,246,0.12);
+            border: 1px solid rgba(59,130,246,0.22);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: var(--accent);
+        }
+
+        .step-connector {
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(59,130,246,0.3), transparent);
+        }
+
+        .step-item:last-child .step-connector {
+            display: none;
+        }
+
+        .step-title {
+            font-size: 15px;
+            font-weight: 700;
+            margin-bottom: 10px;
+            color: var(--text1);
+        }
+
+        .step-desc {
+            font-size: 13px;
+            color: var(--text2);
+            line-height: 1.65;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   ROLES
+                ════════════════════════════════════════════════════ */
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+        }
+
+        .role-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-hard);
+            border-radius: 18px;
+            overflow: hidden;
+            transition: border-color 0.2s, transform 0.2s;
+        }
+
+            .role-card:hover {
+                border-color: rgba(59,130,246,0.3);
+                transform: translateY(-2px);
+            }
+
+        .role-header {
+            padding: 22px 26px;
+            border-bottom: 1px solid var(--border-hard);
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            background: rgba(255,255,255,0.02);
+        }
+
+        .role-icon {
+            width: 46px;
+            height: 46px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .role-icon.pe {
+                background: rgba(59,130,246,0.12);
+                border: 1px solid rgba(59,130,246,0.2);
+            }
+
+            .role-icon.wk {
+                background: rgba(16,185,129,0.1);
+                border: 1px solid rgba(16,185,129,0.2);
+            }
+
+        .role-badge {
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1px;
+            padding: 3px 9px;
+            border-radius: 6px;
+            text-transform: uppercase;
+        }
+
+            .role-badge.pe {
+                background: rgba(59,130,246,0.15);
+                color: #93c5fd;
+                border: 1px solid rgba(59,130,246,0.2);
+            }
+
+            .role-badge.wk {
+                background: rgba(16,185,129,0.12);
+                color: #6ee7b7;
+                border: 1px solid rgba(16,185,129,0.2);
+            }
+
+        .role-name {
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--text1);
+        }
+
+        .role-sub {
+            font-size: 12px;
+            color: var(--text3);
+            margin-top: 3px;
+        }
+
+        .role-list {
+            padding: 20px 26px;
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+            .role-list li {
+                font-size: 13.5px;
+                color: var(--text2);
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+        .role-check {
+            width: 18px;
+            height: 18px;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .role-check.pe {
+                background: rgba(59,130,246,0.1);
+                border: 1px solid rgba(59,130,246,0.2);
+            }
+
+            .role-check.wk {
+                background: rgba(16,185,129,0.1);
+                border: 1px solid rgba(16,185,129,0.2);
+            }
+
+        /* ════════════════════════════════════════════════════
+                   CTA BANNER
+                ════════════════════════════════════════════════════ */
+        .cta-wrap {
+            position: relative;
+            background: var(--bg-card);
+            border: 1px solid var(--border-hard);
+            border-radius: 24px;
+            padding: 80px 40px;
+            text-align: center;
+            overflow: hidden;
+        }
+
+            .cta-wrap::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: radial-gradient(rgba(59,130,246,0.12) 1px, transparent 1px);
+                background-size: 32px 32px;
+                mask-image: radial-gradient(ellipse 60% 60% at 50% 50%, black 0%, transparent 100%);
+                pointer-events: none;
+            }
+
+            .cta-wrap::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 500px;
+                height: 300px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(59,130,246,0.08) 0%, transparent 65%);
+                pointer-events: none;
+            }
+
+        .cta-content {
+            position: relative;
+            z-index: 2;
+        }
+
+        .cta-wrap h2 {
+            font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+            font-weight: 900;
+            letter-spacing: -0.8px;
+            margin-bottom: 14px;
+            color: #f8faff;
+        }
+
+        .cta-wrap p {
+            color: var(--text2);
+            font-size: 15px;
+            margin-bottom: 36px;
+            line-height: 1.7;
+        }
+
+        /* ════════════════════════════════════════════════════
+                   FOOTER
+                ════════════════════════════════════════════════════ */
+        footer {
+            border-top: 1px solid var(--border-hard);
+            padding: 32px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        .footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            color: var(--text3);
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        .footer-divider {
+            width: 1px;
+            height: 14px;
+            background: var(--border-hard);
+        }
+
+        .footer-copy {
+            font-size: 12px;
+            color: var(--text3);
+        }
+
+        /* ════════════════════════════════════════════════════
+                   RESPONSIVE
+                ════════════════════════════════════════════════════ */
+        @@media (max-width: 900px) {
+            .steps-wrap {
+                grid-template-columns: 1fr 1fr;
+            }
+
+            .step-item {
+                border-bottom: 1px solid var(--border-hard);
+            }
+
+                .step-item:nth-child(2n) {
+                    border-right: none;
+                }
+
+                .step-item:nth-last-child(-n+2) {
+                    border-bottom: none;
+                }
+
+            .step-connector {
+                display: none;
+            }
+        }
+
+        @@media (max-width: 640px) {
+            nav {
+                padding: 0 1.2rem;
+            }
+
+            .hero h1 {
+                letter-spacing: -1px;
+            }
+
+            .stats-bar {
+                flex-wrap: wrap;
+            }
+
+            .stat-cell {
+                min-width: 50%;
+                border-bottom: 1px solid var(--border-hard);
+            }
+
+                .stat-cell:nth-child(2n) {
+                    border-right: none;
+                }
+
+                .stat-cell:nth-last-child(-n+2) {
+                    border-bottom: none;
+                }
+
+            .steps-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .step-item {
+                border-right: none;
+            }
+
+                .step-item:last-child {
+                    border-bottom: none;
+                }
+
+            .cta-wrap {
+                padding: 52px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ════════════════════════════════════════════════════════
+         NAV
+    ════════════════════════════════════════════════════════ -->
+    <nav>
+        <a class="nav-brand" href="#">
+            <div class="nav-brand-icon">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                    <path d="M12 2L3 6V12C3 17 7.5 21.5 12 22C16.5 21.5 21 17 21 12V6L12 2Z" fill="white" fill-opacity="0.95" />
+                    <path d="M9 12L11 14L15 10" stroke="#1d4ed8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+            </div>
+            <span class="nav-brand-text">STOCKGUARD</span>
+        </a>
+        <a href="/Auth/Login" class="btn-nav">Sign In →</a>
+    </nav>
+
+    <!-- ════════════════════════════════════════════════════════
+         HERO
+    ════════════════════════════════════════════════════════ -->
+    <section class="hero">
+        <div class="hero-content">
+            <div class="hero-badge">
+                <div class="hero-badge-dot"></div>
+                Equipment Monitoring Platform
+            </div>
+            <h1>Equipment,<br><span class="accent">Under Control.</span></h1>
+            <p class="hero-sub">
+                Track every tool. Know who has what, when they took it,
+                and where it's been — in real time.
+            </p>
+            <div class="hero-actions">
+                <a href="/Auth/Login" class="btn-hero-primary">Get Started →</a>
+                <a href="#features" class="btn-hero-secondary">See Features</a>
+            </div>
+        </div>
+        <div class="scroll-hint">
+            <span>Scroll</span>
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 5v14M5 12l7 7 7-7" />
+            </svg>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         STATS
+    ════════════════════════════════════════════════════════ -->
+    <div class="stats-bar">
+        <div class="stat-cell">
+            <div class="stat-num">100%</div>
+            <div class="stat-label">Accountability</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">Live</div>
+            <div class="stat-label">Status Updates</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">Full</div>
+            <div class="stat-label">Audit Trail</div>
+        </div>
+        <div class="stat-cell">
+            <div class="stat-num">QR</div>
+            <div class="stat-label">Instant Scanning</div>
+        </div>
+    </div>
+
+    <!-- ════════════════════════════════════════════════════════
+         FEATURES
+    ════════════════════════════════════════════════════════ -->
+    <section class="section" id="features">
+        <div class="container">
+            <div class="row align-items-end mb-5">
+                <div class="col-lg-5 mb-4 mb-lg-0">
+                    <span class="section-tag">Features</span>
+                    <h2 class="section-title">Everything you need to manage your tools</h2>
+                    <p class="section-sub">A complete system for construction teams to track, borrow, and audit every piece of equipment on site.</p>
+                </div>
+            </div>
+            <div class="feature-grid">
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">Tool Management</div>
+                    <p class="feature-desc">Borrow, return, transfer and report tools with a full lifecycle view per item.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 11l3 3L22 4" />
+                            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">Full Audit Logs</div>
+                    <p class="feature-desc">Every action is tracked and timestamped — know exactly what happened and when.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                            <circle cx="9" cy="7" r="4" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">Role-Based Access</div>
+                    <p class="feature-desc">Project Engineers oversee operations while Workers perform field actions.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M9 3v18M15 3v18M3 9h18M3 15h18" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">QR Code Scanning</div>
+                    <p class="feature-desc">Instant tool lookup on site. Scan any tagged item to see its full history.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="18" y1="20" x2="18" y2="10" />
+                            <line x1="12" y1="20" x2="12" y2="4" />
+                            <line x1="6" y1="20" x2="6" y2="14" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">Project Analytics</div>
+                    <p class="feature-desc">Visualize equipment utilization and identify bottlenecks across projects.</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon-wrap">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+                            <line x1="12" y1="9" x2="12" y2="13" />
+                            <line x1="12" y1="17" x2="12.01" y2="17" />
+                        </svg>
+                    </div>
+                    <div class="feature-title">Damage Reporting</div>
+                    <p class="feature-desc">Workers report damage instantly. Engineers review and act without delays.</p>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         HOW IT WORKS
+    ════════════════════════════════════════════════════════ -->
+    <section class="section section-pt0">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="section-tag">How It Works</span>
+                <h2 class="section-title">Simple process, powerful results</h2>
+            </div>
+            <div class="steps-wrap">
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">01</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-title">Register & Set Up</div>
+                    <p class="step-desc">Project Engineers create an account and add tools to the catalog with QR tags.</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">02</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-title">Assign Workers</div>
+                    <p class="step-desc">Invite your team, assign roles, and link workers to active projects.</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">03</div>
+                        <div class="step-connector"></div>
+                    </div>
+                    <div class="step-title">Track in Real Time</div>
+                    <p class="step-desc">Workers scan QR codes to borrow and return. Every action is logged instantly.</p>
+                </div>
+                <div class="step-item">
+                    <div class="step-num-wrap">
+                        <div class="step-num">04</div>
+                    </div>
+                    <div class="step-title">Review & Analyze</div>
+                    <p class="step-desc">Monitor dashboards, audit logs, and analytics to keep projects on track.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         ROLES
+    ════════════════════════════════════════════════════════ -->
+    <section class="section section-pt0">
+        <div class="container">
+            <div class="text-center mb-5">
+                <span class="section-tag">User Roles</span>
+                <h2 class="section-title">Built for two types of users</h2>
+            </div>
+            <div class="role-grid">
+
+                <div class="role-card">
+                    <div class="role-header">
+                        <div class="role-icon pe">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L3 6V12C3 17 7.5 21.5 12 22C16.5 21.5 21 17 21 12V6L12 2Z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                                <div class="role-name">Project Engineer</div>
+                                <span class="role-badge pe">PE</span>
+                            </div>
+                            <div class="role-sub">Full oversight and control</div>
+                        </div>
+                    </div>
+                    <ul class="role-list">
+                        <li><div class="role-check pe"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Manage equipment catalog and QR codes</li>
+                        <li><div class="role-check pe"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Approve and review borrow requests</li>
+                        <li><div class="role-check pe"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>View full audit and transaction logs</li>
+                        <li><div class="role-check pe"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Handle damage reports and pause requests</li>
+                        <li><div class="role-check pe"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#3b82f6" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Access project analytics dashboard</li>
+                    </ul>
+                </div>
+
+                <div class="role-card">
+                    <div class="role-header">
+                        <div class="role-icon wk">
+                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M20 7H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z" />
+                                <path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2" />
+                            </svg>
+                        </div>
+                        <div>
+                            <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+                                <div class="role-name">Worker</div>
+                                <span class="role-badge wk">WK</span>
+                            </div>
+                            <div class="role-sub">Field actions and requests</div>
+                        </div>
+                    </div>
+                    <ul class="role-list">
+                        <li><div class="role-check wk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Scan QR codes to borrow or return tools</li>
+                        <li><div class="role-check wk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Submit borrow and pause requests</li>
+                        <li><div class="role-check wk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Report tool damage from the field</li>
+                        <li><div class="role-check wk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>View personal tool history and status</li>
+                        <li><div class="role-check wk"><svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" /></svg></div>Receive real-time status notifications</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         CTA
+    ════════════════════════════════════════════════════════ -->
+    <section class="section section-pt0">
+        <div class="container">
+            <div class="cta-wrap">
+                <div class="cta-content">
+                    <h2>Ready to take control<br>of your equipment?</h2>
+                    <p>Sign in and start tracking your tools in minutes.</p>
+                    <a href="/Auth/Login" class="btn-hero-primary">Get Started →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ════════════════════════════════════════════════════════
+         FOOTER
+    ════════════════════════════════════════════════════════ -->
+    <footer>
+        <a class="footer-brand" href="#">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 2L3 6V12C3 17 7.5 21.5 12 22C16.5 21.5 21 17 21 12V6L12 2Z" fill="#3b82f6" opacity="0.6" />
+            </svg>
+            STOCKGUARD
+        </a>
+        <div class="footer-divider"></div>
+        <span class="footer-copy">© 2025 Equipment Management Platform</span>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Fade-in on scroll
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(e) {
+                if (e.isIntersecting) {
+                    e.target.style.opacity = '1';
+                    e.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        document.querySelectorAll('.feature-card, .step-item, .role-card').forEach(function(el) {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'opacity 0.5s ease, transform 0.5s ease, border-color 0.25s, box-shadow 0.25s';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>

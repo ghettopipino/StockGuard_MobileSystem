@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<resources>
+	<style name="LaunchTheme"
+           parent="Theme.SplashScreen">
+		<item name="android:windowBackground">@color/splash_background</item>
+		<item name="postSplashScreenTheme">@style/MainTheme</item>
+	</style>
+
+	<style name="MainTheme"
+           parent="Theme.MaterialComponents.DayNight.NoActionBar">
+		<item name="android:windowBackground">#080f1e</item>
+		<item name="android:windowLightStatusBar">false</item>
+		<item name="colorPrimary">#3b82f6</item>
+		<item name="colorPrimaryDark">#080f1e</item>
+		<item name="colorAccent">#3b82f6</item>
+	</style>
+</resources>

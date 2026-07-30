@@ -1,0 +1,270 @@
+﻿@model StockGuard.Web.Models.Project
+@{
+    ViewData["Title"] = "Project Management";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success
+                    alert-dismissible fade show">
+        ✅ @TempData["Success"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Active Project Banner -->
+@if (ViewBag.ActiveProject != null)
+{
+    <div class="active-project-banner mb-4">
+        <div class="d-flex align-items-center
+                        justify-content-between">
+            <div class="d-flex align-items-center gap-3">
+                <span style="font-size:28px">🟢</span>
+                <div>
+                    <div style="font-size:11px;
+                                    color:#93c5fd">
+                        Currently Active
+                    </div>
+                    <div class="fw-bold fs-5">
+                        @ViewBag.ActiveProject.ProjectName
+                    </div>
+                    <div style="font-size:12px;
+                                    color:#bfdbfe">
+                        📍 @ViewBag.ActiveProject.Location
+                        · Started
+                        @ViewBag.ActiveProject.StartDateLabel
+                    </div>
+                </div>
+            </div>
+            <a href="/Project/Details/@ViewBag.ActiveProject.ProjectId"
+               class="btn btn-light btn-sm">
+                View Details →
+            </a>
+        </div>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">📁</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalProjects
+            </div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">🟢</div>
+            <div class="stat-number text-success">
+                @ViewBag.ActiveProjects
+            </div>
+            <div class="stat-label">Active</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-info">
+                @ViewBag.CompletedProjects
+            </div>
+            <div class="stat-label">Completed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Create Button -->
+<div class="d-flex justify-content-between
+            align-items-center mb-3">
+    <h6 class="fw-bold mb-0">All Projects</h6>
+    <button class="btn btn-primary btn-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#createModal">
+        ➕ Create Project
+    </button>
+</div>
+
+<!-- Projects List -->
+@if (ViewBag.Projects != null)
+{
+    <div class="row g-3">
+        @foreach (var project in ViewBag.Projects)
+        {
+            <div class="col-12 col-md-6">
+                <div class="card"
+                     style="border-color:@(project.Status
+                                              == "Active"
+                                              ? "#10b981" : "#1e3a5f")">
+            <div class="card-body">
+                <div class="d-flex
+                                    justify-content-between
+                                    align-items-start mb-2">
+                    <div>
+                        <h6 class="fw-bold mb-1">
+                            @project.ProjectName
+                        </h6>
+                        <div style="font-size:12px;
+                                            color:#94a3b8">
+                            📍 @project.Location
+                        </div>
+                        <div style="font-size:12px;
+                                            color:#94a3b8">
+                            📅 @project.StartDateLabel
+                            · @project.DurationLabel
+                        </div>
+                    </div>
+                    <span class="@project.StatusBadgeClass">
+                        @project.Status
+                    </span>
+                </div>
+
+                        <div class="d-flex gap-2 mt-3">
+                            <a href="/Project/Details/@project.ProjectId"
+                               class="btn btn-sm
+                                              btn-outline-primary">
+                                👁 Details
+                            </a>
+
+                    @if (project.Status != "Active" &&
+                                        project.Status != "Completed")
+                            {
+                                <form method="post"
+                                      action="/Project/SetActive">
+                                    <input type="hidden"
+                                           name="projectId"
+                                           value="@project.ProjectId" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                               btn-outline-success">
+                                        🟢 Activate
+                                    </button>
+                                </form>
+                            }
+
+                            @if (project.Status == "Active")
+                            {
+                                <form method="post"
+                                      action="/Project/Complete"
+                                      onsubmit="return confirm('Complete this project? All tools will be returned.')">
+                                    <input type="hidden"
+                                           name="projectId"
+                                           value="@project.ProjectId" />
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                                               btn-outline-info">
+                                        ✅ Complete
+                                    </button>
+                                </form>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+<!-- Create Modal -->
+<div class="modal fade"
+     id="createModal"
+     tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content"
+             style="background:#0d1526;
+                    border-color:#1e3a5f">
+            <div class="modal-header"
+                 style="border-color:#1e3a5f">
+                <h5 class="modal-title fw-bold">
+                    ➕ Create New Project
+                </h5>
+                <button type="button"
+                        class="btn-close btn-close-white"
+                        data-bs-dismiss="modal"></button>
+            </div>
+            <form method="post" action="/Project/Create" id="createProjectForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Project Name *
+                        </label>
+                        <input type="text"
+                               name="projectName"
+                               id="projectName"
+                               class="form-control"
+                               placeholder="e.g. SM Mall Construction" />
+                        <span id="projectNameError" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Location *
+                        </label>
+                        <input type="text"
+                               name="location"
+                               id="projectLocation"
+                               class="form-control"
+                               placeholder="e.g. Cebu City" />
+                        <span id="locationError" class="text-danger small"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label" style="font-size:12px; color:#94a3b8">
+                            Description (optional)
+                        </label>
+                        <textarea name="description"
+                                  class="form-control"
+                                  rows="2"
+                                  placeholder="Brief description...">
+            </textarea>
+                    </div>
+                </div>
+                <div class="modal-footer" style="border-color:#1e3a5f">
+                    <button type="button"
+                            class="btn btn-outline-secondary"
+                            data-bs-dismiss="modal">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        Create Project
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script>
+        document.getElementById('createProjectForm')
+            .addEventListener('submit', function (e) {
+
+            const projectName = document.getElementById('projectName').value.trim();
+            const location = document.getElementById('projectLocation').value.trim();
+
+            let valid = true;
+
+            // Reset errors
+            document.getElementById('projectNameError').textContent = '';
+            document.getElementById('locationError').textContent = '';
+
+            if (projectName === '') {
+                document.getElementById('projectNameError').textContent = 'Project name is required.';
+                valid = false;
+            } else if (projectName.length < 2) {
+                document.getElementById('projectNameError').textContent = 'Project name must be at least 2 characters.';
+                valid = false;
+            }
+
+            if (location === '') {
+                document.getElementById('locationError').textContent = 'Location is required.';
+                valid = false;
+            } else if (location.length < 2) {
+                document.getElementById('locationError').textContent = 'Location must be at least 2 characters.';
+                valid = false;
+            }
+
+            if (!valid) e.preventDefault();
+        });
+    </script>
+}

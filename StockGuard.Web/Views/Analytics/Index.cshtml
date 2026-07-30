@@ -1,0 +1,360 @@
+﻿@{
+    ViewData["Title"] = "Analytics";
+}
+
+<!-- Project Selector -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="fw-bold mb-0">📊 Project Analytics</h5>
+    @if (ViewBag.Projects != null)
+    {
+        <form method="get" action="/Analytics/Index" class="d-flex gap-2">
+            <select name="projectId"
+                    class="form-select form-select-sm"
+                    style="max-width:250px"
+                    onchange="this.form.submit()">
+                <option value="">Select Project</option>
+                @foreach (var p in ViewBag.Projects)
+                {
+                    if (ViewBag.SelectedProject?.ProjectId == p.ProjectId)
+                    {
+                        <option value="@p.ProjectId" selected>@p.ProjectName (@p.Status)</option>
+                    }
+                    else
+                    {
+                        <option value="@p.ProjectId">@p.ProjectName (@p.Status)</option>
+                    }
+                }
+            </select>
+        </form>
+    }
+</div>
+
+@if (ViewBag.SelectedProject == null)
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <div style="font-size:48px">📊</div>
+            <h6 class="mt-3">No Project Selected</h6>
+            <p class="text-secondary" style="font-size:13px">Select a project to view analytics</p>
+        </div>
+    </div>
+}
+else
+{
+    var proj = ViewBag.SelectedProject;
+
+    <!-- Project Header -->
+    <div class="active-project-banner mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <span style="font-size:28px">📊</span>
+            <div>
+                <div style="font-size:11px; color:#93c5fd">Analytics Report</div>
+                <div class="fw-bold fs-5">@proj.ProjectName</div>
+                <div style="font-size:12px; color:#bfdbfe">
+                    📍 @proj.Location · @proj.StartDateLabel → @proj.EndDateLabel · @proj.DurationLabel
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tool Stats -->
+    <h6 class="fw-bold mb-3">🔧 Tool Overview</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">🔧</div>
+                <div class="stat-number text-primary">@ViewBag.TotalTools</div>
+                <div class="stat-label">Total Tools</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">✅</div>
+                <div class="stat-number text-success">@ViewBag.AvailableTools</div>
+                <div class="stat-label">Available</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">⚠️</div>
+                <div class="stat-number text-warning">@ViewBag.DamagedTools</div>
+                <div class="stat-label">Damaged</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">❌</div>
+                <div class="stat-number text-danger">@ViewBag.LostTools</div>
+                <div class="stat-label">Lost</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transaction Stats -->
+    <h6 class="fw-bold mb-3">📋 Transaction Summary</h6>
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">📋</div>
+                <div class="stat-number text-primary">@ViewBag.TotalTransactions</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">📦</div>
+                <div class="stat-number text-warning">@ViewBag.TotalBorrows</div>
+                <div class="stat-label">Borrows</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">↩️</div>
+                <div class="stat-number text-success">@ViewBag.TotalReturns</div>
+                <div class="stat-label">Returns</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon">🔄</div>
+                <div class="stat-number text-info">@ViewBag.TotalTransfers</div>
+                <div class="stat-label">Transfers</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Worker Analytics -->
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span class="fw-bold" style="font-size:14px">👷 Worker Performance</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.WorkerStats != null)
+                    {
+                        @if (ViewBag.MostActiveWorker != null)
+                        {
+                            <div class="p-3" style="background:#0a2a1e; border-bottom:1px solid #1e3a5f">
+                                <div style="font-size:11px; color:#10b981">🏆 Most Active Worker</div>
+                                <div class="fw-bold">@ViewBag.MostActiveWorker.Worker.FullName</div>
+                                <div style="font-size:12px; color:#94a3b8">@ViewBag.MostActiveWorker.Borrows borrows</div>
+                            </div>
+                        }
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Worker</th>
+                                    <th>Borrows</th>
+                                    <th>Damages</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var w in ViewBag.WorkerStats)
+                                {
+                                    <tr>
+                                        <td class="fw-bold" style="font-size:13px">@w.Worker.FullName</td>
+                                        <td><span class="badge bg-primary">@w.Borrows</span></td>
+                                        <td>
+                                            <span class="badge @(w.Damages > 0 ? "bg-danger" : "bg-secondary")">
+                                                @w.Damages
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-secondary" style="font-size:13px">
+                            No worker activity for this project yet.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Tool Usage Analytics -->
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span class="fw-bold" style="font-size:14px">🔧 Tool Usage</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.ToolUsage != null)
+                    {
+                        @if (ViewBag.MostUsedTool != null && ViewBag.MostUsedTool.Usage > 0)
+                        {
+                            <div class="p-3" style="background:#0f1c35; border-bottom:1px solid #1e3a5f">
+                                <div style="font-size:11px; color:#3b82f6">🏆 Most Used Tool</div>
+                                <div class="fw-bold">@ViewBag.MostUsedTool.Tool.ToolName</div>
+                                <div style="font-size:12px; color:#94a3b8">
+                                    @ViewBag.MostUsedTool.Tool.ToolId · @ViewBag.MostUsedTool.Usage times borrowed
+                                </div>
+                            </div>
+                        }
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tool</th>
+                                    <th>Borrows</th>
+                                    <th>Damages</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in ViewBag.ToolUsage)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold" style="font-size:12px">@t.Tool.ToolName</div>
+                                            <code style="color:#60a5fa; font-size:11px">@t.Tool.ToolId</code>
+                                        </td>
+                                        <td><span class="badge bg-primary">@t.Usage</span></td>
+                                        <td>
+                                            <span class="badge @(t.Damages > 0 ? "bg-danger" : "bg-secondary")">
+                                                @t.Damages
+                                            </span>
+                                        </td>
+                                        <td><span class="@t.Tool.StatusBadgeClass">@t.Tool.Status</span></td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-secondary" style="font-size:13px">
+                            No tool usage recorded for this project yet.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Deployed Workers & Tools -->
+    <div class="row g-4 mt-0">
+
+        <!-- Deployed Workers -->
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span class="fw-bold" style="font-size:14px">👷 Deployed Workers</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.DeployedWorkers != null && ((IEnumerable<dynamic>)ViewBag.DeployedWorkers).Any())
+                    {
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var w in ViewBag.DeployedWorkers)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold" style="font-size:13px">@w.FullName</div>
+                                            <div style="font-size:11px; color:#94a3b8">@w.Email</div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary" style="font-size:10px">@w.Role</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge @(w.IsActive ? "bg-success" : "bg-secondary")" style="font-size:10px">
+                                                @(w.IsActive ? "Active" : "Inactive")
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-secondary" style="font-size:13px">
+                            No workers deployed to this project.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Deployed Tools -->
+        <div class="col-12 col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <span class="fw-bold" style="font-size:14px">🔧 Deployed Tools</span>
+                </div>
+                <div class="card-body p-0">
+                    @if (ViewBag.DeployedTools != null && ((IEnumerable<dynamic>)ViewBag.DeployedTools).Any())
+                    {
+                        <table class="table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Tool</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var t in ViewBag.DeployedTools)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-bold" style="font-size:13px">@t.ToolName</div>
+                                            <code style="color:#60a5fa; font-size:11px">@t.ToolId</code>
+                                        </td>
+                                        <td>
+                                            <span class="@t.StatusBadgeClass" style="font-size:11px">@t.Status</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-secondary" style="font-size:13px">
+                            No tools deployed to this project.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Damage Report Summary -->
+    <div class="row g-3 mt-2">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <span class="fw-bold" style="font-size:14px">⚠️ Damage Report Summary</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3 text-center">
+                        <div class="col-4">
+                            <div class="stat-number text-primary">@ViewBag.TotalReports</div>
+                            <div class="stat-label">Total Reports</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-number text-warning">@ViewBag.PendingReports</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="col-4">
+                            <div class="stat-number text-success">@ViewBag.ResolvedReports</div>
+                            <div class="stat-label">Resolved</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

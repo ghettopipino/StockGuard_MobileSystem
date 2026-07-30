@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StockGuard.ViewModels"
+             xmlns:models="clr-namespace:StockGuard.Models"
+             x:Class="StockGuard.Views.ProjectManagementView"
+             x:DataType="vm:ProjectManagementViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+                 Command="{Binding RefreshCommand}"
+                 RefreshColor="{DynamicResource Blue}">
+        <ScrollView>
+            <VerticalStackLayout Padding="20,52,20,40" Spacing="16">
+
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Button Grid.Column="0" Text="☰"
+                            Command="{Binding OpenFlyoutCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"/>
+                    <Label Grid.Column="1" Text="Project Management"
+                           FontSize="18" FontAttributes="Bold"
+                           TextColor="{DynamicResource Text1}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                    <Button Grid.Column="2" Text="🔄"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="Transparent"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="16"/>
+                </Grid>
+
+                <Border IsVisible="{Binding HasActiveProject}"
+                        Stroke="{DynamicResource Blue}"
+                        StrokeShape="RoundRectangle 10"
+                        BackgroundColor="{DynamicResource BlueSubtle}"
+                        Padding="14">
+                    <VerticalStackLayout Spacing="2">
+                        <Label Text="Active Project" FontSize="11" TextColor="{DynamicResource Blue}"/>
+                        <Label Text="{Binding ActiveProjectName}" FontSize="15" FontAttributes="Bold"
+                               TextColor="{DynamicResource Text1}"/>
+                        <Label Text="{Binding ActiveProjectLocation}" FontSize="12"
+                               TextColor="{DynamicResource Text3}"/>
+                    </VerticalStackLayout>
+                </Border>
+
+                <Label FontSize="13" TextColor="{DynamicResource Text2}">
+                    <Label.FormattedText>
+                        <FormattedString>
+                            <Span Text="{Binding TotalProjects}" FontAttributes="Bold"/>
+                            <Span Text=" total  ·  "/>
+                            <Span Text="{Binding ActiveCount}" FontAttributes="Bold"/>
+                            <Span Text=" active  ·  "/>
+                            <Span Text="{Binding CompletedCount}" FontAttributes="Bold"/>
+                            <Span Text=" completed"/>
+                        </FormattedString>
+                    </Label.FormattedText>
+                </Label>
+
+                <Button Text="Create New Project"
+                        Command="{Binding CreateProjectCommand}"
+                        BackgroundColor="{DynamicResource Blue}"
+                        TextColor="White"
+                        FontAttributes="Bold"
+                        HeightRequest="46"/>
+
+                <ActivityIndicator IsRunning="{Binding IsBusy}"
+                                   IsVisible="{Binding IsBusy}"
+                                   Color="{DynamicResource Blue}"
+                                   HorizontalOptions="Center"/>
+
+                <Label Text="No projects yet"
+                       IsVisible="{Binding NoProjects}"
+                       FontSize="14" TextColor="{DynamicResource Text3}"
+                       HorizontalOptions="Center" Margin="0,20"/>
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Projects}" Spacing="10">
+                    <BindableLayout.ItemTemplate>
+                        <DataTemplate x:DataType="models:Project">
+                            <Border Stroke="{DynamicResource BorderColor}"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{DynamicResource BgCard}"
+                                    Padding="14">
+                                <VerticalStackLayout Spacing="6">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <Label Grid.Column="0" Text="{Binding ProjectName}"
+                                               FontSize="15" FontAttributes="Bold"
+                                               TextColor="{DynamicResource Text1}"/>
+                                        <Label Grid.Column="1" Text="{Binding Status}"
+                                               FontSize="11" FontAttributes="Bold"
+                                               TextColor="{Binding StatusColor}"/>
+                                    </Grid>
+                                    <Label Text="{Binding Location}" FontSize="12" TextColor="{DynamicResource Text2}"/>
+                                    <Label FontSize="11" TextColor="{DynamicResource Text3}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding StartDateLabel}"/>
+                                                <Span Text="  ·  "/>
+                                                <Span Text="{Binding DurationLabel}"/>
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+
+                                    <Grid ColumnDefinitions="*,*,*" ColumnSpacing="8" Margin="0,6,0,0">
+                                        <Button Grid.Column="0" Text="Details"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectManagementViewModel}}, Path=ViewProjectCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Text1}"
+                                                FontSize="12"/>
+                                        <Button Grid.Column="1" Text="Activate"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectManagementViewModel}}, Path=SetActiveCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Green}"
+                                                FontSize="12"
+                                                IsVisible="{Binding IsActive, Converter={StaticResource InvertBoolConverter}}"/>
+                                        <Button Grid.Column="1" Text="Complete"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectManagementViewModel}}, Path=CompleteCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Blue}"
+                                                FontSize="12"
+                                                IsVisible="{Binding IsActive}"/>
+                                        <Button Grid.Column="2" Text="Delete"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectManagementViewModel}}, Path=DeleteCommand}"
+                                                BackgroundColor="Transparent"
+                                                TextColor="{DynamicResource Red}"
+                                                FontSize="12"/>
+                                    </Grid>
+                                </VerticalStackLayout>
+                            </Border>
+                        </DataTemplate>
+                    </BindableLayout.ItemTemplate>
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+        </ScrollView>
+    </RefreshView>
+
+</ContentPage>

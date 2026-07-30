@@ -1,0 +1,388 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:StockGuard.ViewModels"
+             xmlns:models="clr-namespace:StockGuard.Models"
+             x:Class="StockGuard.Views.BorrowRequestsView"
+             x:DataType="vm:BorrowRequestsViewModel"
+             Shell.NavBarIsVisible="False"
+             BackgroundColor="{DynamicResource BgBase}">
+
+    <Grid>
+        <RefreshView
+            IsRefreshing="{Binding IsRefreshing}"
+            Command="{Binding RefreshCommand}"
+            RefreshColor="{DynamicResource Blue}">
+            <ScrollView>
+                <VerticalStackLayout Spacing="0"
+                                     Padding="0,0,0,40">
+
+                    <!-- ── HEADER ──────────────────────────── -->
+                    <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                          ColumnSpacing="10"
+                          Padding="20,52,20,16"
+                          BackgroundColor="{DynamicResource BgSurface}">
+
+                        <Button Grid.Column="0"
+                                Text="←"
+                                Command="{Binding GoBackCommand}"
+                                BackgroundColor="{DynamicResource BgElevated}"
+                                TextColor="{DynamicResource Text2}"
+                                FontSize="18" CornerRadius="8"
+                                WidthRequest="40" HeightRequest="36"
+                                Padding="0"/>
+
+                        <VerticalStackLayout Grid.Column="1"
+                                             VerticalOptions="Center"
+                                             Spacing="1">
+                            <Label Text="Borrow Requests"
+                                   FontSize="16" FontAttributes="Bold"
+                                   TextColor="{DynamicResource Text1}"/>
+                            <Label Text="Manage incoming and outgoing requests"
+                                   FontSize="11"
+                                   TextColor="{DynamicResource Text3}"/>
+                        </VerticalStackLayout>
+
+                        <Button Grid.Column="2"
+                                Text="{Binding ThemeIcon}"
+                                Command="{Binding ToggleThemeCommand}"
+                                BackgroundColor="{DynamicResource BgElevated}"
+                                TextColor="{DynamicResource Text2}"
+                                FontSize="16" CornerRadius="8"
+                                WidthRequest="40" HeightRequest="36"
+                                Padding="0"/>
+
+                        <Button Grid.Column="3"
+                                Text="🔄"
+                                Command="{Binding RefreshCommand}"
+                                BackgroundColor="{DynamicResource BgElevated}"
+                                TextColor="{DynamicResource Text2}"
+                                FontSize="16" CornerRadius="8"
+                                WidthRequest="40" HeightRequest="36"
+                                Padding="0"/>
+                    </Grid>
+
+                    <!-- ── LOADING ─────────────────────────── -->
+                    <ActivityIndicator
+                        IsRunning="{Binding IsBusy}"
+                        IsVisible="{Binding IsBusy}"
+                        Color="{DynamicResource Blue}"
+                        HorizontalOptions="Center"
+                        Margin="0,20"/>
+
+                    <!-- ════════════════════════════════════════
+                         INCOMING REQUESTS SECTION
+                    ════════════════════════════════════════════ -->
+                    <VerticalStackLayout
+                        Padding="20,16,20,0" Spacing="10">
+
+                        <!-- Section header -->
+                        <HorizontalStackLayout Spacing="8">
+                            <Label Text="📥  Incoming Requests"
+                                   FontSize="16"
+                                   FontAttributes="Bold"
+                                   TextColor="{DynamicResource Text1}"
+                                   VerticalOptions="Center"/>
+                            <Frame IsVisible="{Binding HasIncoming}"
+                                   BackgroundColor="{DynamicResource RedBg}"
+                                   BorderColor="{DynamicResource Red}"
+                                   CornerRadius="10" Padding="8,3"
+                                   HasShadow="False">
+                                <Label Text="{Binding IncomingRequests.Count}"
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Red}"/>
+                            </Frame>
+                        </HorizontalStackLayout>
+
+                        <Label Text="Workers requesting to borrow your tools"
+                               FontSize="12"
+                               TextColor="{DynamicResource Text3}"/>
+
+                        <!-- No incoming requests -->
+                        <Frame IsVisible="{Binding NoIncoming}"
+                               BackgroundColor="{DynamicResource BgCard}"
+                               BorderColor="{DynamicResource BorderSoft}"
+                               CornerRadius="14" Padding="24"
+                               HasShadow="False">
+                            <VerticalStackLayout Spacing="8"
+                                HorizontalOptions="Center">
+                                <Label Text="📭" FontSize="36"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="No incoming requests"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Text2}"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="No one has requested to borrow your tools"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource Text3}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Incoming request cards -->
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding IncomingRequests}"
+                            Spacing="10">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate
+                                    x:DataType="models:BorrowRequestItem">
+                                    <Frame BackgroundColor="{DynamicResource BgCard}"
+                                           BorderColor="{DynamicResource BorderColor}"
+                                           CornerRadius="14" Padding="0"
+                                           HasShadow="False">
+                                        <VerticalStackLayout
+                                            Padding="16" Spacing="12">
+
+                                            <!-- Request info -->
+                                            <Grid ColumnDefinitions="Auto,*"
+                                                  ColumnSpacing="12">
+
+                                                <!-- Icon -->
+                                                <Frame Grid.Column="0"
+                                                       BackgroundColor="{DynamicResource BlueSubtle}"
+                                                       CornerRadius="12"
+                                                       WidthRequest="48"
+                                                       HeightRequest="48"
+                                                       Padding="0"
+                                                       HasShadow="False"
+                                                       BorderColor="Transparent"
+                                                       VerticalOptions="Center">
+                                                    <Label Text="📩"
+                                                           FontSize="22"
+                                                           HorizontalOptions="Center"
+                                                           VerticalOptions="Center"/>
+                                                </Frame>
+
+                                                <!-- Details -->
+                                                <VerticalStackLayout
+                                                    Grid.Column="1"
+                                                    Spacing="4"
+                                                    VerticalOptions="Center">
+                                                    <Label Text="{Binding RequesterName}"
+                                                           FontSize="15"
+                                                           FontAttributes="Bold"
+                                                           TextColor="{DynamicResource Text1}"/>
+                                                    <!-- Add this below RequesterName label -->
+                                                    <Frame BackgroundColor="{DynamicResource BgElevated}"
+                                                           BorderColor="Transparent"
+                                                           CornerRadius="6" Padding="8,3"
+                                                           HasShadow="False"
+                                                           HorizontalOptions="Start">
+                                                    <Label Text="{Binding RequestTypeLabel}"
+                                                               FontSize="10"
+                                                               FontAttributes="Bold"
+                                                               TextColor="{Binding RequestTypeColor}"/>
+                                                    </Frame>
+                                                    <Label FontSize="12"
+                                                           TextColor="{DynamicResource Text2}">
+                                                        <Label.FormattedText>
+                                                            <FormattedString>
+                                                                <Span Text="wants to borrow  "/>
+                                                                <Span Text="{Binding ToolName}"
+                                                                      FontAttributes="Bold"
+                                                                      TextColor="{DynamicResource Blue}"/>
+                                                            </FormattedString>
+                                                        </Label.FormattedText>
+                                                    </Label>
+                                                    <Label Text="{Binding ToolId}"
+                                                           FontSize="11"
+                                                           TextColor="{DynamicResource Text3}"/>
+                                                    <Label Text="{Binding DateLabel}"
+                                                           FontSize="11"
+                                                           TextColor="{DynamicResource Text3}"/>
+                                                </VerticalStackLayout>
+                                            </Grid>
+
+                                            <BoxView HeightRequest="1"
+                                                     Color="{DynamicResource BorderSoft}"/>
+
+                                            <!-- Accept / Decline buttons -->
+                                            <Grid ColumnDefinitions="*,*"
+                                                  ColumnSpacing="10"
+                                                  IsVisible="{Binding IsPending}">
+
+                                                <Button Grid.Column="0"
+                                                        Text="✅  Accept"
+                                                        CommandParameter="{Binding .}"
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BorrowRequestsViewModel}}, Path=AcceptCommand}"
+                                                        BackgroundColor="{DynamicResource Green}"
+                                                        TextColor="White"
+                                                        FontSize="13"
+                                                        FontAttributes="Bold"
+                                                        CornerRadius="10"
+                                                        HeightRequest="44"/>
+
+                                                <Button Grid.Column="1"
+                                                        Text="❌  Decline"
+                                                        CommandParameter="{Binding .}"
+                                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BorrowRequestsViewModel}}, Path=DeclineCommand}"
+                                                        BackgroundColor="{DynamicResource RedBg}"
+                                                        TextColor="{DynamicResource Red}"
+                                                        BorderColor="{DynamicResource Red}"
+                                                        BorderWidth="1"
+                                                        FontSize="13"
+                                                        FontAttributes="Bold"
+                                                        CornerRadius="10"
+                                                        HeightRequest="44"/>
+                                            </Grid>
+
+                                            <!-- Status badge if not pending -->
+                                            <Frame IsVisible="{Binding IsPending,
+                                                       Converter={StaticResource InvertBoolConverter}}"
+                                                   BackgroundColor="{DynamicResource BgElevated}"
+                                                   BorderColor="Transparent"
+                                                   CornerRadius="8"
+                                                   Padding="12,6"
+                                                   HasShadow="False"
+                                                   HorizontalOptions="Center">
+                                                <Label FontSize="12"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{Binding StatusColor}"
+                                                       HorizontalOptions="Center">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="{Binding StatusIcon}"/>
+                                                            <Span Text="  "/>
+                                                            <Span Text="{Binding Status}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                            </Frame>
+
+                                        </VerticalStackLayout>
+                                    </Frame>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- ════════════════════════════════════════
+                         OUTGOING REQUESTS SECTION
+                    ════════════════════════════════════════════ -->
+                    <VerticalStackLayout
+                        Padding="20,20,20,0" Spacing="10">
+
+                        <!-- Section header -->
+                        <Label Text="📤  My Sent Requests"
+                               FontSize="16"
+                               FontAttributes="Bold"
+                               TextColor="{DynamicResource Text1}"/>
+
+                        <Label Text="Requests you sent to other workers"
+                               FontSize="12"
+                               TextColor="{DynamicResource Text3}"/>
+
+                        <!-- No outgoing -->
+                        <Frame IsVisible="{Binding NoOutgoing}"
+                               BackgroundColor="{DynamicResource BgCard}"
+                               BorderColor="{DynamicResource BorderSoft}"
+                               CornerRadius="14" Padding="24"
+                               HasShadow="False">
+                            <VerticalStackLayout Spacing="8"
+                                HorizontalOptions="Center">
+                                <Label Text="📤" FontSize="36"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="No sent requests"
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Text2}"
+                                       HorizontalOptions="Center"/>
+                                <Label Text="You have not requested any tools yet"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource Text3}"
+                                       HorizontalOptions="Center"
+                                       HorizontalTextAlignment="Center"/>
+                            </VerticalStackLayout>
+                        </Frame>
+
+                        <!-- Outgoing request cards -->
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding OutgoingRequests}"
+                            Spacing="8">
+                            <BindableLayout.ItemTemplate>
+                                <DataTemplate
+                                    x:DataType="models:BorrowRequestItem">
+                                    <Frame BackgroundColor="{DynamicResource BgCard}"
+                                           BorderColor="{DynamicResource BorderColor}"
+                                           CornerRadius="14" Padding="0"
+                                           HasShadow="False">
+                                        <Grid ColumnDefinitions="Auto,*,Auto"
+                                              Padding="16"
+                                              ColumnSpacing="12">
+
+                                            <!-- Icon -->
+                                            <Frame Grid.Column="0"
+                                                   BackgroundColor="{DynamicResource BlueSubtle}"
+                                                   CornerRadius="12"
+                                                   WidthRequest="48"
+                                                   HeightRequest="48"
+                                                   Padding="0"
+                                                   HasShadow="False"
+                                                   BorderColor="Transparent"
+                                                   VerticalOptions="Center">
+                                                <Label Text="📤"
+                                                       FontSize="22"
+                                                       HorizontalOptions="Center"
+                                                       VerticalOptions="Center"/>
+                                            </Frame>
+
+                                            <!-- Details -->
+                                            <VerticalStackLayout
+                                                Grid.Column="1"
+                                                Spacing="4"
+                                                VerticalOptions="Center">
+                                                <Label Text="{Binding ToolName}"
+                                                       FontSize="14"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{DynamicResource Text1}"/>
+                                                <Label Text="{Binding ToolId}"
+                                                       FontSize="11"
+                                                       TextColor="{DynamicResource Text3}"/>
+                                                <Label Text="{Binding DateLabel}"
+                                                       FontSize="11"
+                                                       TextColor="{DynamicResource Text3}"/>
+                                            </VerticalStackLayout>
+
+                                            <!-- Status badge -->
+                                            <Frame Grid.Column="2"
+                                                   BackgroundColor="{DynamicResource BgElevated}"
+                                                   BorderColor="Transparent"
+                                                   CornerRadius="8"
+                                                   Padding="10,4"
+                                                   HasShadow="False"
+                                                   VerticalOptions="Center">
+                                                <Label FontSize="11"
+                                                       FontAttributes="Bold"
+                                                       TextColor="{Binding StatusColor}">
+                                                    <Label.FormattedText>
+                                                        <FormattedString>
+                                                            <Span Text="{Binding StatusIcon}"/>
+                                                            <Span Text=" "/>
+                                                            <Span Text="{Binding Status}"/>
+                                                        </FormattedString>
+                                                    </Label.FormattedText>
+                                                </Label>
+                                            </Frame>
+                                        </Grid>
+                                    </Frame>
+                                </DataTemplate>
+                            </BindableLayout.ItemTemplate>
+                        </VerticalStackLayout>
+                    </VerticalStackLayout>
+
+                    <!-- Footer -->
+                    <Label Text="© 2025 StockGuard"
+                           FontSize="10"
+                           TextColor="{DynamicResource Text3}"
+                           HorizontalOptions="Center"
+                           Margin="0,20,0,0"/>
+
+                </VerticalStackLayout>
+            </ScrollView>
+        </RefreshView>
+    </Grid>
+
+</ContentPage>

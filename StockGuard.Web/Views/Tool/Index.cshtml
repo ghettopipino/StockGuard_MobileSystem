@@ -1,0 +1,279 @@
+﻿@{
+    ViewData["Title"] = "Tools & QR Codes";
+
+    int  currentPage   = ViewBag.CurrentPage   ?? 1;
+    int  totalPages    = ViewBag.TotalPages     ?? 1;
+    int  totalFiltered = ViewBag.TotalFiltered  ?? 0;
+    int  firstItem     = ViewBag.FirstItem      ?? 0;
+    int  lastItem      = ViewBag.LastItem       ?? 0;
+    bool hasPrev       = ViewBag.HasPrevPage    ?? false;
+    bool hasNext       = ViewBag.HasNextPage    ?? false;
+    var  pageRange     = (List<int>)(ViewBag.PageRange ?? new List<int>());
+
+    string? selCatalog = ViewBag.SelectedCatalog;
+    string? selStatus  = ViewBag.SelectedStatus;
+    string? searchText = ViewBag.SearchText;
+}
+
+<!-- Stats — always full unfiltered totals -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">🔧</div>
+            <div class="stat-number text-primary">@ViewBag.TotalTools</div>
+            <div class="stat-label">Total</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-success">@ViewBag.AvailableTools</div>
+            <div class="stat-label">Available</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-number text-warning">@ViewBag.BorrowedTools</div>
+            <div class="stat-label">Borrowed</div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-3">
+    <div class="card-body py-2">
+        <form method="get" action="/Tool"
+              class="d-flex gap-2 flex-wrap align-items-center">
+
+            <input type="text"
+                   name="search"
+                   class="form-control form-control-sm"
+                   style="max-width:200px"
+                   placeholder="Search tools..."
+                   value="@searchText" />
+
+            <select name="catalogId"
+                    class="form-select form-select-sm"
+                    style="max-width:180px">
+                <option value="">All Catalogs</option>
+                @if (ViewBag.Catalogs != null)
+                {
+                    foreach (var cat in ViewBag.Catalogs)
+                    {
+                        if (selCatalog == cat.CatalogId)
+                        {
+                            <option value="@cat.CatalogId" selected>@cat.CatalogName</option>
+                        }
+                        else
+                        {
+                            <option value="@cat.CatalogId">@cat.CatalogName</option>
+                        }
+                    }
+                }
+            </select>
+
+            <select name="status"
+                    class="form-select form-select-sm"
+                    style="max-width:150px">
+                <option value="">All Status</option>
+                @foreach (var s in new[] { "Available", "Borrowed", "Damaged" })
+                {
+                    if (selStatus == s)
+                    {
+                        <option value="@s" selected>@s</option>
+                    }
+                    else
+                    {
+                        <option value="@s">@s</option>
+                    }
+                }
+            </select>
+
+            <!-- page intentionally omitted — filter resets to page 1 -->
+
+            <button type="submit" class="btn btn-primary btn-sm">
+                Filter
+            </button>
+            <a href="/Tool" class="btn btn-outline-secondary btn-sm">
+                Clear
+            </a>
+
+            <span class="text-secondary ms-auto" style="font-size:12px">
+                @if (totalFiltered > 0)
+                {
+                    <span>Showing @firstItem–@lastItem of @totalFiltered</span>
+                }
+                else
+                {
+                    <span>No results</span>
+                }
+            </span>
+
+        </form>
+    </div>
+</div>
+
+<!-- Tools Table -->
+<div class="card">
+    <div class="card-header d-flex align-items-center justify-content-between">
+        <span class="fw-bold" style="font-size:14px">
+            Tools
+            <span class="badge bg-primary ms-2">@totalFiltered</span>
+        </span>
+        @if (totalPages > 1)
+        {
+            <span class="text-secondary" style="font-size:12px">
+                Page @currentPage of @totalPages
+            </span>
+        }
+    </div>
+    <div class="card-body p-0">
+
+        @if (ViewBag.Tools != null &&
+             ((List<StockGuard.Web.Models.Tool>)ViewBag.Tools).Count > 0)
+        {
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Tool ID</th>
+                        <th>Name</th>
+                        <th>Status</th>
+                        <th>Condition</th>
+                        <th>Assigned To</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var tool in
+                        (List<StockGuard.Web.Models.Tool>)ViewBag.Tools)
+                    {
+                        <tr>
+                            <td>
+                                <code style="color:#60a5fa">@tool.ToolId</code>
+                            </td>
+                            <td class="fw-bold" style="font-size:13px">
+                                @tool.ToolName
+                            </td>
+                            <td>
+                                <span class="@tool.StatusBadgeClass">
+                                    @tool.StatusIcon @tool.Status
+                                </span>
+                            </td>
+                            <td style="font-size:12px; color:#94a3b8">
+                                @tool.Condition
+                            </td>
+                            <td style="font-size:13px">
+                                @(string.IsNullOrEmpty(tool.AssignedWorkerName)
+                                    ? "—"
+                                    : tool.AssignedWorkerName)
+                            </td>
+                            <td>
+                                <a href="/Tool/QrCode?toolId=@tool.ToolId"
+                                   class="btn btn-sm btn-outline-primary">
+                                    📱 QR
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        }
+        else
+        {
+            <div class="p-4 text-center text-secondary" style="font-size:13px">
+                No tools found
+            </div>
+        }
+
+    </div>
+
+    <!-- ── PAGINATION BAR ─────────────────────────────────────────────────── -->
+    @if (totalPages > 1)
+    {
+        <div class="card-footer d-flex justify-content-between align-items-center py-2">
+
+            <span class="text-secondary" style="font-size:12px">
+                Showing @firstItem–@lastItem of @totalFiltered
+            </span>
+
+            <nav>
+                <ul class="pagination pagination-sm mb-0">
+
+                    <!-- Previous -->
+                    <li class="page-item @(!hasPrev ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", "Tool", new {
+                               page      = currentPage - 1,
+                               catalogId = selCatalog,
+                               status    = selStatus,
+                               search    = searchText
+                           })">&laquo;</a>
+                    </li>
+
+                    <!-- First page shortcut -->
+                    @if (!pageRange.Contains(1))
+                    {
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Tool", new {
+                                   page      = 1,
+                                   catalogId = selCatalog,
+                                   status    = selStatus,
+                                   search    = searchText
+                               })">1</a>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                    }
+
+                    <!-- Page window -->
+                    @foreach (var p in pageRange)
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Tool", new {
+                                   page      = p,
+                                   catalogId = selCatalog,
+                                   status    = selStatus,
+                                   search    = searchText
+                               })">@p</a>
+                        </li>
+                    }
+
+                    <!-- Last page shortcut -->
+                    @if (!pageRange.Contains(totalPages))
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">…</span>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="@Url.Action("Index", "Tool", new {
+                                   page      = totalPages,
+                                   catalogId = selCatalog,
+                                   status    = selStatus,
+                                   search    = searchText
+                               })">@totalPages</a>
+                        </li>
+                    }
+
+                    <!-- Next -->
+                    <li class="page-item @(!hasNext ? "disabled" : "")">
+                        <a class="page-link"
+                           href="@Url.Action("Index", "Tool", new {
+                               page      = currentPage + 1,
+                               catalogId = selCatalog,
+                               status    = selStatus,
+                               search    = searchText
+                           })">&raquo;</a>
+                    </li>
+
+                </ul>
+            </nav>
+
+        </div>
+    }
+
+</div>

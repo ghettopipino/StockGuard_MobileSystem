@@ -1,0 +1,124 @@
+﻿@{
+    ViewData["Title"] = "Print QR Codes";
+    Layout = "_Layout";
+}
+
+<div class="d-flex justify-content-between
+            align-items-center mb-4">
+    <div>
+        <h5 class="fw-bold mb-1">
+            QR Codes — @ViewBag.CatalogName
+        </h5>
+        <p class="text-secondary mb-0"
+           style="font-size:13px">
+            Print and attach to physical tools
+        </p>
+    </div>
+    <div class="d-flex gap-2 no-print">
+        <button onclick="window.print()"
+                class="btn btn-primary">
+            🖨️ Print All
+        </button>
+        <a href="/Equipment/Index"
+           class="btn btn-outline-secondary">
+            ← Back
+        </a>
+    </div>
+</div>
+
+<!-- QR Grid -->
+<div class="row g-3">
+    @if (ViewBag.ToolsWithQr != null)
+    {
+        @foreach (var item in ViewBag.ToolsWithQr)
+        {
+            var qrBase64 =
+            item.QrCodeBase64?.ToString() ?? "";
+
+            <div class="col-6 col-md-4 col-lg-3">
+                <div class="card text-center p-3">
+
+                    @if (!string.IsNullOrEmpty(qrBase64))
+                    {
+                        <div class="p-2 mb-2
+                                                d-inline-block mx-auto"
+                             style="background:white;
+                                                border-radius:8px">
+                            <img src="data:image/png;base64,@qrBase64"
+                                 alt="QR Code @item.Tool.ToolId"
+                                 style="width:140px;
+                                                    height:140px;
+                                                    display:block" />
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="p-3 mb-2"
+                             style="background:#111d33;
+                                                border-radius:8px;
+                                                color:#ef4444;
+                                                font-size:11px">
+                            QR Failed
+                        </div>
+                    }
+
+                    <div class="fw-bold"
+                         style="font-size:14px">
+                        @item.Tool.ToolName
+                    </div>
+                    <div style="font-size:16px;
+                                        font-weight:700;
+                                        color:#3b82f6;
+                                        letter-spacing:2px">
+                        @item.Tool.ToolId
+                    </div>
+                    <div style="font-size:11px;
+                                        color:#94a3b8">
+                        @ViewBag.CatalogName
+                    </div>
+
+                    <a href="/Tool/DownloadQr?toolId=@item.Tool.ToolId"
+                       class="btn btn-sm
+                                      btn-outline-primary
+                                      mt-2 no-print">
+                        ⬇️ Download
+                    </a>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+<style>
+    @@media print {
+        .no-print {
+            display: none !important;
+        }
+
+        .sidebar {
+            display: none !important;
+        }
+
+        .main-content {
+            margin-left: 0 !important;
+        }
+
+        .top-bar {
+            display: none !important;
+        }
+
+        body {
+            background: white !important;
+        }
+
+        .card {
+            border: 1px solid #ccc !important;
+            background: white !important;
+            color: black !important;
+        }
+
+        .row {
+            page-break-inside: avoid;
+        }
+    }
+</style>

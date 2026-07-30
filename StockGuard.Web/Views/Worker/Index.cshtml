@@ -1,0 +1,235 @@
+﻿@using StockGuard.Web.Models
+@{
+    ViewData["Title"] = "Worker Management";
+}
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success
+                    alert-dismissible fade show">
+        ✅ @TempData["Success"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger
+                    alert-dismissible fade show">
+        ⚠️ @TempData["Error"]
+        <button type="button"
+                class="btn-close"
+                data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats -->
+<div class="row g-3 mb-4">
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">👷</div>
+            <div class="stat-number text-primary">
+                @ViewBag.TotalWorkers
+            </div>
+            <div class="stat-label">Total Workers</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-number text-success">
+                @ViewBag.ActiveWorkers
+            </div>
+            <div class="stat-label">Active</div>
+        </div>
+    </div>
+    <div class="col-4">
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-number text-warning">
+                @ViewBag.PendingWorkers
+            </div>
+            <div class="stat-label">Pending</div>
+        </div>
+    </div>
+</div>
+
+<!-- Workers Table -->
+<div class="card">
+    <div class="card-header d-flex
+                justify-content-between
+                align-items-center">
+        <span class="fw-bold"
+              style="font-size:14px">
+            Workers
+        </span>
+    </div>
+    <div class="card-body p-0">
+        @{
+            var workerDisplay = ViewBag.WorkerDisplay;
+        }
+        @if (workerDisplay != null)
+        {
+            <div class="table-responsive">
+                <table class="table mb-0
+                                  table-dark-custom">
+                    <thead>
+                        <tr>
+                            <th>Worker</th>
+                            <th>Email</th>
+                            <th>Status</th>
+                            <th>Tools</th>
+                            <th>Activity</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in
+                                            workerDisplay)
+                        {
+                            User worker = item.Worker;
+                            int assignedTools =
+                            item.AssignedTools;
+                            string activityStatus =
+                            item.ActivityStatus;
+
+                            string initial = worker
+                            .FullName
+                            .Length > 0
+                            ? worker.FullName
+                            .Substring(0, 1)
+                            .ToUpper()
+                            : "W";
+
+                            string joinedDate =
+                            worker.DateCreated
+                            .ToString(
+                            "MMM d, yyyy");
+
+                            <tr>
+                                <td>
+                                    <div class="d-flex
+                                                align-items-center
+                                                gap-2">
+                                        <div class="worker-avatar">
+                                            @initial
+                                        </div>
+                                        <div>
+                                            <div class="fw-bold"
+                                                 style="font-size:13px">
+                                                @worker.FullName
+                                            </div>
+                                            <div style="font-size:11px;
+                                                        color:#94a3b8">
+                                                Joined @joinedDate
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td style="font-size:13px;
+                                                   color:#94a3b8">
+                                    @worker.Email
+                                </td>
+                                <td>
+                                    <span class="@worker.StatusBadgeClass">
+                                        @worker.AccountStatus
+                                    </span>
+                                </td>
+                                <td style="font-size:13px">
+                                    @assignedTools tool(s)
+                                </td>
+                                <td>
+                                    @if (activityStatus
+                                                                == "Active")
+                                    {
+                                        <span class="badge
+                                                                 bg-success">
+                                            Active
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge
+                                                                 bg-secondary">
+                                            Idle
+                                        </span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        @if (worker.AccountStatus
+                                                                        == "Pending")
+                                        {
+                                            <form method="post"
+                                                  action="/Worker/Approve"
+                                                  style="display:inline">
+                                                <input type="hidden"
+                                                       name="workerKey"
+                                                       value="@worker.UniqueKey" />
+                                                <button type="submit"
+                                                        class="btn btn-sm
+                                                                           btn-success"
+                                                        title="Approve">
+                                                    ✅ Approve
+                                                </button>
+                                            </form>
+                                            <form method="post"
+                                                  action="/Worker/Reject"
+                                                  style="display:inline">
+                                                <input type="hidden"
+                                                       name="workerKey"
+                                                       value="@worker.UniqueKey" />
+                                                <button type="submit"
+                                                        class="btn btn-sm
+                                                                           btn-danger"
+                                                        title="Reject">
+                                                    ❌ Reject
+                                                </button>
+                                            </form>
+                                        }
+                                        else if (
+                                        worker.AccountStatus
+                                        != "Rejected")
+                                        {
+                                            <form method="post"
+                                                  action="/Worker/Remove"
+                                                  style="display:inline">
+                                                <input type="hidden"
+                                                       name="workerKey"
+                                                       value="@worker.UniqueKey" />
+                                                <button type="submit"
+                                                        class="btn btn-sm
+                                                                           btn-outline-danger"
+                                                        onclick="return confirm(
+                                                                        'Remove this worker?')">
+                                                    🗑 Remove
+                                                </button>
+                                            </form>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-secondary"
+                                                  style="font-size:12px">
+                                                Rejected
+                                            </span>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="p-4 text-center
+                            text-secondary"
+                 style="font-size:13px">
+                No workers found
+            </div>
+        }
+    </div>
+</div>

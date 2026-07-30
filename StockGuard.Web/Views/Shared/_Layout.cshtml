@@ -1,0 +1,1314 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] — StockGuard</title>
+
+    <!-- Bootstrap 5 -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" />
+
+    <style>
+        :root {
+            --sidebar-width: 260px;
+            --bg-dark: #080f1e;
+            --bg-surface: #0d1526;
+            --bg-card: #111d33;
+            --bg-elevated: #1a2a45;
+            --border-color: #1e3a5f;
+            --border-soft: #162440;
+            --text-primary: #f0f4ff;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --blue: #3b82f6;
+            --green: #10b981;
+            --red: #ef4444;
+            --amber: #f59e0b;
+        }
+        /* ── Toast slide in animation ── */
+        
+
+        to {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        }
+
+        /* ── Base ── */
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+            font-family: 'Segoe UI', sans-serif;
+            margin: 0;
+        }
+
+        /* Force all text to be visible */
+        p, span, div, td, th, li, label,
+        h1, h2, h3, h4, h5, h6 {
+            color: inherit;
+        }
+
+        /* ── Sidebar ── */
+        .sidebar {
+            width: var(--sidebar-width);
+            min-height: 100vh;
+            background-color: var(--bg-surface);
+            border-right: 1px solid var(--border-color);
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 100;
+        }
+
+        .sidebar-brand {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .brand-icon {
+            width: 40px;
+            height: 40px;
+            background: #1d4ed8;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        .brand-name {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .brand-sub {
+            font-size: 10px;
+            color: var(--text-secondary);
+        }
+
+        .sidebar-nav {
+            padding: 16px 12px;
+        }
+
+        .nav-section-label {
+            font-size: 10px;
+            font-weight: 700;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            padding: 8px 12px 4px;
+        }
+
+        .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 14px;
+            border-radius: 8px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 14px;
+            margin-bottom: 2px;
+            transition: all 0.2s;
+        }
+
+            .sidebar-link:hover {
+                background-color: var(--bg-card);
+                color: var(--text-primary);
+            }
+
+            .sidebar-link.active {
+                background-color: #1e3a5f;
+                color: var(--blue);
+                font-weight: 600;
+            }
+
+            .sidebar-link i {
+                width: 20px;
+                font-size: 16px;
+            }
+
+        /* ── Main ── */
+        .main-content {
+            margin-left: var(--sidebar-width);
+            min-height: 100vh;
+        }
+
+        .top-bar {
+            background-color: var(--bg-surface);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+            .top-bar h6 {
+                color: var(--text-primary) !important;
+                margin: 0;
+            }
+
+        .page-content {
+            padding: 24px;
+        }
+
+        /* ── Cards ── */
+        .card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+        }
+
+        .card-header {
+            background-color: var(--bg-card);
+            border-bottom: 1px solid var(--border-color);
+            padding: 14px 20px;
+            color: var(--text-primary);
+        }
+
+        .card-body {
+            color: var(--text-primary);
+        }
+
+        /* ── Stat Cards ── */
+        .stat-card {
+            background-color: var(--bg-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: 700;
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+
+        .stat-icon {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+
+        /* ── Tables — Force dark theme ── */
+        .table {
+            color: var(--text-primary);
+            border-color: var(--border-color);
+            --bs-table-color: var(--text-primary);
+            --bs-table-bg: transparent;
+            --bs-table-hover-bg: var(--bg-card);
+        }
+
+            .table thead th {
+                background-color: var(--bg-card) !important;
+                border-color: var(--border-color) !important;
+                color: var(--text-secondary) !important;
+                font-size: 12px;
+                font-weight: 600;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .table tbody tr {
+                background-color: transparent !important;
+            }
+
+            .table tbody td {
+                border-color: var(--border-color) !important;
+                vertical-align: middle;
+                font-size: 13px;
+                color: var(--text-primary) !important;
+                background-color: transparent !important;
+            }
+
+            .table tbody tr:hover td {
+                background-color: var(--bg-card) !important;
+            }
+
+        /* ── Fix Bootstrap table stripes override ── */
+        .table-striped > tbody > tr:nth-of-type(odd) > * {
+            --bs-table-accent-bg: transparent;
+            color: var(--text-primary) !important;
+        }
+
+        /* ── Forms ── */
+        .form-control,
+        .form-select {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+            color: var(--text-primary);
+        }
+
+            .form-control:focus,
+            .form-select:focus {
+                background-color: var(--bg-card);
+                border-color: var(--blue);
+                color: var(--text-primary);
+                box-shadow: 0 0 0 0.2rem rgba(59, 130, 246, 0.25);
+            }
+
+            .form-control::placeholder {
+                color: var(--text-muted);
+            }
+
+        /* ── Buttons ── */
+        .btn-primary {
+            background-color: var(--blue);
+            border-color: var(--blue);
+            color: white;
+        }
+
+        .btn-outline-secondary {
+            color: var(--text-secondary);
+            border-color: var(--border-color);
+        }
+
+            .btn-outline-secondary:hover {
+                background-color: var(--bg-card);
+                color: var(--text-primary);
+                border-color: var(--border-color);
+            }
+
+        /* ── Modals ── */
+        .modal-content {
+            background-color: var(--bg-surface) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .modal-header {
+            border-color: var(--border-color) !important;
+            color: var(--text-primary) !important;
+        }
+
+        .modal-footer {
+            border-color: var(--border-color) !important;
+        }
+
+        .modal-title {
+            color: var(--text-primary) !important;
+        }
+
+        /* ── Badges ── */
+        .badge {
+            font-size: 11px;
+        }
+
+        /* ── Alerts ── */
+        .alert-success {
+            background-color: #0a2a1e;
+            border-color: #10b981;
+            color: #6ee7b7;
+        }
+
+        .alert-danger {
+            background-color: #2a0a0a;
+            border-color: #ef4444;
+            color: #fca5a5;
+        }
+
+        /* ── Active project banner ── */
+        .active-project-banner {
+            background: linear-gradient( 135deg, #1d4ed8, #1e40af);
+            border-radius: 12px;
+            padding: 16px 20px;
+            color: white;
+        }
+
+        /* ── Code blocks ── */
+        code {
+            color: #60a5fa !important;
+            background-color: transparent;
+        }
+
+        /* ── Worker avatar ── */
+        .worker-avatar {
+            width: 36px;
+            height: 36px;
+            background: #1d4ed8;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 13px;
+            color: white;
+            flex-shrink: 0;
+        }
+
+        /* ── Scrollbar ── */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 3px;
+        }
+
+        /* ── Dropdown in dark mode ── */
+        .dropdown-menu {
+            background-color: var(--bg-card);
+            border-color: var(--border-color);
+        }
+
+        .dropdown-item {
+            color: var(--text-primary);
+        }
+
+            .dropdown-item:hover {
+                background-color: var(--bg-elevated);
+                color: var(--text-primary);
+            }
+
+        /* ══════════════════════════════════════════
+               LIGHT MODE
+            ══════════════════════════════════════════ */
+        body.light-mode {
+            --bg-dark: #f0f4ff;
+            --bg-surface: #ffffff;
+            --bg-card: #f8faff;
+            --bg-elevated: #e8eef8;
+            --border-color: #d1ddf0;
+            --border-soft: #e2e8f0;
+            --text-primary: #0f172a;
+            --text-secondary: #475569;
+            --text-muted: #94a3b8;
+            background-color: var(--bg-dark);
+            color: var(--text-primary);
+        }
+
+            body.light-mode .sidebar {
+                background-color: #ffffff;
+                border-right: 1px solid #d1ddf0;
+            }
+
+            body.light-mode .brand-name {
+                color: #0f172a;
+            }
+
+            body.light-mode .sidebar-link {
+                color: #475569;
+            }
+
+                body.light-mode .sidebar-link:hover {
+                    background-color: #e8eef8;
+                    color: #1d4ed8;
+                }
+
+                body.light-mode .sidebar-link.active {
+                    background-color: #dbeafe;
+                    color: #1d4ed8;
+                }
+
+            body.light-mode .nav-section-label {
+                color: #94a3b8;
+            }
+
+            body.light-mode .top-bar {
+                background-color: #ffffff;
+                border-bottom: 1px solid #d1ddf0;
+            }
+
+                body.light-mode .top-bar h6 {
+                    color: #0f172a !important;
+                }
+
+            body.light-mode .card {
+                background-color: #ffffff;
+                border-color: #d1ddf0;
+                color: #0f172a;
+            }
+
+            body.light-mode .card-header {
+                background-color: #f8faff;
+                border-bottom: 1px solid #d1ddf0;
+                color: #0f172a;
+            }
+
+            body.light-mode .card-body {
+                color: #0f172a;
+            }
+
+            body.light-mode .stat-card {
+                background-color: #ffffff;
+                border-color: #d1ddf0;
+                color: #0f172a;
+            }
+
+            body.light-mode .stat-label {
+                color: #475569;
+            }
+
+            body.light-mode .table {
+                color: #0f172a;
+                --bs-table-color: #0f172a;
+            }
+
+                body.light-mode .table thead th {
+                    background-color: #f8faff !important;
+                    color: #475569 !important;
+                    border-color: #d1ddf0 !important;
+                }
+
+                body.light-mode .table tbody td {
+                    color: #0f172a !important;
+                    border-color: #e2e8f0 !important;
+                }
+
+                body.light-mode .table tbody tr:hover td {
+                    background-color: #f0f4ff !important;
+                }
+
+            body.light-mode .form-control,
+            body.light-mode .form-select {
+                background-color: #ffffff;
+                border-color: #d1ddf0;
+                color: #0f172a;
+            }
+
+                body.light-mode .form-control:focus,
+                body.light-mode .form-select:focus {
+                    background-color: #ffffff;
+                    color: #0f172a;
+                }
+
+                body.light-mode .form-control::placeholder {
+                    color: #94a3b8;
+                }
+
+            body.light-mode .modal-content {
+                background-color: #ffffff !important;
+                border-color: #d1ddf0 !important;
+                color: #0f172a !important;
+            }
+
+            body.light-mode .modal-header {
+                border-color: #d1ddf0 !important;
+                color: #0f172a !important;
+            }
+
+            body.light-mode .modal-title {
+                color: #0f172a !important;
+            }
+
+            body.light-mode .modal-footer {
+                border-color: #d1ddf0 !important;
+            }
+
+            body.light-mode .alert-success {
+                background-color: #f0fdf4;
+                border-color: #86efac;
+                color: #166534;
+            }
+
+            body.light-mode .alert-danger {
+                background-color: #fef2f2;
+                border-color: #fca5a5;
+                color: #991b1b;
+            }
+
+            body.light-mode code {
+                color: #1d4ed8 !important;
+            }
+
+            body.light-mode .text-secondary {
+                color: #475569 !important;
+            }
+
+            body.light-mode .btn-outline-secondary {
+                color: #475569;
+                border-color: #d1ddf0;
+            }
+
+                body.light-mode .btn-outline-secondary:hover {
+                    background-color: #e8eef8;
+                    color: #0f172a;
+                }
+
+            body.light-mode .btn-close {
+                filter: none;
+            }
+
+            body.light-mode .dropdown-menu {
+                background-color: #ffffff;
+                border-color: #d1ddf0;
+            }
+
+            body.light-mode .dropdown-item {
+                color: #0f172a;
+            }
+
+                body.light-mode .dropdown-item:hover {
+                    background-color: #f0f4ff;
+                }
+
+        /* ── Responsive ── */
+        @@media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        @@keyframes slideIn {
+            from
+
+        {
+            transform: translateX(100px);
+            opacity: 0;
+        }
+    </style>
+</head>
+<body>
+
+    @if (Context.Session.GetString("UserEmail") != null)
+    {
+        <!-- ── SIDEBAR ─────────────────────────────── -->
+        <div class="sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">🛡</div>
+                <div>
+                    <div class="brand-name">StockGuard</div>
+                    <div class="brand-sub">
+                        Equipment Management
+                    </div>
+                </div>
+            </div>
+
+            <nav class="sidebar-nav">
+
+                <div class="nav-section-label">Main</div>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                       .Values["controller"]?.ToString() == "Dashboard"
+                       ? "active" : "")"
+               href="/Dashboard/Index">
+                <i class="bi bi-speedometer2"></i>
+                Dashboard
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Project"
+                   ? "active" : "")"
+               href="/Project/Index">
+                <i class="bi bi-folder"></i>
+                Projects
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Equipment"
+                   ? "active" : "")"
+               href="/Equipment/Index">
+                <i class="bi bi-tools"></i>
+                Equipment Catalog
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Tool"
+                   ? "active" : "")"
+               href="/Tool/Index">
+                <i class="bi bi-qr-code"></i>
+                Tools &amp; QR Codes
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Worker"
+                   ? "active" : "")"
+               href="/Worker/Index">
+                <i class="bi bi-people"></i>
+                Workers
+            </a>
+            <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Pause"
+                   ? "active" : "")"
+               href="/Pause/Index">
+                <i class="bi bi-pause-circle"></i>
+                Pause Requests
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Damage"
+                   ? "active" : "")"
+               href="/Damage/Index">
+                <i class="bi bi-exclamation-triangle"></i>
+                Damage Reports
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Transaction"
+                   ? "active" : "")"
+               href="/Transaction/Index">
+                <i class="bi bi-clock-history"></i>
+                Transactions
+            </a>
+
+                <a class="sidebar-link @(ViewContext.RouteData
+                   .Values["controller"]?.ToString() == "Analytics"
+                   ? "active" : "")"
+               href="/Analytics/Index">
+                <i class="bi bi-bar-chart"></i>
+                Analytics
+            </a>
+
+                <a class="sidebar-link text-danger"
+                   href="/Auth/Logout">
+                    <i class="bi bi-box-arrow-right"></i>
+                    Logout
+                </a>
+
+            </nav>
+        </div>
+
+        <!-- ── MAIN CONTENT ──────────────────────────── -->
+        <div class="main-content">
+
+            <!-- REPLACE top bar with this -->
+            <div class="top-bar">
+                <div>
+                    <h6 class="mb-0 fw-bold">
+                        @ViewData["Title"]
+                    </h6>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <!-- ✅ Theme toggle button -->
+                    <button id="themeToggle"
+                            class="btn btn-sm
+                           btn-outline-secondary"
+                            onclick="toggleTheme()"
+                            title="Toggle Dark/Light Mode">
+                        🌙
+                    </button>
+
+                    <span class="text-secondary"
+                          style="font-size:13px">
+                        <i class="bi bi-person-circle me-1"></i>
+                        @Context.Session.GetString("UserName")
+                    </span>
+                    <span class="badge bg-primary">
+                        Project Engineer
+                    </span>
+                </div>
+            </div>
+
+            <!-- Page content -->
+            <div class="page-content">
+                @RenderBody()
+            </div>
+        </div>
+        }
+    else
+    {
+        @RenderBody()
+    }
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js">
+    </script>
+
+    @await RenderSectionAsync("Scripts",
+    required: false)
+    <script>
+        // ── Theme Management ──────────────────────────
+        function toggleTheme() {
+            const body = document.body;
+            const btn  = document.getElementById(
+                'themeToggle');
+
+            if (body.classList.contains('light-mode')) {
+                body.classList.remove('light-mode');
+                btn.textContent = '🌙';
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.add('light-mode');
+                btn.textContent = '☀️';
+                localStorage.setItem('theme', 'light');
+            }
+        }
+
+        // Apply saved theme on load
+        document.addEventListener('DOMContentLoaded',
+            function() {
+                const savedTheme =
+                    localStorage.getItem('theme');
+                const btn = document.getElementById(
+                    'themeToggle');
+
+                if (savedTheme === 'light') {
+                    document.body.classList.add(
+                        'light-mode');
+                    if (btn) btn.textContent = '☀️';
+                } else {
+                    if (btn) btn.textContent = '🌙';
+                }
+            });
+        // ── Firebase Real-Time Streaming ──────────────
+            const FIREBASE_URL =
+                "https://stockguard-e781c-default-rtdb" +
+                ".firebaseio.com";
+
+            function listenToNode(node, callback)
+            {
+                try
+                {
+                    const url =
+                        `${FIREBASE_URL}/${node}.json`;
+
+                    const source = new EventSource(url);
+
+                    source.addEventListener("put", (e) =>
+                    {
+                        try
+                        {
+                            const data =
+                                JSON.parse(e.data);
+                            callback(data);
+                        }
+                        catch (err)
+                        {
+                            console.log(
+                                `Parse error on ${node}:`,
+                                err);
+                        }
+                    });
+
+                    source.addEventListener("patch", (e) =>
+                    {
+                        try
+                        {
+                            const data =
+                                JSON.parse(e.data);
+                            callback(data);
+                        }
+                        catch (err)
+                        {
+                            console.log(
+                                `Patch error on ${node}:`,
+                                err);
+                        }
+                    });
+
+                    source.onerror = () =>
+                    {
+                        setTimeout(() =>
+                            listenToNode(node, callback),
+                            5000);
+                    };
+
+                    return source;
+                }
+                catch (err)
+                {
+                    console.log(
+                        `Failed to listen ${node}:`, err);
+                    return null;
+                }
+            }
+
+            function onToolsChanged(data)
+            {
+                refreshStats();
+                refreshBorrowedTools();
+                showLiveUpdate("Tool data updated");
+            }
+
+            function onTransactionsChanged(data)
+            {
+                refreshStats();
+                showLiveUpdate(
+                    "New transaction recorded");
+            }
+
+            function onReportsChanged(data)
+            {
+                refreshStats();
+                refreshDamageReports();
+                showLiveUpdate(
+                    "Damage report updated");
+            }
+
+            async function refreshStats()
+            {
+                try
+                {
+                    const res =
+                        await fetch("/api/stats");
+                    if (!res.ok) return;
+                    const data = await res.json();
+
+                    updateEl("stat-total-tools",
+                        data.totalTools);
+                    updateEl("stat-available-tools",
+                        data.availableTools);
+                    updateEl("stat-borrowed-tools",
+                        data.borrowedTools);
+                    updateEl("stat-damaged-tools",
+                        data.damagedTools);
+                    updateEl("stat-total-workers",
+                        data.totalWorkers);
+                    updateEl("stat-pending-workers",
+                        data.pendingWorkers);
+                    updateEl("stat-pending-reports",
+                        data.pendingReports);
+
+                    lastRefresh = new Date();
+                }
+                catch (err)
+                {
+                    console.log(
+                        "Stats refresh error:", err);
+                }
+            }
+
+            async function refreshBorrowedTools()
+            {
+                try
+                {
+                    const res = await fetch(
+                        "/api/borrowed-tools");
+                    if (!res.ok) return;
+
+                    const tools = await res.json();
+                    const tbody = document
+                        .getElementById(
+                            "borrowed-tools-body");
+
+                    if (!tbody) return;
+
+                    if (tools.length === 0)
+                    {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="3"
+                                    class="text-center
+                                           text-secondary
+                                           p-3"
+                                    style="font-size:13px">
+                                    No tools currently
+                                    borrowed
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = tools.map(t => `
+                        <tr>
+                            <td>
+                                <div class="fw-bold"
+                                     style="font-size:13px">
+                                    ${t.toolName}
+                                </div>
+                                <div class="text-secondary"
+                                     style="font-size:11px">
+                                    ${t.toolId}
+                                </div>
+                            </td>
+                            <td style="font-size:13px">
+                                ${t.assignedWorkerName
+                                  || "—"}
+                            </td>
+                            <td>
+                                <span class=
+                                    "${t.statusBadgeClass}">
+                                    ${t.status}
+                                </span>
+                            </td>
+                        </tr>`).join("");
+                }
+                catch (err)
+                {
+                    console.log(
+                        "Borrowed tools error:", err);
+                }
+            }
+
+            async function refreshDamageReports()
+            {
+                try
+                {
+                    const res = await fetch(
+                        "/api/damage-reports");
+                    if (!res.ok) return;
+
+                    const reports = await res.json();
+                    const tbody = document
+                        .getElementById(
+                            "damage-reports-body");
+
+                    if (!tbody) return;
+
+                    if (reports.length === 0)
+                    {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="3"
+                                    class="text-center
+                                           text-secondary
+                                           p-3"
+                                    style="font-size:13px">
+                                    No pending damage
+                                    reports
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    tbody.innerHTML = reports.map(r => `
+                        <tr>
+                            <td>
+                                <div class="fw-bold"
+                                     style="font-size:13px">
+                                    ${r.toolName}
+                                </div>
+                                <div class="text-secondary"
+                                     style="font-size:11px">
+                                    ${r.toolId}
+                                </div>
+                            </td>
+                            <td style="font-size:13px">
+                                ${r.workerName}
+                            </td>
+                            <td>
+                                <span class=
+                                    "${r.severityBadgeClass}">
+                                    ${r.severity}
+                                </span>
+                            </td>
+                        </tr>`).join("");
+                }
+                catch (err)
+                {
+                    console.log(
+                        "Damage reports error:", err);
+                }
+            }
+
+            function updateEl(id, value)
+            {
+                const el = document.getElementById(id);
+                if (!el) return;
+
+                const current = el.textContent.trim();
+                const newVal  = String(value);
+
+                if (current !== newVal)
+                {
+                    el.textContent = newVal;
+                    el.classList.add("stat-updated");
+                    setTimeout(() =>
+                        el.classList.remove(
+                            "stat-updated"), 1000);
+                }
+            }
+
+            function showLiveUpdate(message)
+            {
+                const indicator =
+                    document.getElementById(
+                        "refreshIndicator");
+                if (indicator)
+                {
+                    indicator.textContent =
+                        `🟢 ${message}`;
+                    indicator.style.opacity = "1";
+                    setTimeout(() =>
+                        indicator.style.opacity = "0",
+                        3000);
+                }
+
+                showToast(message);
+            }
+
+            function showToast(message)
+            {
+                let container = document
+                    .getElementById("toastContainer");
+
+                if (!container)
+                {
+                    container =
+                        document.createElement("div");
+                    container.id = "toastContainer";
+                    container.style.cssText = `
+                        position:       fixed;
+                        bottom:         20px;
+                        right:          20px;
+                        z-index:        9999;
+                        display:        flex;
+                        flex-direction: column;
+                        gap:            8px;
+                    `;
+                    document.body.appendChild(
+                        container);
+                }
+
+                const toast =
+                    document.createElement("div");
+                toast.style.cssText = `
+                    background:    #0d1526;
+                    border:        1px solid #10b981;
+                    border-radius: 10px;
+                    padding:       12px 16px;
+                    color:         #f0f4ff;
+                    font-size:     13px;
+                    display:       flex;
+                    align-items:   center;
+                    gap:           8px;
+                    animation:     slideIn 0.3s ease;
+                    box-shadow:    0 4px 12px
+                                   rgba(0,0,0,0.3);
+                    min-width:     220px;
+                `;
+                toast.innerHTML = `
+                    <span style="color:#10b981;
+                                 font-size:16px">
+                        🟢
+                    </span>
+                    <span>${message}</span>
+                `;
+
+                container.appendChild(toast);
+
+                setTimeout(() =>
+                {
+                    toast.style.opacity    = "0";
+                    toast.style.transition =
+                        "opacity 0.3s";
+                    setTimeout(() =>
+                    {
+                        if (container.contains(toast))
+                            container.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+                    // ── Generic Firebase SSE listener ────────────────────────
+        function listenToNode(node, callback)
+        {
+            try
+            {
+                const url =
+                    `${FIREBASE_URL}/${node}.json`;
+
+                const source = new EventSource(url);
+
+                // ✅ Track if this is the first event
+                let isFirstEvent = true;
+
+                source.addEventListener("put", (e) =>
+                {
+                    // ✅ Skip first put event —
+                    // it's just the initial data load
+                    // not a real change
+                    if (isFirstEvent)
+                    {
+                        isFirstEvent = false;
+                        console.log(
+                            `${node}: initial load skipped`);
+                        return;
+                    }
+
+                    try
+                    {
+                        const data = JSON.parse(e.data);
+                        callback(data);
+                    }
+                    catch (err)
+                    {
+                        console.log(
+                            `Parse error on ${node}:`, err);
+                    }
+                });
+
+                source.addEventListener("patch", (e) =>
+                {
+                    // ✅ patch events are always real changes
+                    // no need to skip
+                    try
+                    {
+                        const data = JSON.parse(e.data);
+                        callback(data);
+                    }
+                    catch (err)
+                    {
+                        console.log(
+                            `Patch error on ${node}:`, err);
+                    }
+                });
+
+                source.onerror = () =>
+                {
+                    source.close();
+                    setTimeout(() =>
+                        listenToNode(node, callback),
+                        5000);
+                };
+
+                return source;
+            }
+            catch (err)
+            {
+                console.log(
+                    `Failed to listen ${node}:`, err);
+                return null;
+            }
+        }
+            function manualRefresh()
+            {
+                refreshStats();
+                refreshBorrowedTools();
+                refreshDamageReports();
+                showLiveUpdate("Manually refreshed");
+            }
+
+            let lastRefresh = new Date();
+
+            function updateRefreshTimer()
+            {
+                const el = document.getElementById(
+                    "lastRefreshTime");
+                if (!el) return;
+
+                const diff = Math.floor(
+                    (new Date() - lastRefresh) / 1000);
+
+                el.textContent =
+                    diff < 5  ? "Just now"      :
+                    diff < 60 ? `${diff}s ago`  :
+                    `${Math.floor(diff / 60)}m ago`;
+            }
+
+            function startFirebaseListeners()
+            {
+                listenToNode("tools",
+                    onToolsChanged);
+                listenToNode("transactions",
+                    onTransactionsChanged);
+                listenToNode("damageReports",
+                    onReportsChanged);
+            }
+
+            document.addEventListener(
+                "DOMContentLoaded", () =>
+            {
+                startFirebaseListeners();
+                setInterval(updateRefreshTimer, 1000);
+                console.log(
+                    "StockGuard real-time sync started ✅");
+            });
+
+    </script>
+    <!-- ── Global Real-Time Sync ────────────────────────────────── -->
+    <script type="module">
+        import { initializeApp } from
+            'https://www.gstatic.com/firebasejs/10.7.0/firebase-app.js';
+        import { getDatabase, ref, onValue } from
+            'https://www.gstatic.com/firebasejs/10.7.0/firebase-database.js';
+
+        const app = initializeApp({
+            apiKey:            "AIzaSyBshsgxRbZmG8c5orWJhGgd5IJfR8_UVOU",
+            authDomain:        "stockguard-e781c.firebaseapp.com",
+            databaseURL:       "https://stockguard-e781c-default-rtdb.firebaseio.com",
+            projectId:         "stockguard-e781c",
+            storageBucket:     "stockguard-e781c.firebasestorage.app",
+            messagingSenderId: "684099081472",
+            appId:             "1:684099081472:web:ff8b61664efed4b1df0fe5"
+        });
+
+        const db = getDatabase(app);
+
+        const watchPaths = [
+            'borrowRequests', 'catalogs', 'damageReports',
+            'pauseRequests', 'projectTools', 'projectWorkers',
+            'projects', 'tools', 'transactions',
+            'transferRequests', 'users'
+        ];
+
+        let initialized    = false;
+        let reloadTimer    = null;
+        let lastInteract   = Date.now();
+        let isNavigating   = false;
+
+        // ── Track user interaction ─────────────────────────────────
+        // Do not reload if user recently clicked or is navigating
+        document.addEventListener('click',      () => lastInteract = Date.now());
+        document.addEventListener('keydown',    () => lastInteract = Date.now());
+        document.addEventListener('mousedown',  () => lastInteract = Date.now());
+
+        // ── Track navigation ───────────────────────────────────────
+        document.querySelectorAll('a, button, [type=submit]')
+            .forEach(el => {
+                el.addEventListener('click', () => {
+                    isNavigating = true;
+                    // Reset after 3 seconds
+                    setTimeout(() => isNavigating = false, 3000);
+                });
+            });
+
+        // ── Firebase listeners ─────────────────────────────────────
+        watchPaths.forEach(path => {
+            onValue(ref(db, path), () => {
+                if (!initialized) return;
+
+                clearTimeout(reloadTimer);
+                reloadTimer = setTimeout(() => {
+
+                    // Do not reload if user clicked in last 3 seconds
+                    const timeSinceInteract =
+                        Date.now() - lastInteract;
+                    if (timeSinceInteract < 3000) return;
+
+                    // Do not reload during navigation
+                    if (isNavigating) return;
+
+                    // Do not reload on form pages
+                    const p = window.location.pathname.toLowerCase();
+                    const isFormPage =
+                        p.includes('/create') ||
+                        p.includes('/edit')   ||
+                        p.includes('/add');
+
+                    if (!isFormPage) window.location.reload();
+
+                }, 3000); // ← increased from 800ms to 3000ms
+            });
+        });
+
+        // ── Wait 5 seconds before activating ──────────────────────
+        // Gives Firebase time to settle all initial fires
+        setTimeout(() => { initialized = true; }, 5000);
+    </script>
+    <!-- ── End Global Real-Time Sync ─────────────────────────────── -->
+</body>
+</html>

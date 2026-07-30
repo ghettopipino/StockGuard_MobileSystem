@@ -1,0 +1,857 @@
+﻿@model StockGuard.Web.Models.Login
+@{
+    ViewData["Title"] = "Login";
+    Layout = null;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StockGuard — Sign In</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" />
+    <style>
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg: #060d1a;
+            --bg-panel: #080f1e;
+            --bg-input: #0d1829;
+            --border: rgba(59,130,246,0.15);
+            --border-soft: rgba(255,255,255,0.06);
+            --accent: #3b82f6;
+            --accent-dark: #1d4ed8;
+            --accent-glow: rgba(59,130,246,0.25);
+            --text1: #f0f4ff;
+            --text2: #94a3b8;
+            --text3: #3d5278;
+            --green: #10b981;
+        }
+
+        html, body {
+            background: var(--bg);
+            color: var(--text1);
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        /* ── PAGE LAYOUT ────────────────────────────────────── */
+        .page-wrap {
+            min-height: 100vh;
+            display: grid;
+            grid-template-columns: 1fr 500px;
+        }
+
+        /* ── LEFT PANEL ─────────────────────────────────────── */
+        .left-panel {
+            position: relative;
+            padding: 52px 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow: hidden;
+            background: #060d1a;
+        }
+
+            /* Animated grid background */
+            .left-panel::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background-image: linear-gradient(rgba(59,130,246,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(59,130,246,0.04) 1px, transparent 1px);
+                background-size: 48px 48px;
+                mask-image: radial-gradient(ellipse 80% 80% at 40% 50%, black 30%, transparent 100%);
+                pointer-events: none;
+            }
+
+            /* Blue radial glow top-left */
+            .left-panel::after {
+                content: '';
+                position: absolute;
+                top: -120px;
+                left: -120px;
+                width: 500px;
+                height: 500px;
+                border-radius: 50%;
+                background: radial-gradient(circle, rgba(59,130,246,0.12) 0%, transparent 65%);
+                pointer-events: none;
+                animation: pulse-glow 6s ease-in-out infinite;
+            }
+
+        @@keyframes pulse-glow {
+            0%, 100%
+
+        {
+            opacity: 0.6;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 1;
+            transform: scale(1.08);
+        }
+
+        }
+
+        /* Second glow bottom-right */
+        .glow-br {
+            position: absolute;
+            bottom: -100px;
+            right: -60px;
+            width: 360px;
+            height: 360px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(29,78,216,0.1) 0%, transparent 65%);
+            pointer-events: none;
+            animation: pulse-glow 8s ease-in-out infinite reverse;
+        }
+
+        /* ── BRAND ──────────────────────────────────────────── */
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            text-decoration: none;
+            position: relative;
+            z-index: 2;
+        }
+
+        .brand-icon {
+            width: 46px;
+            height: 46px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 24px rgba(59,130,246,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+            transition: box-shadow 0.3s;
+        }
+
+        .brand:hover .brand-icon {
+            box-shadow: 0 0 36px rgba(59,130,246,0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+
+        .brand-name {
+            font-size: 15px;
+            font-weight: 800;
+            letter-spacing: 3px;
+            color: #e2e8f0;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--text3);
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+
+        /* ── HERO TEXT ──────────────────────────────────────── */
+        .left-hero {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            margin-bottom: 22px;
+            padding: 5px 12px;
+            background: rgba(59,130,246,0.08);
+            border: 1px solid rgba(59,130,246,0.2);
+            border-radius: 999px;
+        }
+
+            .hero-eyebrow::before {
+                content: '';
+                width: 6px;
+                height: 6px;
+                border-radius: 50%;
+                background: var(--green);
+                box-shadow: 0 0 8px var(--green);
+                animation: blink 2s ease-in-out infinite;
+            }
+
+        @@keyframes blink {
+            0%, 100%
+
+        {
+            opacity: 1;
+        }
+
+        50% {
+            opacity: 0.3;
+        }
+
+        }
+
+        .left-hero h1 {
+            font-size: clamp(2.2rem, 3.2vw, 3rem);
+            font-weight: 900;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            letter-spacing: -1px;
+            color: #f8faff;
+        }
+
+            .left-hero h1 .accent {
+                color: var(--accent);
+            }
+
+        .left-hero p {
+            color: var(--text2);
+            font-size: 15px;
+            line-height: 1.75;
+            max-width: 380px;
+            margin-bottom: 44px;
+        }
+
+        /* ── FEATURE LIST ───────────────────────────────────── */
+        .feature-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13.5px;
+            color: var(--text2);
+            padding: 10px 14px;
+            border-radius: 10px;
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border-soft);
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+            .feature-item:hover {
+                background: rgba(59,130,246,0.06);
+                border-color: rgba(59,130,246,0.15);
+                color: #cbd5e1;
+            }
+
+        .feature-check {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: rgba(16,185,129,0.12);
+            border: 1px solid rgba(16,185,129,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+            .feature-check svg {
+                display: block;
+            }
+
+        /* ── LEFT FOOTER ────────────────────────────────────── */
+        .left-footer {
+            font-size: 12px;
+            color: var(--text3);
+            position: relative;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+            .left-footer::before {
+                content: '';
+                flex: 1;
+                height: 1px;
+                background: var(--border-soft);
+            }
+
+        /* ── RIGHT PANEL ────────────────────────────────────── */
+        .right-panel {
+            background: var(--bg-panel);
+            border-left: 1px solid var(--border-soft);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 56px 48px;
+            position: relative;
+        }
+
+            /* Subtle top accent line */
+            .right-panel::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                height: 2px;
+                background: linear-gradient(90deg, transparent, var(--accent), transparent);
+                opacity: 0.5;
+            }
+
+        /* ── FORM HEADER ────────────────────────────────────── */
+        .form-header {
+            margin-bottom: 34px;
+        }
+
+            .form-header h2 {
+                font-size: 26px;
+                font-weight: 800;
+                letter-spacing: -0.5px;
+                margin-bottom: 6px;
+                color: var(--text1);
+            }
+
+            .form-header p {
+                font-size: 13.5px;
+                color: var(--text2);
+            }
+
+        /* ── FIELDS ─────────────────────────────────────────── */
+        .field-wrap {
+            margin-bottom: 18px;
+        }
+
+        .field-label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            color: var(--text2);
+            margin-bottom: 8px;
+        }
+
+        .field-box {
+            display: flex;
+            align-items: center;
+            background: var(--bg-input);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 11px;
+            height: 50px;
+            padding: 0 16px;
+            gap: 10px;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+            .field-box:focus-within {
+                border-color: var(--accent);
+                box-shadow: 0 0 0 4px var(--accent-glow);
+                background: #0f1e36;
+            }
+
+        .field-icon {
+            flex-shrink: 0;
+            opacity: 0.35;
+            transition: opacity 0.2s;
+            display: flex;
+            align-items: center;
+        }
+
+        .field-box:focus-within .field-icon {
+            opacity: 0.7;
+        }
+
+        .field-box input {
+            flex: 1;
+            background: transparent;
+            border: none;
+            outline: none;
+            color: var(--text1);
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+            .field-box input::placeholder {
+                color: var(--text3);
+            }
+
+        .toggle-pw {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 4px;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+            color: var(--text2);
+            display: flex;
+            align-items: center;
+        }
+
+            .toggle-pw:hover {
+                opacity: 0.8;
+            }
+
+        /* ── ERROR ──────────────────────────────────────────── */
+        .error-banner {
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+            background: rgba(239,68,68,0.07);
+            border: 1px solid rgba(239,68,68,0.25);
+            border-radius: 10px;
+            padding: 12px 16px;
+            font-size: 13px;
+            color: #fca5a5;
+            margin-bottom: 22px;
+            animation: slide-in 0.2s ease;
+        }
+
+        @@keyframes slide-in {
+            from
+
+        {
+            opacity: 0;
+            transform: translateY(-6px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        }
+
+        .error-icon {
+            flex-shrink: 0;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: rgba(239,68,68,0.2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            margin-top: 1px;
+        }
+
+        /* ── SUBMIT BUTTON ──────────────────────────────────── */
+        .btn-submit {
+            width: 100%;
+            height: 52px;
+            background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%);
+            color: #fff;
+            border: none;
+            border-radius: 11px;
+            font-size: 15px;
+            font-weight: 700;
+            letter-spacing: 0.3px;
+            cursor: pointer;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.15s, box-shadow 0.2s;
+            box-shadow: 0 4px 20px rgba(29,78,216,0.4);
+        }
+
+            .btn-submit::before {
+                content: '';
+                position: absolute;
+                inset: 0;
+                background: linear-gradient(135deg, rgba(255,255,255,0.1) 0%, transparent 60%);
+                transition: opacity 0.2s;
+            }
+
+            .btn-submit:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 8px 28px rgba(29,78,216,0.55);
+            }
+
+            .btn-submit:active {
+                transform: translateY(0);
+                box-shadow: 0 2px 10px rgba(29,78,216,0.4);
+            }
+
+            .btn-submit .btn-text {
+                position: relative;
+                z-index: 1;
+            }
+
+            /* Loading state */
+            .btn-submit.loading .btn-text {
+                opacity: 0;
+            }
+
+            .btn-submit.loading::after {
+                content: '';
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 20px;
+                height: 20px;
+                margin: -10px 0 0 -10px;
+                border: 2px solid rgba(255,255,255,0.3);
+                border-top-color: white;
+                border-radius: 50%;
+                animation: spin 0.7s linear infinite;
+            }
+
+        @@keyframes spin {
+            to
+
+        {
+            transform: rotate(360deg);
+        }
+
+        }
+
+        /* ── DIVIDER ────────────────────────────────────────── */
+        .or-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            margin: 24px 0;
+        }
+
+        .or-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border-soft);
+        }
+
+        .or-text {
+            font-size: 12px;
+            color: var(--text3);
+            font-weight: 500;
+        }
+
+        /* ── REGISTER LINK ──────────────────────────────────── */
+        .register-row {
+            text-align: center;
+            font-size: 13.5px;
+            color: var(--text2);
+        }
+
+            .register-row a {
+                color: var(--accent);
+                font-weight: 700;
+                text-decoration: none;
+                border-bottom: 1px solid transparent;
+                transition: border-color 0.15s;
+            }
+
+                .register-row a:hover {
+                    border-color: var(--accent);
+                }
+
+        /* ── HINT BOX ───────────────────────────────────────── */
+        .hint-box {
+            margin-top: 28px;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-soft);
+            background: rgba(255,255,255,0.02);
+        }
+
+        .hint-header {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 10px;
+            font-weight: 800;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: var(--accent);
+            padding: 10px 16px;
+            background: rgba(59,130,246,0.06);
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .hint-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            border-bottom: 1px solid var(--border-soft);
+            transition: background 0.15s;
+            cursor: pointer;
+        }
+
+            .hint-row:last-child {
+                border-bottom: none;
+            }
+
+            .hint-row:hover {
+                background: rgba(255,255,255,0.03);
+            }
+
+        .hint-badge {
+            font-size: 9px;
+            font-weight: 800;
+            padding: 3px 8px;
+            border-radius: 6px;
+            flex-shrink: 0;
+            letter-spacing: 0.5px;
+        }
+
+            .hint-badge.pe {
+                background: rgba(59,130,246,0.15);
+                color: #93c5fd;
+                border: 1px solid rgba(59,130,246,0.2);
+            }
+
+            .hint-badge.wk {
+                background: rgba(16,185,129,0.12);
+                color: #6ee7b7;
+                border: 1px solid rgba(16,185,129,0.2);
+            }
+
+        .hint-creds {
+            font-size: 12px;
+            color: var(--text2);
+            font-family: 'Courier New', monospace;
+        }
+
+        .hint-copy {
+            margin-left: auto;
+            font-size: 10px;
+            color: var(--text3);
+            transition: color 0.15s;
+        }
+
+        .hint-row:hover .hint-copy {
+            color: var(--accent);
+        }
+
+        /* ── RESPONSIVE ─────────────────────────────────────── */
+        @@media (max-width: 960px) {
+            .page-wrap {
+                grid-template-columns: 1fr;
+            }
+
+            .left-panel {
+                display: none;
+            }
+
+            .right-panel {
+                padding: 48px 28px;
+                justify-content: flex-start;
+                padding-top: 72px;
+            }
+
+                .right-panel::before {
+                    display: none;
+                }
+        }
+
+        @@media (max-width: 480px) {
+            .right-panel {
+                padding: 40px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="page-wrap">
+
+        <!-- ══════════════════════════════════════════════════════
+             LEFT PANEL
+        ══════════════════════════════════════════════════════════ -->
+        <div class="left-panel">
+            <div class="glow-br"></div>
+
+            <!-- Brand -->
+            <a class="brand" href="/">
+                <div class="brand-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                        <path d="M12 2L3 6V12C3 17 7.5 21.5 12 22C16.5 21.5 21 17 21 12V6L12 2Z"
+                              fill="white" fill-opacity="0.95" />
+                        <path d="M9 12L11 14L15 10"
+                              stroke="#1d4ed8" stroke-width="2.2"
+                              stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                </div>
+                <div>
+                    <div class="brand-name">STOCKGUARD</div>
+                    <div class="brand-sub">Equipment Monitoring Platform</div>
+                </div>
+            </a>
+
+            <!-- Hero -->
+            <div class="left-hero">
+                <div class="hero-eyebrow">Live Platform</div>
+                <h1>Equipment,<br><span class="accent">Under Control.</span></h1>
+                <p>
+                    Track every tool. Know who has what, when they
+                    took it, and where it's been — in real time.
+                </p>
+                <div class="feature-list">
+                    <div class="feature-item">
+                        <div class="feature-check">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                <path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        Borrow, return and transfer tools with full audit trail
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-check">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                <path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        QR code scanning for instant tool lookup on site
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-check">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                <path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        Role-based access for engineers and workers
+                    </div>
+                    <div class="feature-item">
+                        <div class="feature-check">
+                            <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                                <path d="M2 5L4.2 7.5L8 3" stroke="#10b981" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+                            </svg>
+                        </div>
+                        Real-time damage reporting and project analytics
+                    </div>
+                </div>
+            </div>
+
+            <div class="left-footer">© 2025 StockGuard</div>
+        </div>
+
+        <!-- ══════════════════════════════════════════════════════
+             RIGHT PANEL
+        ══════════════════════════════════════════════════════════ -->
+        <div class="right-panel">
+
+            <div class="form-header">
+                <h2>Welcome back</h2>
+                <p>Sign in to your StockGuard account to continue.</p>
+            </div>
+
+            @if (ViewBag.Error != null)
+            {
+                <div class="error-banner">
+                    <div class="error-icon">✕</div>
+                    <span>@ViewBag.Error</span>
+                </div>
+            }
+
+            <form method="post" asp-action="Login" asp-controller="Auth" id="loginForm">
+                <div class="field-wrap">
+                    <label class="field-label">Email Address</label>
+                    <div class="field-box">
+                        <span class="field-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#94a3b8">
+                                <rect x="2" y="4" width="20" height="16" rx="2" />
+                                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7" />
+                            </svg>
+                        </span>
+                        <input asp-for="Email"
+                               type="email"
+                               placeholder="you@example.com"
+                               autocomplete="email" />
+                    </div>
+                    <span asp-validation-for="Email" class="text-danger small"></span>
+                </div>
+
+                <div class="field-wrap">
+                    <label class="field-label">Password</label>
+                    <div class="field-box">
+                        <span class="field-icon">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" color="#94a3b8">
+                                <rect x="3" y="11" width="18" height="11" rx="2" />
+                                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                            </svg>
+                        </span>
+                        <input asp-for="Password"
+                               type="password"
+                               id="pwInput"
+                               placeholder="Enter your password"
+                               autocomplete="current-password" />
+                        <button type="button" class="toggle-pw" onclick="togglePw()" id="pwToggle" title="Toggle password">
+                            <svg id="eyeIcon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z" />
+                                <circle cx="12" cy="12" r="3" />
+                            </svg>
+                        </button>
+                    </div>
+                    <span asp-validation-for="Password" class="text-danger small"></span>
+                </div>
+
+                <button type="submit" class="btn-submit" id="submitBtn">
+                    <span class="btn-text">Sign In →</span>
+                </button>
+            </form>
+
+            <div class="or-row">
+                <div class="or-line"></div>
+                <span class="or-text">or</span>
+                <div class="or-line"></div>
+            </div>
+
+            <!-- Test accounts -->
+            <div class="hint-box">
+                <div class="hint-header">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M9 3H5a2 2 0 0 0-2 2v4m6-6h10a2 2 0 0 1 2 2v4M9 3v18m0 0h10a2 2 0 0 0 2-2v-4M9 21H5a2 2 0 0 1-2-2v-4m0 0h18" />
+                    </svg>
+                    Test Accounts — click to fill
+                </div>
+                <div class="hint-row" onclick="fillCredentials('pe@stockguard.com','admin123')">
+                    <span class="hint-badge pe">PE</span>
+                    <span class="hint-creds">pe@stockguard.com · admin123</span>
+                    <span class="hint-copy">fill →</span>
+                </div>
+                <div class="hint-row" onclick="fillCredentials('worker@stockguard.com','worker123')">
+                    <span class="hint-badge wk">WK</span>
+                    <span class="hint-creds">worker@stockguard.com · worker123</span>
+                    <span class="hint-copy">fill →</span>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function togglePw() {
+            var input = document.getElementById('pwInput');
+            var icon  = document.getElementById('eyeIcon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                icon.innerHTML = '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>';
+            } else {
+                input.type = 'password';
+                icon.innerHTML = '<path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/>';
+            }
+        }
+
+        function fillCredentials(email, password) {
+            document.querySelector('input[name="Email"]').value = email;  // ← capital E
+            document.getElementById('pwInput').value = password;
+            // Brief flash feedback
+            var rows = document.querySelectorAll('.hint-row');
+            rows.forEach(function(r) { r.style.background = ''; });
+            event.currentTarget.style.background = 'rgba(59,130,246,0.08)';
+            setTimeout(function() { event.currentTarget.style.background = ''; }, 600);
+        }
+
+        document.getElementById('loginForm').addEventListener('submit', function() {
+            var btn = document.getElementById('submitBtn');
+            btn.classList.add('loading');
+            btn.disabled = true;
+        });
+    </script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.12/jquery.validate.unobtrusive.min.js"></script>
+</body>
+</html>
