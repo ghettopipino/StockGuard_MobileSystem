@@ -7,8 +7,8 @@
              x:DataType="vm:WorkerDashboardViewModel"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{DynamicResource BgBase}">
-
-    <RefreshView
+    <Grid>
+        <RefreshView
         IsRefreshing="{Binding IsRefreshing}"
         Command="{Binding RefreshCommand}"
         RefreshColor="{DynamicResource Blue}">
@@ -431,27 +431,28 @@
         </ScrollView>
     </RefreshView>
 
-     <!--Floating QR Button--> 
-    
-    <!--<Grid VerticalOptions="End"
-          HorizontalOptions="Center"
-          Margin="0,0,0,30"
-          InputTransparent="False">
+     <!--Floating QR Button-->
+
+    <Grid VerticalOptions="End"
+       HorizontalOptions="Center"
+       Margin="0,0,0,30"
+       InputTransparent="False">
         <Frame BackgroundColor="{DynamicResource Blue}"
-               CornerRadius="30"
-               WidthRequest="60" HeightRequest="60"
-               Padding="0" HasShadow="True"
-               BorderColor="Transparent"
-               InputTransparent="False">
+            CornerRadius="30"
+            WidthRequest="60" HeightRequest="60"
+            Padding="0" HasShadow="True"
+            BorderColor="Transparent"
+            InputTransparent="False">
             <Label Text="📷" FontSize="26"
-                   HorizontalOptions="Center"
-                   VerticalOptions="Center"
-                   InputTransparent="True"/>
+                HorizontalOptions="Center"
+                VerticalOptions="Center"
+                InputTransparent="True"/>
             <Frame.GestureRecognizers>
                 <TapGestureRecognizer Command="{Binding ScanQrCommand}"/>
             </Frame.GestureRecognizers>
         </Frame>
-    </Grid>-->
-    
+    </Grid>
+    </Grid>
+
 
 </ContentPage>

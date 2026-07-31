@@ -105,6 +105,8 @@ namespace StockGuard.ViewModels
         public ICommand SetActiveCommand { get; }
         public ICommand CompleteCommand { get; }
         public ICommand DeleteCommand { get; }
+        public ICommand ScanQrCommand { get; }
+
 
         // ── Constructor ───────────────────────────────────────────
         public ProjectManagementViewModel(
@@ -144,6 +146,10 @@ namespace StockGuard.ViewModels
 
             DeleteCommand = new Command<Project>(
                 async p => await DeleteProjectAsync(p));
+
+            ScanQrCommand = new Command(
+                async () => await ScanQrAsync());
+
 
             MainThread.BeginInvokeOnMainThread(
                 async () => await LoadProjectsAsync());
@@ -471,6 +477,19 @@ namespace StockGuard.ViewModels
                     "OK");
             }
             finally { IsBusy = false; }
+        }
+
+        private async Task ScanQrAsync()
+        {
+            try
+            {
+                await Shell.Current.GoToAsync(
+                    $"{nameof(QrScannerView)}?mode=AssignEquipment");
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+            }
         }
     }
 }

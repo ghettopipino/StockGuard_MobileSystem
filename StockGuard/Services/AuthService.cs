@@ -18,6 +18,7 @@ namespace StockGuard.Services
         public AuthService(FirebaseService firebase)
         {
             _firebase = firebase;
+
         }
 
         // ── LOGIN ─────────────────────────────────────────────────
@@ -220,7 +221,10 @@ namespace StockGuard.Services
         {
             return await _firebase.GetAllUsersAsync();
         }
+
+
     }
 }
 
 
+    

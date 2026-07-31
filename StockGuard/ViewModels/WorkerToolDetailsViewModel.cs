@@ -60,6 +60,8 @@ namespace StockGuard.ViewModels
                 OnPropertyChanged(nameof(ShowResume));
                 OnPropertyChanged(nameof(ShowConfirmReceipt));
                 OnPropertyChanged(nameof(ShowPendingPause));
+                OnPropertyChanged(nameof(ShowDeclineReceipt));
+
             }
         }
 
@@ -71,6 +73,8 @@ namespace StockGuard.ViewModels
         public string StatusColor => Tool?.StatusColor ?? "#6b7280";
         public string StatusIcon => Tool?.StatusIcon ?? "❓";
         public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
+        public bool ShowDeclineReceipt => ShowConfirmReceipt;
+
 
         public string AssignedWorkerName =>
             string.IsNullOrEmpty(Tool?.AssignedWorkerName)
@@ -155,6 +159,7 @@ namespace StockGuard.ViewModels
         public ICommand PauseCommand { get; }
         public ICommand ResumeCommand { get; }
         public ICommand ConfirmReceiptCommand { get; }
+        public ICommand DeclineCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────
         public WorkerToolDetailsViewModel(
@@ -178,6 +183,8 @@ namespace StockGuard.ViewModels
             PauseCommand = new Command(async () => await PauseAsync(), () => !IsBusy);
             ResumeCommand = new Command(async () => await ResumeAsync(), () => !IsBusy);
             ConfirmReceiptCommand = new Command(async () => await ConfirmReceiptAsync(), () => !IsBusy);
+            DeclineCommand = new Command(async () => await DeclineReceiptAsync(), () => !IsBusy);
+
 
             // GoBackCommand — ".." pops the detail page off the stack,
             // returning to WorkerDashboardView. Valid here because
@@ -545,6 +552,32 @@ namespace StockGuard.ViewModels
                 await LoadToolAsync();
                 await Shell.Current.DisplayAlert("✅ Receipt Confirmed",
                     $"You have confirmed receipt of {Tool.ToolName} ({Tool.ToolId}).\n\nThe tool is now assigned to you.", "OK");
+            }
+            finally { IsBusy = false; }
+        }
+
+        private async Task DeclineReceiptAsync()
+        {
+            if (Tool is null || IsBusy) return;
+            IsBusy = true;
+            try
+            {
+                bool confirm = await Shell.Current.DisplayAlert("Decline Assignment",
+                    $"Decline {Tool.ToolName} ({Tool.ToolId})?\n\nIt will go back to Available for the Project Engineer to reassign.",
+                    "Decline", "Cancel");
+                if (!confirm) return;
+
+                var toolName = Tool.ToolName;
+                var toolId = Tool.ToolId;
+
+                Tool.PreAssignedWorkerId = string.Empty;
+                Tool.PreAssignedWorkerName = string.Empty;
+
+                await _firebase.UpdateToolAsync(Tool);
+                await LogAsync("Declined", "Declined pre-assigned tool", Tool.Condition);
+                await LoadToolAsync();
+                await Shell.Current.DisplayAlert("Declined",
+                    $"You declined {toolName} ({toolId}).", "OK");
             }
             finally { IsBusy = false; }
         }

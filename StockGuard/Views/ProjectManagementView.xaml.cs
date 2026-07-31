@@ -17,4 +17,6 @@ public partial class ProjectManagementView : ContentPage
         if (BindingContext is ProjectManagementViewModel vm)
             await vm.LoadProjectsAsync();
     }
+    private void OnScanQrClicked(object sender, EventArgs e)
+    => System.Diagnostics.Debug.WriteLine("[ScanQr] tapped");
 }

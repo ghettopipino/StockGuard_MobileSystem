@@ -7,8 +7,8 @@
              x:DataType="vm:ProjectManagementViewModel"
              Shell.NavBarIsVisible="False"
              BackgroundColor="{DynamicResource BgBase}">
-
-    <RefreshView IsRefreshing="{Binding IsRefreshing}"
+    <Grid>
+        <RefreshView IsRefreshing="{Binding IsRefreshing}"
                  Command="{Binding RefreshCommand}"
                  RefreshColor="{DynamicResource Blue}">
         <ScrollView>
@@ -140,5 +140,36 @@
             </VerticalStackLayout>
         </ScrollView>
     </RefreshView>
+
+    <Grid VerticalOptions="End"
+      HorizontalOptions="Center"
+      Margin="0,0,0,24"
+      RowDefinitions="Auto,Auto"
+      RowSpacing="5">
+        <Frame Grid.Row="0"
+           WidthRequest="62" HeightRequest="62"
+           CornerRadius="31"
+           BackgroundColor="{DynamicResource Blue}"
+           HasShadow="True"
+           BorderColor="Transparent"
+           Padding="0"
+           HorizontalOptions="Center">
+                <Button Text="📷"
+                        Command="{Binding ScanQrCommand}"
+                        Clicked="OnScanQrClicked"
+                        BackgroundColor="Transparent"
+                        TextColor="White"
+                        FontSize="26" Padding="0"
+                        WidthRequest="62" HeightRequest="62"/>
+            </Frame>
+        <Label Grid.Row="1"
+           Text="Assign via QR"
+           FontSize="11" FontAttributes="Bold"
+           TextColor="{DynamicResource Text2}"
+           HorizontalOptions="Center"/>
+    </Grid>
+
+    </Grid>
+
 
 </ContentPage>

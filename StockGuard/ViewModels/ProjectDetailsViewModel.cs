@@ -130,6 +130,55 @@ namespace StockGuard.ViewModels
         }
         public bool NoTools => !HasTools;
 
+        // ── Tools: search + pagination ─────────────────────────────
+        private const int ToolsPageSize = 5;
+        private readonly List<Tool> _allDeployedTools = new();
+
+        private string _toolSearchText = string.Empty;
+        public string ToolSearchText
+        {
+            get => _toolSearchText;
+            set
+            {
+                SetProperty(ref _toolSearchText, value);
+                _toolsPage = 1;
+                ApplyToolsFilterAndPage();
+            }
+        }
+
+        private int _toolsPage = 1;
+        public int ToolsPage
+        {
+            get => _toolsPage;
+            private set
+            {
+                SetProperty(ref _toolsPage, value);
+                OnPropertyChanged(nameof(ToolsPageLabel));
+                OnPropertyChanged(nameof(CanGoToolsPrev));
+                OnPropertyChanged(nameof(CanGoToolsNext));
+                OnPropertyChanged(nameof(ShowToolsPager));
+            }
+        }
+
+        private int _toolsTotalPages = 1;
+        public int ToolsTotalPages
+        {
+            get => _toolsTotalPages;
+            private set
+            {
+                SetProperty(ref _toolsTotalPages, value);
+                OnPropertyChanged(nameof(ToolsPageLabel));
+                OnPropertyChanged(nameof(CanGoToolsPrev));
+                OnPropertyChanged(nameof(CanGoToolsNext));
+                OnPropertyChanged(nameof(ShowToolsPager));
+            }
+        }
+
+        public string ToolsPageLabel => $"{ToolsPage} / {ToolsTotalPages}";
+        public bool CanGoToolsPrev => ToolsPage > 1;
+        public bool CanGoToolsNext => ToolsPage < ToolsTotalPages;
+        public bool ShowToolsPager => ToolsTotalPages > 1;
+
         // ── Commands ──────────────────────────────────────────────
         public ICommand GoBackCommand { get; }
         public ICommand ToggleThemeCommand { get; }
@@ -140,6 +189,10 @@ namespace StockGuard.ViewModels
         public ICommand RemoveToolCommand { get; }
         public ICommand PreAssignToolCommand { get; }
         public ICommand AssignEquipmentCommand { get; }
+        public ICommand DeployViaScanCommand { get; }
+        public ICommand ToolsPrevCommand { get; }
+        public ICommand ToolsNextCommand { get; }
+
 
         // ── Constructor ───────────────────────────────────────────
         public ProjectDetailsViewModel(
@@ -169,6 +222,10 @@ namespace StockGuard.ViewModels
             AssignEquipmentCommand = new Command(
                 async () => await AssignEquipmentAsync());
 
+            DeployViaScanCommand = new Command(async () =>
+                await Shell.Current.GoToAsync(
+                    $"{nameof(QrScannerView)}?mode=Deploy&projectId={ProjectId}"));
+
             AssignWorkerCommand = new Command(async () =>
     await Shell.Current.GoToAsync(
         $"{nameof(BulkSelectView)}" +
@@ -186,6 +243,20 @@ namespace StockGuard.ViewModels
 
             RemoveToolCommand = new Command<Tool>(
                 async t => await RemoveToolAsync(t));
+
+            ToolsPrevCommand = new Command(() =>
+            {
+                if (!CanGoToolsPrev) return;
+                _toolsPage--;
+                ApplyToolsFilterAndPage();
+            });
+
+            ToolsNextCommand = new Command(() =>
+            {
+                if (!CanGoToolsNext) return;
+                _toolsPage++;
+                ApplyToolsFilterAndPage();
+            });
         }
         private async Task PreAssignToolAsync(Tool tool)
         {
@@ -249,6 +320,7 @@ namespace StockGuard.ViewModels
 
             await LoadAsync();
         }
+
         // ── Load Project Details ──────────────────────────────────
         public async Task LoadAsync()
         {
@@ -267,7 +339,6 @@ namespace StockGuard.ViewModels
 
                 // ✅ Always clear before adding
                 AssignedWorkers.Clear();
-                DeployedTools.Clear();
 
                 // Load assigned workers
                 var workerKeys = await _firebase
@@ -294,30 +365,64 @@ namespace StockGuard.ViewModels
                 var allTools =
                     await _firebase.GetAllToolsAsync();
 
+                _allDeployedTools.Clear();
                 foreach (var toolId in toolIds)
                 {
                     var tool = allTools.FirstOrDefault(
                         t => t.ToolId == toolId);
                     if (tool != null)
-                        DeployedTools.Add(tool);
+                        _allDeployedTools.Add(tool);
                 }
 
-                HasTools = DeployedTools.Count > 0;
-                ToolCount = DeployedTools.Count;
-                BorrowedCount = DeployedTools
+                BorrowedCount = _allDeployedTools
                     .Count(t => t.Status == "Borrowed");
+
+                _toolsPage = 1;
+                ApplyToolsFilterAndPage();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
                     $"LoadProject error: {ex.Message}");
             }
-            finally 
-            { 
+            finally
+            {
                 IsBusy = false;
                 _isLoading = false;
 
             }
+        }
+
+        // ── Tools: apply search filter + page slice ─────────────────
+        private void ApplyToolsFilterAndPage()
+        {
+            var filtered = string.IsNullOrWhiteSpace(_toolSearchText)
+                ? _allDeployedTools
+                : _allDeployedTools
+                    .Where(t =>
+                        t.ToolName.Contains(_toolSearchText, StringComparison.OrdinalIgnoreCase) ||
+                        t.ToolId.Contains(_toolSearchText, StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            ToolsTotalPages = filtered.Count == 0 ? 1
+                : (int)Math.Ceiling(filtered.Count / (double)ToolsPageSize);
+
+            if (_toolsPage < 1) _toolsPage = 1;
+            if (_toolsPage > ToolsTotalPages) _toolsPage = ToolsTotalPages;
+
+            var slice = filtered
+                .Skip((_toolsPage - 1) * ToolsPageSize)
+                .Take(ToolsPageSize)
+                .ToList();
+
+            DeployedTools.Clear();
+            foreach (var t in slice)
+                DeployedTools.Add(t);
+
+            ToolsPage = _toolsPage;
+
+            HasTools = _allDeployedTools.Count > 0;
+            ToolCount = _allDeployedTools.Count;
         }
 
         // ── Assign Worker ─────────────────────────────────────────
@@ -392,7 +497,7 @@ namespace StockGuard.ViewModels
             if (worker is null) return;
 
             // Check if worker has borrowed tools
-            var workerTools = DeployedTools
+            var workerTools = _allDeployedTools
                 .Where(t => t.AssignedWorkerId ==
                             worker.UniqueKey)
                 .ToList();
@@ -446,7 +551,7 @@ namespace StockGuard.ViewModels
                     await _firebase.GetAllToolsAsync();
 
                 // Get tools not yet deployed
-                var deployedIds = DeployedTools
+                var deployedIds = _allDeployedTools
                     .Select(t => t.ToolId).ToList();
 
                 var available = allTools
@@ -562,136 +667,13 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ── Assign Equipment (combined Deploy + Pre-assign) ────────
+        // ── Assign Equipment via QR Scan ────────────────────────────
         private async Task AssignEquipmentAsync()
         {
             await Shell.Current.GoToAsync(
-        $"{nameof(QrScannerView)}" +
-        $"?mode=AssignEquipment" +
-        $"&projectId={ProjectId}");
-            //try
-            //{
-            //    // Step 1: find all available units, grouped by equipment name
-            //    var allTools = await _firebase.GetAllToolsAsync();
-            //    var available = allTools
-            //        .Where(t => t.Status == "Available")
-            //        .ToList();
-
-            //    if (available.Count == 0)
-            //    {
-            //        await Shell.Current.DisplayAlert(
-            //            "No Equipment Available",
-            //            "There are no available tools in the system right now.",
-            //            "OK");
-            //        return;
-            //    }
-
-            //    var groups = available
-            //        .GroupBy(t => t.ToolName)
-            //        .Select(g => new { Name = g.Key, Count = g.Count() })
-            //        .OrderBy(g => g.Name)
-            //        .ToList();
-
-            //    var equipmentOptions = groups
-            //        .Select(g => $"{g.Name} ({g.Count} available)")
-            //        .ToArray();
-
-            //    var selectedEquipment = await Shell.Current.DisplayActionSheet(
-            //        "Select Equipment to Bring",
-            //        "Cancel", null,
-            //        equipmentOptions);
-
-            //    if (selectedEquipment == null || selectedEquipment == "Cancel")
-            //        return;
-
-            //    var equipmentName = groups
-            //        .FirstOrDefault(g =>
-            //            $"{g.Name} ({g.Count} available)" == selectedEquipment)
-            //        ?.Name;
-
-            //    if (equipmentName == null) return;
-
-            //    // Step 2: pick which worker on this project gets it
-            //    var workerKeys = await _firebase
-            //        .GetProjectWorkerKeysAsync(ProjectId);
-
-            //    var allUsers = await _firebase.GetAllUsersAsync();
-
-            //    var workers = allUsers
-            //        .Where(u =>
-            //            u.Role == "Worker" &&
-            //            u.AccountStatus == "Approved" &&
-            //            workerKeys.Contains(u.UniqueKey))
-            //        .ToList();
-
-            //    if (workers.Count == 0)
-            //    {
-            //        await Shell.Current.DisplayAlert(
-            //            "No Workers",
-            //            "Assign workers to this project first.",
-            //            "OK");
-            //        return;
-            //    }
-
-            //    var workerNames = workers.Select(w => w.FullName).ToArray();
-
-            //    var selectedWorkerName = await Shell.Current.DisplayActionSheet(
-            //        $"Assign {equipmentName} to:",
-            //        "Cancel", null,
-            //        workerNames);
-
-            //    if (selectedWorkerName == null || selectedWorkerName == "Cancel")
-            //        return;
-
-            //    var worker = workers.FirstOrDefault(
-            //        w => w.FullName == selectedWorkerName);
-
-            //    if (worker is null) return;
-
-            //    // Step 3: system auto-picks ANY available unit of that equipment type
-            //    var tool = available.FirstOrDefault(
-            //        t => t.ToolName == equipmentName);
-
-            //    if (tool is null)
-            //    {
-            //        await Shell.Current.DisplayAlert(
-            //            "Unavailable",
-            //            $"No units of {equipmentName} are available anymore. " +
-            //            $"Please try again.",
-            //            "OK");
-            //        return;
-            //    }
-
-            //    // Step 4: deploy to project + pre-assign to worker, in one go
-            //    await _firebase.DeployToolToProjectAsync(ProjectId, tool.ToolId);
-            //    tool.ProjectId = ProjectId;
-            //    await _firebase.UpdateToolAsync(tool);
-
-            //    await _firebase.PreAssignToolAsync(
-            //        tool.ToolId,
-            //        tool.ToolName,
-            //        worker.UniqueKey,
-            //        worker.FullName,
-            //        ProjectId,
-            //        Project?.ProjectName ?? string.Empty,
-            //        _auth.CurrentUser?.FullName ?? "Project Engineer");
-
-            //    await Shell.Current.DisplayAlert(
-            //        "✅ Equipment Assigned",
-            //        $"{tool.ToolName} ({tool.ToolId}) has been brought to " +
-            //        $"{Project?.ProjectName} and assigned to {worker.FullName}.\n\n" +
-            //        $"The Equipment ID will show once {worker.FullName} confirms receipt.",
-            //        "OK");
-
-            //    await LoadAsync();
-            //}
-            //catch (Exception ex)
-            //{
-            //    await Shell.Current.DisplayAlert(
-            //        "Error",
-            //        $"Could not assign equipment.\n{ex.Message}",
-            //        "OK");
-            //}
+                $"{nameof(QrScannerView)}" +
+                $"?mode=AssignEquipment" +
+                $"&projectId={ProjectId}");
         }
     }
 }

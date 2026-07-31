@@ -62,6 +62,7 @@ namespace StockGuard.ViewModels
                 OnPropertyChanged(nameof(IsBorrowed));
                 OnPropertyChanged(nameof(IsAvailable));
                 OnPropertyChanged(nameof(IsDamaged));
+                OnPropertyChanged(nameof(CanAssignWorker));
             }
         }
 
@@ -137,15 +138,21 @@ namespace StockGuard.ViewModels
         public ICommand GoBackCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ToggleThemeCommand { get; }
+        public ICommand AssignWorkerCommand { get; }   // ← NEW command
 
         // ── Constructor ───────────────────────────────────────────────────────
+
+
         public AdminToolDetailsViewModel(
             FirebaseService firebase,
-            ThemeService theme)
+            ThemeService theme,
+            AuthService auth)
         {
             _firebase = firebase;
             _theme = theme;
             Title = "Tool Details";
+            _auth = auth;                   // ← ADD this line
+
 
             _theme.ThemeChanged += _ =>
                 MainThread.BeginInvokeOnMainThread(() =>
@@ -157,6 +164,8 @@ namespace StockGuard.ViewModels
                 async () => await LoadAsync());
             ToggleThemeCommand = new Command(
                 () => _theme.Toggle());
+            AssignWorkerCommand = new Command(              // ← ADD this
+                async () => await AssignWorkerAsync(), () => !IsBusy);
         }
 
         // ── Load ──────────────────────────────────────────────────────────────
@@ -211,5 +220,30 @@ namespace StockGuard.ViewModels
                 IsLoading = false;
             }
         }
+
+        private readonly AuthService _auth;   // ← NEW field
+
+        // ── Assign Worker gating ────────────────────────────────────────────────
+        public bool CanAssignWorker =>
+            Tool != null &&
+            !string.IsNullOrEmpty(Tool.ProjectId) &&
+            Tool.IsAvailable &&
+            _auth.CurrentUser?.Role == "Project Engineer";
+
+        private async Task AssignWorkerAsync()
+        {
+            if (Tool is null || IsBusy) return;
+            IsBusy = true;
+            try
+            {
+                bool assigned = await WorkerAssignmentHelper.AssignToolToWorkerViaPickerAsync(
+                    _firebase, _auth, Tool, Tool.ProjectId);
+
+                if (assigned)
+                    await LoadAsync();
+            }
+            finally { IsBusy = false; }
+        }
+
     }
 }

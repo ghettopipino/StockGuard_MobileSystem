@@ -163,7 +163,6 @@ namespace StockGuard.ViewModels
         public ICommand ToggleThemeCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand RefreshCommand { get; }
-        public ICommand ScanQrCommand { get; }
         public ICommand ViewAllToolsCommand { get; }
         public ICommand ViewDamageReportsCommand { get; }
         public ICommand ViewWorkersCommand { get; }
@@ -173,6 +172,7 @@ namespace StockGuard.ViewModels
         public ICommand ViewPauseRequestsCommand { get; }
         public ICommand LoadMoreBorrowedCommand { get; }
         public ICommand LoadMoreWorkersCommand { get; }
+        public ICommand ScanQrCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────────────────
         public PEDashboardViewModel(

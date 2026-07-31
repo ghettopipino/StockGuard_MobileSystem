@@ -155,10 +155,10 @@
                            CharacterSpacing="2"
                            Margin="12,0,0,6"/>-->
 
-                    <Button x:Name="BtnDashboard"
+                    <!--<Button x:Name="BtnDashboard"
                             Text="🏠  Dashboard"
                             Clicked="OnDashboardClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>
+                            Style="{StaticResource FlyoutItemStyle}"/>-->
 
                     <!-- ▌SECTION: Operations ────────────────────── -->
                     <Label Text="OPERATIONS"

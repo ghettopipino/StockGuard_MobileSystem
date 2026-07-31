@@ -221,6 +221,15 @@
                     </Frame>
 
                     <!-- ── STATUS BANNERS ──────────────────── -->
+                             <!--NEW ADDED-->
+                    <Button IsVisible="{Binding CanAssignWorker}"
+                            Text="👷  Assign to Worker"
+                            Command="{Binding AssignWorkerCommand}"
+                            BackgroundColor="{DynamicResource Blue}"
+                            TextColor="White"
+                            FontSize="14" FontAttributes="Bold"
+                            CornerRadius="12" HeightRequest="48"/>
+                    
                     <!-- Damaged warning -->
                     <Frame IsVisible="{Binding IsDamaged}"
                            BackgroundColor="{DynamicResource RedBg}"

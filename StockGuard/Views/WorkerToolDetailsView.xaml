@@ -195,7 +195,7 @@
                     </Frame>
 
                     <!-- ── QR CODE ─────────────────────────── -->
-                    <!--<Frame BackgroundColor="{DynamicResource BgCard}"
+                    <Frame BackgroundColor="{DynamicResource BgCard}"
                            BorderColor="{DynamicResource BorderColor}"
                            CornerRadius="16" Padding="0" HasShadow="False"
                            IsVisible="{Binding IsNotLoading}">
@@ -233,7 +233,7 @@
                         </VerticalStackLayout>
                     </Frame>
 
-                    --><!-- ── ACTIONS ─────────────────────────── --><!--
+                     <!--── ACTIONS ───────────────────────────--> 
                     <Label Text="Available Actions"
                            FontSize="15" FontAttributes="Bold"
                            TextColor="{DynamicResource Text1}"
@@ -260,6 +260,14 @@
                                 Command="{Binding ConfirmReceiptCommand}"
                                 BackgroundColor="{DynamicResource Blue}"
                                 TextColor="White"
+                                FontSize="14" FontAttributes="Bold"
+                                CornerRadius="12" HeightRequest="50"/>
+
+                        <Button IsVisible="{Binding ShowDeclineReceipt}"
+                                Text="❌  Decline"
+                                Command="{Binding DeclineCommand}"
+                                BackgroundColor="{DynamicResource BgElevated}"
+                                TextColor="{DynamicResource Red}"
                                 FontSize="14" FontAttributes="Bold"
                                 CornerRadius="12" HeightRequest="50"/>
 
@@ -356,7 +364,7 @@
                         <Label Text="🔨  This tool is currently under repair."
                                FontSize="12" TextColor="{DynamicResource Amber}"
                                HorizontalTextAlignment="Center"/>
-                    </Frame>-->
+                    </Frame>
 
                 </VerticalStackLayout>
             </VerticalStackLayout>
