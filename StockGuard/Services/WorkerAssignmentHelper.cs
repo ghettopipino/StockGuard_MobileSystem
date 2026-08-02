@@ -68,6 +68,39 @@ namespace StockGuard.Services
             else
             {
                 project = projects.FirstOrDefault(p => p.ProjectId == tool.ProjectId);
+
+                // Stale/dead reference — project was completed or deleted
+                // after this tool was deployed to it. Treat as undeployed.
+                if (project is null || project.Status == "Completed")
+                {
+                    var eligible = projects
+                        .Where(p => p.Status != "Completed")
+                        .ToList();
+
+                    if (eligible.Count == 0)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "No Projects",
+                            "Create a project first before deploying equipment.",
+                            "OK");
+                        return false;
+                    }
+
+                    var projectNames = eligible.Select(p => p.ProjectName).ToArray();
+                    var selectedProjectName = await Shell.Current.DisplayActionSheet(
+                        $"{tool.ToolName} ({tool.ToolId}) is not on an active project. Deploy to which project?",
+                        "Cancel", null, projectNames);
+
+                    if (selectedProjectName == null || selectedProjectName == "Cancel")
+                        return false;
+
+                    project = eligible.FirstOrDefault(p => p.ProjectName == selectedProjectName);
+                    if (project is null) return false;
+
+                    await firebase.DeployToolToProjectAsync(project.ProjectId, tool.ToolId);
+                    tool.ProjectId = project.ProjectId;
+                    await firebase.UpdateToolAsync(tool);
+                }
             }
 
             var targetProjectId = tool.ProjectId;

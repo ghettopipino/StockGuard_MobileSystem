@@ -433,7 +433,7 @@ namespace StockGuard.ViewModels
                 var workerId = currentUser.UniqueKey;
 
                 // ── Parallel fetch ─────────────────────────────────
-                var projectTask = _firebase.GetActiveProjectAsync();
+                var projectTask = _firebase.GetProjectForWorkerAsync(workerId);
                 var toolsTask = _firebase.GetToolsByWorkerAsync(workerId);
                 var requestsTask = _firebase.GetAllBorrowRequestsRawAsync();
                 var transfersTask = _firebase.GetAllTransferRequestsRawAsync();
@@ -456,6 +456,7 @@ namespace StockGuard.ViewModels
 
                 // ── Active project + deployment ────────────────────
                 ActiveProject = activeProject;
+                IsDeployed = activeProject != null;
 
                 if (activeProject != null)
                 {

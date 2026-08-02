@@ -1105,5 +1105,41 @@ namespace StockGuard.Services
             }
             catch { return false; }
         }
+
+        // ── PROJECT LOOKUP BY WORKER ──────────────────────────────────────────
+
+        /// <summary>
+        /// Finds the project this worker is actually deployed to (via
+        /// projectWorkers membership), preferring an Active project over a
+        /// Paused one if the worker somehow belongs to more than one.
+        /// Returns null if the worker isn't deployed to any non-completed project.
+        /// </summary>
+        public async Task<Project?> GetProjectForWorkerAsync(string workerId)
+        {
+            try
+            {
+                var projects = await GetAllProjectsAsync(); // already excludes IsDeleted
+                var candidates = projects
+                    .Where(p => p.Status != "Completed")
+                    .ToList();
+
+                Project? found = null;
+
+                foreach (var project in candidates)
+                {
+                    var workerKeys = await GetProjectWorkerKeysAsync(project.ProjectId);
+                    if (!workerKeys.Contains(workerId)) continue;
+
+                    if (project.Status == "Active")
+                        return project; // best match, stop immediately
+
+                    found ??= project; // keep first Paused match as fallback
+                }
+
+                return found;
+            }
+            catch { return null; }
+        }
+
     }
 }
