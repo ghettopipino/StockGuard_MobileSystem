@@ -318,14 +318,7 @@ namespace StockGuard.ViewModels
                             .DeployToolToProjectAsync(
                                 ProjectId, item.Id);
 
-                        var tool = await _firebase
-                            .GetToolByIdAsync(item.Id);
-
-                        if (tool != null)
-                        {
-                            tool.ProjectId = ProjectId;
-                            await _firebase.UpdateToolAsync(tool);
-                        }
+                       
                     }
 
                     await Shell.Current.DisplayAlert(

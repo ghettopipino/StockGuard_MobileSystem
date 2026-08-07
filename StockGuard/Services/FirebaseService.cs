@@ -983,7 +983,7 @@ namespace StockGuard.Services
 
         // ── PRE-ASSIGNMENTS ───────────────────────────────────────────────────
 
-        public async Task<string> PreAssignToolAsync(
+        public async Task<bool> BorrowToolForProjectAsync(
     string toolId, string toolName,
     string workerId, string workerName,
     string projectId, string projectName,
@@ -991,7 +991,18 @@ namespace StockGuard.Services
         {
             try
             {
-                var preAssign = new PreAssignment
+                var tool = await GetToolByIdAsync(toolId);
+                if (tool == null || tool.Status != "Available") return false;
+
+                tool.Status = "Borrowed";
+                tool.AssignedWorkerId = workerId;
+                tool.AssignedWorkerName = workerName;
+                tool.BorrowDate = DateTime.Now;
+                tool.BorrowedProjectId = projectId;
+                tool.BorrowedProjectName = projectName;
+                await UpdateToolAsync(tool);
+
+                await LogTransactionAsync(new TransactionLog
                 {
                     ToolId = toolId,
                     ToolName = toolName,
@@ -999,23 +1010,15 @@ namespace StockGuard.Services
                     WorkerName = workerName,
                     ProjectId = projectId,
                     ProjectName = projectName,
-                    AssignedByName = assignedByName,
-                    Status = "Pending",
-                    DateCreated = DateTime.Now
-                };
+                    Action = "Borrowed",
+                    Description = $"Distributed by {assignedByName}",
+                    Condition = tool.Condition,
+                    Date = DateTime.Now
+                });
 
-                var result = await _client
-                    .Child("preAssignments")
-                    .PostAsync(preAssign);
-
-                return result.Key;
+                return true;
             }
-            catch (Exception ex)
-            {
-                System.Diagnostics.Debug.WriteLine(
-                    $"PreAssignToolAsync error: {ex.Message}");
-                return string.Empty;
-            }
+            catch { return false; }
         }
 
         public async Task<List<PreAssignmentResult>> GetPendingAssignmentsForWorkerAsync(
@@ -1139,6 +1142,47 @@ namespace StockGuard.Services
                 return found;
             }
             catch { return null; }
+        }
+
+        // ── PROJECT EQUIPMENT REQUIREMENTS ────────────────────────────────────
+        public async Task<bool> SetProjectEquipmentRequirementAsync(
+            string projectId, string catalogId, string catalogName, int quantity)
+        {
+            try
+            {
+                await _client.Child("projectEquipment").Child(projectId).Child(catalogId)
+                    .PutAsync(new ProjectEquipmentRequirement
+                    {
+                        ProjectId = projectId,
+                        CatalogId = catalogId,
+                        CatalogName = catalogName,
+                        QuantityNeeded = quantity
+                    });
+                return true;
+            }
+            catch { return false; }
+        }
+
+        public async Task<List<ProjectEquipmentRequirement>> GetProjectEquipmentRequirementsAsync(string projectId)
+        {
+            try
+            {
+                var result = await _client.Child("projectEquipment").Child(projectId)
+                    .OnceAsync<ProjectEquipmentRequirement>();
+                return result?.Where(r => r.Object != null).Select(r => r.Object).ToList()
+                    ?? new List<ProjectEquipmentRequirement>();
+            }
+            catch { return new List<ProjectEquipmentRequirement>(); }
+        }
+
+        public async Task<bool> RemoveProjectEquipmentRequirementAsync(string projectId, string catalogId)
+        {
+            try
+            {
+                await _client.Child("projectEquipment").Child(projectId).Child(catalogId).DeleteAsync();
+                return true;
+            }
+            catch { return false; }
         }
 
     }

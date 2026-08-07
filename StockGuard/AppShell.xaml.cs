@@ -25,9 +25,9 @@ public partial class AppShell : Shell
 
         _navButtons = new[]
         {
-            //BtnDashboard,
+            BtnDashboard,
             BtnProjects,     BtnCatalog,
-            BtnTools,     BtnWorkers      //BtnPause,
+            BtnTools,     BtnWorkers,      BtnPause
             //BtnDamage,    BtnTransactions, BtnAnalytics
         };
 
@@ -103,8 +103,8 @@ public partial class AppShell : Shell
     }
 
     // ── Flyout handlers ───────────────────────────────────────────────────────
-    //private async void OnDashboardClicked(object s, EventArgs e)
-    //    => await NavigateTo("//PEDashboardView", BtnDashboard);
+    private async void OnDashboardClicked(object s, EventArgs e)
+        => await NavigateTo("//PEDashboardView", BtnDashboard);
 
     private async void OnProjectsClicked(object s, EventArgs e)
         => await NavigateTo("//ProjectManagementView", BtnProjects);
@@ -118,8 +118,8 @@ public partial class AppShell : Shell
     private async void OnWorkersClicked(object s, EventArgs e)
         => await NavigateTo("//WorkerManagementView", BtnWorkers);
 
-    //private async void OnPauseClicked(object s, EventArgs e)
-    //    => await NavigateTo("//PauseRequestsView", BtnPause);
+    private async void OnPauseClicked(object s, EventArgs e)
+        => await NavigateTo("//PauseRequestsView", BtnPause);
 
     //private async void OnDamageClicked(object s, EventArgs e)
     //    => await NavigateTo("//DamageReportsView", BtnDamage);

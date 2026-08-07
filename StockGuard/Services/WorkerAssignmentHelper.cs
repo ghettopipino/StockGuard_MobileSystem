@@ -6,9 +6,8 @@ namespace StockGuard.Services
 {
     /// <summary>
     /// Single source of truth for "PE picks a worker on this project and
-    /// pre-assigns a tool to them." Used by QrScannerView (scan-to-assign),
-    /// AdminToolDetailsViewModel (assign from tool details), and can replace
-    /// the old per-tool picker in ProjectDetailsViewModel.
+    /// borrows a tool for them." Used by QrScannerView (scan-to-assign)
+    /// and AdminToolDetailsViewModel (assign from tool details).
     /// </summary>
     public static class WorkerAssignmentHelper
     {
@@ -16,11 +15,8 @@ namespace StockGuard.Services
             FirebaseService firebase,
             AuthService auth,
             Tool tool,
-            string projectId)   // kept for signature compatibility; no longer required
+            string projectId)
         {
-            System.Diagnostics.Debug.WriteLine(
-       $"[AssignHelper] ToolId={tool.ToolId} ProjectId='{tool.ProjectId}' Status={tool.Status}");
-
             if (tool.Status != "Available")
             {
                 await Shell.Current.DisplayAlert(
@@ -31,82 +27,29 @@ namespace StockGuard.Services
                 return false;
             }
 
-            // ── Step 1: which project? ──────────────────────────────
+            if (string.IsNullOrEmpty(projectId))
+            {
+                await Shell.Current.DisplayAlert(
+                    "No Project",
+                    "This action needs a project context to assign equipment to.",
+                    "OK");
+                return false;
+            }
+
             var projects = await firebase.GetAllProjectsAsync();
-            Project? project;
+            var project = projects.FirstOrDefault(p => p.ProjectId == projectId);
 
-            if (string.IsNullOrEmpty(tool.ProjectId))
+            if (project is null || project.Status == "Completed")
             {
-                var eligible = projects
-                    .Where(p => p.Status != "Completed")
-                    .ToList();
-
-                if (eligible.Count == 0)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "No Projects",
-                        "Create a project first before deploying equipment.",
-                        "OK");
-                    return false;
-                }
-
-                var projectNames = eligible.Select(p => p.ProjectName).ToArray();
-                var selectedProjectName = await Shell.Current.DisplayActionSheet(
-                    $"Deploy {tool.ToolName} ({tool.ToolId}) to which project?",
-                    "Cancel", null, projectNames);
-
-                if (selectedProjectName == null || selectedProjectName == "Cancel")
-                    return false;
-
-                project = eligible.FirstOrDefault(p => p.ProjectName == selectedProjectName);
-                if (project is null) return false;
-
-                await firebase.DeployToolToProjectAsync(project.ProjectId, tool.ToolId);
-                tool.ProjectId = project.ProjectId;
-                await firebase.UpdateToolAsync(tool);
-            }
-            else
-            {
-                project = projects.FirstOrDefault(p => p.ProjectId == tool.ProjectId);
-
-                // Stale/dead reference — project was completed or deleted
-                // after this tool was deployed to it. Treat as undeployed.
-                if (project is null || project.Status == "Completed")
-                {
-                    var eligible = projects
-                        .Where(p => p.Status != "Completed")
-                        .ToList();
-
-                    if (eligible.Count == 0)
-                    {
-                        await Shell.Current.DisplayAlert(
-                            "No Projects",
-                            "Create a project first before deploying equipment.",
-                            "OK");
-                        return false;
-                    }
-
-                    var projectNames = eligible.Select(p => p.ProjectName).ToArray();
-                    var selectedProjectName = await Shell.Current.DisplayActionSheet(
-                        $"{tool.ToolName} ({tool.ToolId}) is not on an active project. Deploy to which project?",
-                        "Cancel", null, projectNames);
-
-                    if (selectedProjectName == null || selectedProjectName == "Cancel")
-                        return false;
-
-                    project = eligible.FirstOrDefault(p => p.ProjectName == selectedProjectName);
-                    if (project is null) return false;
-
-                    await firebase.DeployToolToProjectAsync(project.ProjectId, tool.ToolId);
-                    tool.ProjectId = project.ProjectId;
-                    await firebase.UpdateToolAsync(tool);
-                }
+                await Shell.Current.DisplayAlert(
+                    "Invalid Project",
+                    "This project is no longer active.",
+                    "OK");
+                return false;
             }
 
-            var targetProjectId = tool.ProjectId;
-
-            // ── Step 2: does that project have workers? ─────────────
-            var workerKeys = await firebase.GetProjectWorkerKeysAsync(targetProjectId);
+            // ── Which worker on this project? ────────────────────────
+            var workerKeys = await firebase.GetProjectWorkerKeysAsync(projectId);
             var allUsers = await firebase.GetAllUsersAsync();
 
             var workers = allUsers
@@ -120,13 +63,12 @@ namespace StockGuard.Services
             {
                 await Shell.Current.DisplayAlert(
                     "No Workers on Project",
-                    $"{project?.ProjectName ?? "This project"} has no workers assigned yet.\n\n" +
-                    $"Assign workers to the project before deploying equipment.",
+                    $"{project.ProjectName} has no workers assigned yet.\n\n" +
+                    $"Assign workers to the project first.",
                     "OK");
                 return false;
             }
 
-            // ── Step 3: which worker? ────────────────────────────────
             var workerNames = workers.Select(w => w.FullName).ToArray();
             var selectedWorkerName = await Shell.Current.DisplayActionSheet(
                 $"Assign {tool.ToolName} ({tool.ToolId}) to:",
@@ -138,25 +80,30 @@ namespace StockGuard.Services
             var worker = workers.FirstOrDefault(w => w.FullName == selectedWorkerName);
             if (worker is null) return false;
 
-            await firebase.PreAssignToolAsync(
-                tool.ToolId,
-                tool.ToolName,
-                worker.UniqueKey,
-                worker.FullName,
-                targetProjectId,
-                project?.ProjectName ?? string.Empty,
+            // ── Borrow directly — no pending step ────────────────────
+            bool success = await firebase.BorrowToolForProjectAsync(
+                tool.ToolId, tool.ToolName,
+                worker.UniqueKey, worker.FullName,
+                projectId, project.ProjectName,
                 auth.CurrentUser?.FullName ?? "Project Engineer");
+
+            if (!success)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    $"Could not assign {tool.ToolName} — it may have just " +
+                    $"been borrowed by someone else.",
+                    "OK");
+                return false;
+            }
 
             await Shell.Current.DisplayAlert(
                 "✅ Equipment Assigned",
                 $"{tool.ToolName} ({tool.ToolId}) assigned to {worker.FullName} " +
-                $"on {project?.ProjectName}.\n\nThey'll see it in Pending Assignments to accept or decline.",
+                $"on {project.ProjectName}.",
                 "OK");
 
             return true;
         }
-
-
     }
-
 }

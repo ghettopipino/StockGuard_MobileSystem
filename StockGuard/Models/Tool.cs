@@ -19,8 +19,13 @@ namespace StockGuard.Models
         public string QrCode { get; set; } = string.Empty;
         public DateTime? BorrowDate { get; set; }
         public bool IsDeleted { get; set; } = false;
-        [JsonProperty("projectId")]
-        public string ProjectId { get; set; } = string.Empty;
+
+
+        [JsonProperty("borrowedProjectId")]
+        public string BorrowedProjectId { get; set; } = string.Empty;
+
+        [JsonProperty("borrowedProjectName")]
+        public string BorrowedProjectName { get; set; } = string.Empty;
         // Status helpers
         public bool IsDamaged => Status == "Damaged";
         public bool IsUnderRepair => Status == "UnderRepair";

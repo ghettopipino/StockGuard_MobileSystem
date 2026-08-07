@@ -155,10 +155,10 @@
                            CharacterSpacing="2"
                            Margin="12,0,0,6"/>-->
 
-                    <!--<Button x:Name="BtnDashboard"
+                    <Button x:Name="BtnDashboard"
                             Text="🏠  Dashboard"
                             Clicked="OnDashboardClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>-->
+                            Style="{StaticResource FlyoutItemStyle}"/>
 
                     <!-- ▌SECTION: Operations ────────────────────── -->
                     <Label Text="OPERATIONS"
@@ -214,7 +214,7 @@
                            Margin="12,16,0,6"/>-->
 
                     <!-- Pause Requests — with badge -->
-                    <!--<Grid>
+                    <Grid>
                         <Button x:Name="BtnPause"
                                 Text="⏸️  Pause Requests"
                                 Clicked="OnPauseClicked"
@@ -235,7 +235,7 @@
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center"/>
                         </Frame>
-                    </Grid>-->
+                    </Grid>
 
                     <!-- Damage Report — with badge --><!--
                     <Grid>

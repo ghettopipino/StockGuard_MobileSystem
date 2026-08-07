@@ -14,6 +14,12 @@ namespace StockGuard.Models
 
         [JsonProperty("toolId")]
         public string ToolId { get; set; } = string.Empty;
+       
+        [JsonProperty("projectId")]
+        public string ProjectId { get; set; } = string.Empty;
+
+        [JsonProperty("projectName")]
+        public string ProjectName { get; set; } = string.Empty;
 
         [JsonProperty("toolName")]
         public string ToolName { get; set; } = string.Empty;

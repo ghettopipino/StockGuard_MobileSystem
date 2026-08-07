@@ -225,6 +225,11 @@
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Blue}"
                                                     IsVisible="{Binding IsBorrowed}"/>
+                                                <Label
+                                                    Text="{Binding BorrowedProjectName, StringFormat='📍 {0}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"
+                                                    IsVisible="{Binding IsBorrowed}"/>
                                             </VerticalStackLayout>
 
                                             <Frame Grid.Column="2"

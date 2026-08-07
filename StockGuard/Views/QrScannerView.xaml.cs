@@ -7,6 +7,8 @@ namespace StockGuard.Views;
 
 [QueryProperty(nameof(Mode), "mode")]
 [QueryProperty(nameof(ProjectId), "projectId")]
+[QueryProperty(nameof(CatalogId), "catalogId")]
+
 public partial class QrScannerView : ContentPage
 {
     private readonly AuthService _auth;
@@ -17,6 +19,7 @@ public partial class QrScannerView : ContentPage
     // "AssignEquipment" = scan identifies a tool to deploy + pre-assign
     public string Mode { get; set; } = string.Empty;
     public string ProjectId { get; set; } = string.Empty;
+    public string CatalogId { get; set; } = string.Empty;
 
     public QrScannerView(AuthService auth, FirebaseService firebase)
     {
@@ -106,11 +109,12 @@ public partial class QrScannerView : ContentPage
             await HandleAssignEquipmentScan(toolId);
             return;
         }
-        if (Mode == "Deploy")                    // ← NEW
+        if (Mode == "Distribute")
         {
-            await HandleDeployScan(toolId);
+            await HandleDistributeScan(toolId);
             return;
         }
+      
 
         // ── Default: original scan-to-view-details behavior ────
         try
@@ -175,7 +179,94 @@ public partial class QrScannerView : ContentPage
             BarcodeReader.IsDetecting = true;
         }
     }
+    // NEW method — place it next to HandleAssignEquipmentScan
+    private async Task HandleDistributeScan(string toolId)
+    {
+        try
+        {
+            var allTools = await _firebase.GetAllToolsAsync();
+            var tool = allTools.FirstOrDefault(t => t.ToolId == toolId);
 
+            if (tool is null)
+            {
+                await DisplayAlert("Not Found", $"No tool found with ID {toolId}.", "OK");
+                return;
+            }
+
+            // Make sure the scanned unit is actually the equipment type
+            // the PE meant to distribute (e.g. scanned a drill by mistake
+            // while distributing welding machines).
+            if (tool.CatalogId != CatalogId)
+            {
+                await DisplayAlert("Wrong Equipment",
+                    $"{tool.ToolName} ({tool.ToolId}) doesn't match the " +
+                    $"equipment you're distributing.", "OK");
+                return;
+            }
+
+            if (tool.Status != "Available")
+            {
+                await DisplayAlert("Not Available",
+                    $"{tool.ToolName} ({tool.ToolId}) is currently {tool.Status}.", "OK");
+                return;
+            }
+
+            var workerKeys = await _firebase.GetProjectWorkerKeysAsync(ProjectId);
+            var allUsers = await _firebase.GetAllUsersAsync();
+
+            var workers = allUsers
+                .Where(u => u.Role == "Worker" &&
+                            u.AccountStatus == "Approved" &&
+                            workerKeys.Contains(u.UniqueKey))
+                .ToList();
+
+            if (workers.Count == 0)
+            {
+                await DisplayAlert("No Workers",
+                    "Assign workers to this project first.", "OK");
+                return;
+            }
+
+            var workerNames = workers.Select(w => w.FullName).ToArray();
+            var selectedWorkerName = await DisplayActionSheet(
+                $"Assign {tool.ToolName} ({tool.ToolId}) to:", "Cancel", null, workerNames);
+
+            if (selectedWorkerName == null || selectedWorkerName == "Cancel") return;
+
+            var worker = workers.FirstOrDefault(w => w.FullName == selectedWorkerName);
+            if (worker is null) return;
+
+            var projects = await _firebase.GetAllProjectsAsync();
+            var project = projects.FirstOrDefault(p => p.ProjectId == ProjectId);
+
+            bool success = await _firebase.BorrowToolForProjectAsync(
+                tool.ToolId, tool.ToolName, worker.UniqueKey, worker.FullName,
+                ProjectId, project?.ProjectName ?? string.Empty,
+                _auth.CurrentUser?.FullName ?? "Project Engineer");
+
+            if (!success)
+            {
+                await DisplayAlert("Error",
+                    $"Could not assign {tool.ToolName} — it may have just been " +
+                    $"borrowed by someone else.", "OK");
+                return;
+            }
+
+            await DisplayAlert("✅ Distributed",
+                $"{tool.ToolName} ({tool.ToolId}) assigned to {worker.FullName}.", "OK");
+
+            await Shell.Current.GoToAsync("..");
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert("Error", $"Could not distribute equipment.\n{ex.Message}", "OK");
+        }
+        finally
+        {
+            _isProcessing = false;
+            BarcodeReader.IsDetecting = true;
+        }
+    }
     //// ── Assign Equipment scan handling ──────────────────────────
     //private async Task HandleAssignEquipmentScan(string toolId)
     //{
@@ -289,59 +380,11 @@ public partial class QrScannerView : ContentPage
     //        _isProcessing = false;
     //        BarcodeReader.IsDetecting = true;
     //    }
-    
+
 
     private async void OnCloseClicked(object sender, EventArgs e)
         => await Shell.Current.GoToAsync("..");
 
 
-    // ── Deploy scan handling (PE only, bulk) ─────────────────────
-    private async Task HandleDeployScan(string toolId)
-    {
-        if (_auth.CurrentUser?.Role != "Project Engineer")
-        {
-            await DisplayAlert("Not Allowed",
-                "Only Project Engineers can deploy equipment.", "OK");
-            await Shell.Current.GoToAsync("..");
-            return;
-        }
-
-        try
-        {
-            var allTools = await _firebase.GetAllToolsAsync();
-            var tool = allTools.FirstOrDefault(t => t.ToolId == toolId);
-
-            if (tool is null)
-            {
-                await DisplayAlert("Not Found", $"No tool found with ID {toolId}.", "OK");
-                return;
-            }
-
-            if (tool.ProjectId == ProjectId)
-            {
-                await DisplayAlert("Already Deployed",
-                    $"{tool.ToolName} ({tool.ToolId}) is already on this project.", "OK");
-                return;
-            }
-
-            await _firebase.DeployToolToProjectAsync(ProjectId, tool.ToolId);
-            tool.ProjectId = ProjectId;
-            await _firebase.UpdateToolAsync(tool);
-
-            await DisplayAlert("✅ Deployed",
-                $"{tool.ToolName} ({tool.ToolId}) added to the project.\n\nKeep scanning to add more.", "OK");
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", $"Could not deploy tool.\n{ex.Message}", "OK");
-        }
-        finally
-        {
-            _isProcessing = false;
-            BarcodeReader.IsDetecting = true;   // ← stays on the scanner, unlike Assign mode
-     
-        }
-
-    }
 
 }
