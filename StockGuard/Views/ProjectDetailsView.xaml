@@ -1,4 +1,5 @@
 <?xml version="1.0" encoding="utf-8" ?>
+
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:StockGuard.ViewModels"
@@ -9,34 +10,56 @@
              BackgroundColor="{DynamicResource BgBase}">
 
     <ScrollView>
-        <VerticalStackLayout Padding="20,52,20,40" Spacing="16">
+        <VerticalStackLayout Padding="20,52,20,40"
+                             Spacing="16">
 
             <!-- Header -->
             <Grid ColumnDefinitions="Auto,*,Auto">
-                <Button Grid.Column="0" Text="←"
+
+                <Button Grid.Column="0"
+                        Text="←"
                         Command="{Binding GoBackCommand}"
                         BackgroundColor="Transparent"
                         TextColor="{DynamicResource Text2}"
                         FontSize="18"/>
-                <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                    <Label Text="{Binding ProjectName}" FontSize="16" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text1}" LineBreakMode="TailTruncation"/>
-                    <Label Text="{Binding Location}" FontSize="11" TextColor="{DynamicResource Text3}"/>
+
+                <VerticalStackLayout Grid.Column="1"
+                                     VerticalOptions="Center">
+
+                    <Label Text="{Binding ProjectName}"
+                           FontSize="16"
+                           FontAttributes="Bold"
+                           TextColor="{DynamicResource Text1}"
+                           LineBreakMode="TailTruncation"/>
+
+                    <Label Text="{Binding Location}"
+                           FontSize="11"
+                           TextColor="{DynamicResource Text3}"/>
+
                 </VerticalStackLayout>
-                <Button Grid.Column="2" Text="🔄"
+
+                <Button Grid.Column="2"
+                        Text="🔄"
                         Command="{Binding RefreshCommand}"
                         BackgroundColor="Transparent"
                         TextColor="{DynamicResource Text2}"
                         FontSize="16"/>
+
             </Grid>
+
 
             <!-- Project info -->
             <Border Stroke="{DynamicResource BorderColor}"
                     StrokeShape="RoundRectangle 10"
                     BackgroundColor="{DynamicResource BgCard}"
                     Padding="14">
+
                 <VerticalStackLayout Spacing="8">
-                    <Label FontSize="13" FontAttributes="Bold" TextColor="{Binding StatusColor}">
+
+                    <Label FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{Binding StatusColor}">
+
                         <Label.FormattedText>
                             <FormattedString>
                                 <Span Text="{Binding StatusIcon}"/>
@@ -44,148 +67,357 @@
                                 <Span Text="{Binding Status}"/>
                             </FormattedString>
                         </Label.FormattedText>
+
                     </Label>
 
-                    <Label FontSize="13" TextColor="{DynamicResource Text2}">
+
+                    <Label FontSize="13"
+                           TextColor="{DynamicResource Text2}">
+
                         <Label.FormattedText>
                             <FormattedString>
-                                <Span Text="{Binding WorkerCount}" FontAttributes="Bold" TextColor="{DynamicResource Blue}"/>
+
+                                <Span Text="{Binding WorkerCount}"
+                                      FontAttributes="Bold"
+                                      TextColor="{DynamicResource Blue}"/>
+
                                 <Span Text=" workers  ·  "/>
-                                <Span Text="{Binding ToolCount}" FontAttributes="Bold" TextColor="{DynamicResource Green}"/>
+
+                                <Span Text="{Binding ToolCount}"
+                                      FontAttributes="Bold"
+                                      TextColor="{DynamicResource Green}"/>
+
                                 <Span Text=" tools  ·  "/>
-                                <Span Text="{Binding BorrowedCount}" FontAttributes="Bold" TextColor="{DynamicResource Amber}"/>
+
+                                <Span Text="{Binding BorrowedCount}"
+                                      FontAttributes="Bold"
+                                      TextColor="{DynamicResource Amber}"/>
+
                                 <Span Text=" borrowed"/>
+
                             </FormattedString>
                         </Label.FormattedText>
+
                     </Label>
 
-                    <Label FontSize="12" TextColor="{DynamicResource Text3}">
+
+                    <Label FontSize="12"
+                           TextColor="{DynamicResource Text3}">
+
                         <Label.FormattedText>
                             <FormattedString>
+
                                 <Span Text="{Binding StartDateLabel}"/>
+
                                 <Span Text="  ·  "/>
+
                                 <Span Text="{Binding DurationLabel}"/>
+
                             </FormattedString>
                         </Label.FormattedText>
+
                     </Label>
+
                 </VerticalStackLayout>
             </Border>
+
 
             <ActivityIndicator IsRunning="{Binding IsBusy}"
                                IsVisible="{Binding IsBusy}"
                                Color="{DynamicResource Blue}"
                                HorizontalOptions="Center"/>
 
+
             <!-- Workers -->
             <Grid ColumnDefinitions="*,Auto">
-                <Label Grid.Column="0" Text="Assigned Workers" FontSize="15" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text1}" VerticalOptions="Center"/>
-                <Button Grid.Column="1" Text="Assign"
+
+                <Label Grid.Column="0"
+                       Text="Assigned Workers"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Text1}"
+                       VerticalOptions="Center"/>
+
+                <Button Grid.Column="1"
+                        Text="Assign"
                         Command="{Binding AssignWorkerCommand}"
                         BackgroundColor="{DynamicResource Blue}"
-                        TextColor="White" FontSize="12"
-                        HeightRequest="36" Padding="12,0"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="36"
+                        Padding="12,0"
                         IsVisible="{Binding IsActive}"/>
+
             </Grid>
+
 
             <Label Text="No workers assigned yet"
                    IsVisible="{Binding NoWorkers}"
-                   FontSize="13" TextColor="{DynamicResource Text3}"/>
+                   FontSize="13"
+                   TextColor="{DynamicResource Text3}"/>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding AssignedWorkers}" Spacing="8">
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding AssignedWorkers}"
+                                 Spacing="8">
+
                 <BindableLayout.ItemTemplate>
+
                     <DataTemplate x:DataType="models:User">
+
                         <Border Stroke="{DynamicResource BorderColor}"
                                 StrokeShape="RoundRectangle 10"
                                 BackgroundColor="{DynamicResource BgCard}"
                                 Padding="12">
+
                             <Grid ColumnDefinitions="*,Auto">
+
                                 <VerticalStackLayout Grid.Column="0">
-                                    <Label Text="{Binding FullName}" FontSize="14" FontAttributes="Bold"
+
+                                    <Label Text="{Binding FullName}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
                                            TextColor="{DynamicResource Text1}"/>
-                                    <Label Text="{Binding Email}" FontSize="11" TextColor="{DynamicResource Text3}"/>
+
+                                    <Label Text="{Binding Email}"
+                                           FontSize="11"
+                                           TextColor="{DynamicResource Text3}"/>
+
                                 </VerticalStackLayout>
-                                <Button Grid.Column="1" Text="Remove"
+
+
+                                <Button Grid.Column="1"
+                                        Text="Remove"
                                         CommandParameter="{Binding .}"
                                         Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}}, Path=RemoveWorkerCommand}"
                                         BackgroundColor="Transparent"
                                         TextColor="{DynamicResource Red}"
                                         FontSize="12"/>
+
                             </Grid>
+
                         </Border>
+
                     </DataTemplate>
+
                 </BindableLayout.ItemTemplate>
+
             </VerticalStackLayout>
+
+
             <!-- Equipment -->
-            <Grid ColumnDefinitions="*,Auto" Margin="0,10,0,0">
-                <Label Grid.Column="0" Text="Equipment" FontSize="15" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text1}" VerticalOptions="Center"/>
-                <Button Grid.Column="1" Text="+ Add Equipment"
+            <Grid ColumnDefinitions="*,Auto"
+                  Margin="0,10,0,0">
+
+                <Label Grid.Column="0"
+                       Text="Equipment"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Text1}"
+                       VerticalOptions="Center"/>
+
+                <Button Grid.Column="1"
+                        Text="+ Add Equipment"
                         Command="{Binding AddEquipmentCommand}"
                         BackgroundColor="{DynamicResource Blue}"
-                        TextColor="White" FontSize="12"
-                        HeightRequest="36" Padding="12,0"
+                        TextColor="White"
+                        FontSize="12"
+                        HeightRequest="36"
+                        Padding="12,0"
                         IsVisible="{Binding IsActive}"/>
+
             </Grid>
+
 
             <Label Text="No equipment added yet"
                    IsVisible="{Binding NoEquipment}"
-                   FontSize="13" TextColor="{DynamicResource Text3}"/>
+                   FontSize="13"
+                   TextColor="{DynamicResource Text3}"/>
+
 
             <!-- Table header -->
-            <Grid ColumnDefinitions="*,Auto,Auto" IsVisible="{Binding HasEquipment}" Margin="4,4,4,0">
-                <Label Grid.Column="0" Text="Equipment" FontSize="11" FontAttributes="Bold"
+            <Grid ColumnDefinitions="*,Auto,Auto"
+                  IsVisible="{Binding HasEquipment}"
+                  Margin="4,4,4,0">
+
+                <Label Grid.Column="0"
+                       Text="Equipment"
+                       FontSize="11"
+                       FontAttributes="Bold"
                        TextColor="{DynamicResource Text3}"/>
-                <Label Grid.Column="1" Text="Available" FontSize="11" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text3}" WidthRequest="70" HorizontalTextAlignment="Center"/>
-                <Label Grid.Column="2" Text="Borrowed" FontSize="11" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text3}" WidthRequest="70" HorizontalTextAlignment="Center"/>
+
+                <Label Grid.Column="1"
+                       Text="Available"
+                       FontSize="11"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Text3}"
+                       WidthRequest="70"
+                       HorizontalTextAlignment="Center"/>
+
+                <Label Grid.Column="2"
+                       Text="Borrowed"
+                       FontSize="11"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Text3}"
+                       WidthRequest="70"
+                       HorizontalTextAlignment="Center"/>
+
             </Grid>
 
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding EquipmentSummary}" Spacing="8">
+
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding EquipmentSummary}"
+                                 Spacing="8">
+
                 <BindableLayout.ItemTemplate>
+
                     <DataTemplate x:DataType="models:CatalogStockSummary">
+
                         <Border Stroke="{DynamicResource BorderColor}"
                                 StrokeShape="RoundRectangle 10"
                                 BackgroundColor="{DynamicResource BgCard}"
                                 Padding="12">
+
                             <VerticalStackLayout Spacing="8">
+
                                 <Grid ColumnDefinitions="*,Auto,Auto">
-                                    <Label Grid.Column="0" Text="{Binding CatalogName}"
-                                           FontSize="14" FontAttributes="Bold"
+
+                                    <Label Grid.Column="0"
+                                           Text="{Binding CatalogName}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
                                            TextColor="{DynamicResource Text1}"
                                            VerticalOptions="Center"/>
-                                    <Label Grid.Column="1" Text="{Binding AvailableCount}"
-                                           FontSize="15" FontAttributes="Bold"
+
+                                    <Label Grid.Column="1"
+                                           Text="{Binding AvailableCount}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
                                            TextColor="{DynamicResource Green}"
-                                           WidthRequest="70" HorizontalTextAlignment="Center"
+                                           WidthRequest="70"
+                                           HorizontalTextAlignment="Center"
                                            VerticalOptions="Center"/>
-                                    <Label Grid.Column="2" Text="{Binding BorrowedCount}"
-                                           FontSize="15" FontAttributes="Bold"
+
+                                    <Label Grid.Column="2"
+                                           Text="{Binding BorrowedCount}"
+                                           FontSize="15"
+                                           FontAttributes="Bold"
                                            TextColor="{DynamicResource Amber}"
-                                           WidthRequest="70" HorizontalTextAlignment="Center"
+                                           WidthRequest="70"
+                                           HorizontalTextAlignment="Center"
                                            VerticalOptions="Center"/>
+
                                 </Grid>
 
-                                <Grid ColumnDefinitions="*,Auto" ColumnSpacing="8">
-                                    <Button Grid.Column="0" Text="Distribute"
+
+                                <Grid ColumnDefinitions="*,Auto"
+                                      ColumnSpacing="8">
+
+                                    <Button Grid.Column="0"
+                                            Text="Distribute"
                                             CommandParameter="{Binding .}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}}, Path=DistributeCommand}"
                                             BackgroundColor="{DynamicResource Blue}"
-                                            TextColor="White" FontSize="12"
+                                            TextColor="White"
+                                            FontSize="12"
                                             HeightRequest="38"/>
-                                    <Button Grid.Column="1" Text="Remove"
+
+                                    <Button Grid.Column="1"
+                                            Text="Remove"
                                             CommandParameter="{Binding .}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}}, Path=RemoveEquipmentCommand}"
                                             BackgroundColor="Transparent"
                                             TextColor="{DynamicResource Red}"
                                             FontSize="12"/>
+
                                 </Grid>
+
                             </VerticalStackLayout>
+
                         </Border>
+
                     </DataTemplate>
+
                 </BindableLayout.ItemTemplate>
+
             </VerticalStackLayout>
+
+
+            <!-- ── ON HOLD EQUIPMENT RELEASE ───────────────── -->
+            <VerticalStackLayout IsVisible="{Binding ShowReleaseSection}"
+                                 Spacing="10"
+                                 Margin="0,14,0,0">
+
+                <Label Text="On Hold Equipment"
+                       FontSize="15"
+                       FontAttributes="Bold"
+                       TextColor="{DynamicResource Text1}"/>
+
+
+                <Label Text="These items remain under this completed project until physically verified and released."
+                       FontSize="11"
+                       TextColor="{DynamicResource Text3}"/>
+
+
+                <VerticalStackLayout BindableLayout.ItemsSource="{Binding OnHoldTools}"
+                                     Spacing="8">
+
+                    <BindableLayout.ItemTemplate>
+
+                        <DataTemplate x:DataType="models:Tool">
+
+                            <Border Stroke="{DynamicResource BorderColor}"
+                                    StrokeShape="RoundRectangle 10"
+                                    BackgroundColor="{DynamicResource BgCard}"
+                                    Padding="12">
+
+                                <VerticalStackLayout Spacing="6">
+
+                                    <Label Text="{Binding ToolName}"
+                                           FontSize="14"
+                                           FontAttributes="Bold"
+                                           TextColor="{DynamicResource Text1}"/>
+
+
+                                    <Label Text="{Binding ToolId}"
+                                           FontSize="11"
+                                           TextColor="{DynamicResource Text3}"/>
+
+
+                                    <Label Text="{Binding HoldProjectName, StringFormat='📁 Project: {0}'}"
+                                           FontSize="11"
+                                           TextColor="{DynamicResource Text2}"/>
+
+
+                                    <Label Text="{Binding HoldLocation, StringFormat='📍 Location: {0}'}"
+                                           FontSize="11"
+                                           TextColor="{DynamicResource Text2}"/>
+
+
+                                    <Label Text="{Binding LastBorrowerName, StringFormat='👤 Last borrower: {0}'}"
+                                           FontSize="11"
+                                           TextColor="{DynamicResource Blue}"/>
+
+
+                                    <Button Text="Release Equipment"
+                                            CommandParameter="{Binding .}"
+                                            Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}}, Path=ReleaseToolCommand}"
+                                            BackgroundColor="{DynamicResource Green}"
+                                            TextColor="White"
+                                            FontSize="12"
+                                            FontAttributes="Bold"
+                                            HeightRequest="40"/>
+
+                                </VerticalStackLayout>
+
+                            </Border>
+
+                        </DataTemplate>
+
+                    </BindableLayout.ItemTemplate>
+
+                </VerticalStackLayout>
+
+            </VerticalStackLayout>
+
         </VerticalStackLayout>
     </ScrollView>
 

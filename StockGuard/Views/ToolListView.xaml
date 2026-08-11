@@ -105,7 +105,7 @@
                                CornerRadius="14" Padding="0"
                                HasShadow="False">
                             <VerticalStackLayout
-                                Padding="10,12" Spacing="4"
+                                Padding="0,12" Spacing="4"
                                 HorizontalOptions="Center">
                                 <Label Text="{Binding AvailableCount}"
                                        FontSize="22"
@@ -125,7 +125,7 @@
                                CornerRadius="14" Padding="0"
                                HasShadow="False">
                             <VerticalStackLayout
-                                Padding="10,12" Spacing="4"
+                                Padding="0,12" Spacing="4"
                                 HorizontalOptions="Center">
                                 <Label Text="{Binding BorrowedCount}"
                                        FontSize="22"
@@ -142,20 +142,28 @@
                         <Frame Grid.Column="2"
                                BackgroundColor="{DynamicResource BgCard}"
                                BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14" Padding="0"
+                               CornerRadius="14"
+                               Padding="0"
                                HasShadow="False">
+
                             <VerticalStackLayout
-                                Padding="10,12" Spacing="4"
+                                Padding="0,12"
+                                Spacing="4"
                                 HorizontalOptions="Center">
-                                <Label Text="{Binding DamagedCount}"
-                                       FontSize="22"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Red}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="Damaged"
-                                       FontSize="10"
-                                       TextColor="{DynamicResource Text3}"
-                                       HorizontalOptions="Center"/>
+
+                                <Label
+                                Text="{Binding OnHoldCount}"
+                                FontSize="22"
+                                FontAttributes="Bold"
+                                TextColor="#8b5cf6"
+                                HorizontalOptions="Center"/>
+
+                                <Label
+                                Text="On Hold"
+                                FontSize="10"
+                                TextColor="{DynamicResource Text3}"
+                                HorizontalOptions="Center"/>
+
                             </VerticalStackLayout>
                         </Frame>
                     </Grid>
@@ -230,6 +238,27 @@
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Text3}"
                                                     IsVisible="{Binding IsBorrowed}"/>
+                                                <VerticalStackLayout
+                                                    IsVisible="{Binding IsOnHold}"
+                                                    Spacing="3"
+                                                    Margin="0,3,0,0">
+
+                                                    <Label
+                                                    Text="{Binding HoldProjectName, StringFormat='📁 Project: {0}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text2}"/>
+
+                                                    <Label
+                                                    Text="{Binding HoldLocation, StringFormat='📍 Location: {0}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+                                                    <Label
+                                                    Text="{Binding LastBorrowerName, StringFormat='👤 Last borrower: {0}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Blue}"/>
+
+                                                </VerticalStackLayout>
                                             </VerticalStackLayout>
 
                                             <Frame Grid.Column="2"

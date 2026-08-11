@@ -37,6 +37,10 @@ namespace StockGuard.Models
         public string ProjectName { get; set; }
             = string.Empty;
 
+        [JsonProperty("holdLocation")]
+        public string HoldLocation { get; set; } 
+            = string.Empty;
+
         [JsonProperty("reason")]
         public string Reason { get; set; }
             = string.Empty;

@@ -164,10 +164,11 @@ namespace StockGuard.ViewModels
         }
 
         private async Task ApproveAsync(
-            PauseRequestItem item)
+    PauseRequestItem item)
         {
             if (item is null || IsBusy) return;
 
+            // Step 1 — Confirm physical verification
             bool confirm =
                 await Shell.Current.DisplayAlert(
                     "✅ Approve Pause",
@@ -176,14 +177,59 @@ namespace StockGuard.ViewModels
                     $"({item.ToolId}) is in the " +
                     $"project site storage?\n\n" +
                     $"Worker: {item.WorkerName}",
-                    "Yes, Approve", "Cancel");
+                    "Yes, Continue",
+                    "Cancel");
 
             if (!confirm) return;
 
+            // Step 2 — Select storage location
+            string[] locations =
+            {
+        "Site Storage",
+        "Warehouse",
+        "Tool Room",
+        "Worker Area",
+        "Other"
+    };
+
+            string selectedLocation =
+                await Shell.Current.DisplayActionSheet(
+                    "📍 Where is the equipment located?",
+                    "Cancel",
+                    null,
+                    locations);
+
+            if (string.IsNullOrWhiteSpace(selectedLocation) ||
+                selectedLocation == "Cancel")
+                return;
+
+            // Step 3 — Custom location
+            if (selectedLocation == "Other")
+            {
+                selectedLocation =
+                    await Shell.Current.DisplayPromptAsync(
+                        "📍 Custom Location",
+                        "Enter the exact equipment location:",
+                        "Save",
+                        "Cancel",
+                        placeholder:
+                            "e.g. Warehouse B - Storage Room 2");
+
+                if (string.IsNullOrWhiteSpace(selectedLocation))
+                    return;
+
+                selectedLocation = selectedLocation.Trim();
+            }
+
             IsBusy = true;
+
             try
             {
                 var user = _auth.CurrentUser!;
+
+                // Save location to pause request
+                item.Request.HoldLocation =
+                    selectedLocation;
 
                 // Update pause request
                 item.Request.Status = "Approved";
@@ -191,15 +237,41 @@ namespace StockGuard.ViewModels
                 item.Request.ApprovedBy = user.FullName;
 
                 await _firebase.UpdatePauseRequestAsync(
-                    item.RequestKey, item.Request);
+                    item.RequestKey,
+                    item.Request);
 
-                // Update tool status to OnHold
+                // Update tool status
                 var tool = await _firebase
                     .GetToolByIdAsync(item.ToolId);
 
                 if (tool != null)
                 {
+                    // Save OnHold information directly to the tool
                     tool.Status = "OnHold";
+
+                    // Project holding the equipment
+                    tool.HoldProjectId = item.Request.ProjectId;
+                    tool.HoldProjectName = item.Request.ProjectName;
+
+                    // Exact physical location
+                    tool.HoldLocation = item.Request.HoldLocation;
+
+                    // Preserve the worker who last borrowed it
+                    tool.LastBorrowerId = item.Request.WorkerId;
+                    tool.LastBorrowerName = item.Request.WorkerName;
+
+                    // Record when it was placed on hold
+                    tool.HoldDate = DateTime.Now;
+
+                    // The worker is no longer actively borrowing it
+                    tool.AssignedWorkerId = string.Empty;
+                    tool.AssignedWorkerName = string.Empty;
+                    tool.BorrowDate = null;
+
+                    // The active borrowing project is no longer active custody
+                    tool.BorrowedProjectId = string.Empty;
+                    tool.BorrowedProjectName = string.Empty;
+
                     await _firebase.UpdateToolAsync(tool);
 
                     // Log transaction
@@ -214,7 +286,8 @@ namespace StockGuard.ViewModels
                             Description =
                                 $"Pause approved by " +
                                 $"{user.FullName}. " +
-                                $"Tool in site storage.",
+                                $"Tool stored at: " +
+                                $"{selectedLocation}.",
                             Condition = tool.Condition,
                             Date = DateTime.Now
                         });
@@ -222,15 +295,17 @@ namespace StockGuard.ViewModels
 
                 await Shell.Current.DisplayAlert(
                     "✅ Pause Approved",
-                    $"{item.ToolName} is now " +
-                    $"marked as On Hold.\n\n" +
-                    $"{item.WorkerName} can resume " +
-                    $"borrowing tomorrow.",
+                    $"{item.ToolName} is now On Hold.\n\n" +
+                    $"📍 Location: {selectedLocation}\n" +
+                    $"👤 Last borrower: {item.WorkerName}",
                     "OK");
 
                 await LoadAsync();
             }
-            finally { IsBusy = false; }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task RejectAsync(

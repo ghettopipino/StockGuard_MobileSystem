@@ -26,6 +26,23 @@ namespace StockGuard.Models
 
         [JsonProperty("borrowedProjectName")]
         public string BorrowedProjectName { get; set; } = string.Empty;
+        [JsonProperty("holdProjectId")]
+        public string HoldProjectId { get; set; } = string.Empty;
+
+        [JsonProperty("holdProjectName")]
+        public string HoldProjectName { get; set; } = string.Empty;
+
+        [JsonProperty("holdLocation")]
+        public string HoldLocation { get; set; } = string.Empty;
+
+        [JsonProperty("lastBorrowerId")]
+        public string LastBorrowerId { get; set; } = string.Empty;
+
+        [JsonProperty("lastBorrowerName")]
+        public string LastBorrowerName { get; set; } = string.Empty;
+
+        [JsonProperty("holdDate")]
+        public DateTime? HoldDate { get; set; }
         // Status helpers
         public bool IsDamaged => Status == "Damaged";
         public bool IsUnderRepair => Status == "UnderRepair";

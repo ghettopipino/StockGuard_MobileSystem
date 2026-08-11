@@ -360,42 +360,90 @@ namespace StockGuard.ViewModels
             try
             {
                 // Get all tools in project
+                // Get all tools in project
                 var toolIds = await _firebase
-                    .GetProjectToolIdsAsync(
-                        project.ProjectId);
+                    .GetProjectToolIdsAsync(project.ProjectId);
 
-                // Return all borrowed tools
                 foreach (var toolId in toolIds)
                 {
                     var tool = await _firebase
                         .GetToolByIdAsync(toolId);
 
-                    if (tool != null &&
-                        tool.Status == "Borrowed")
+                    if (tool == null)
+                        continue;
+
+                    // ── ON HOLD ─────────────────────────────────────
+                    // Do NOT release the equipment.
+                    // It stays under the completed project's custody
+                    // until the Project Engineer explicitly releases it.
+                    if (tool.Status == "OnHold")
                     {
-                        // Log return transaction
                         await _firebase.LogTransactionAsync(
                             new TransactionLog
                             {
                                 ToolId = tool.ToolId,
                                 ToolName = tool.ToolName,
-                                WorkerId =
-                                    tool.AssignedWorkerId,
-                                WorkerName =
-                                    tool.AssignedWorkerName,
-                                Action = "Returned",
+
+                                WorkerId = tool.LastBorrowerId,
+                                WorkerName = tool.LastBorrowerName,
+
+                                ProjectId = tool.HoldProjectId,
+                                ProjectName = tool.HoldProjectName,
+
+                                Action = "ProjectCompletedOnHold",
+
                                 Description =
-                                    $"Returned at project " +
-                                    $"completion: " +
-                                    $"{project.ProjectName}",
+                                    $"Project {project.ProjectName} completed. " +
+                                    $"Tool remains On Hold at {tool.HoldLocation}.",
+
                                 Condition = tool.Condition,
                                 Date = DateTime.Now
                             });
 
-                        // Return tool
+                        // IMPORTANT:
+                        // Do not clear HoldProjectId
+                        // Do not clear HoldProjectName
+                        // Do not clear HoldLocation
+                        // Do not clear LastBorrower
+                        // Do not change Status
+
+                        continue;
+                    }
+
+                    // ── BORROWED ────────────────────────────────────
+                    if (tool.Status == "Borrowed")
+                    {
+                        await _firebase.LogTransactionAsync(
+                            new TransactionLog
+                            {
+                                ToolId = tool.ToolId,
+                                ToolName = tool.ToolName,
+
+                                WorkerId = tool.AssignedWorkerId,
+                                WorkerName = tool.AssignedWorkerName,
+
+                                ProjectId = tool.BorrowedProjectId,
+                                ProjectName = tool.BorrowedProjectName,
+
+                                Action = "Returned",
+
+                                Description =
+                                    $"Returned at project completion: " +
+                                    $"{project.ProjectName}",
+
+                                Condition = tool.Condition,
+                                Date = DateTime.Now
+                            });
+
+                        // Return normally
                         tool.Status = "Available";
+
                         tool.AssignedWorkerId = string.Empty;
                         tool.AssignedWorkerName = string.Empty;
+
+                        tool.BorrowedProjectId = string.Empty;
+                        tool.BorrowedProjectName = string.Empty;
+
                         tool.BorrowDate = null;
 
                         await _firebase.UpdateToolAsync(tool);
@@ -408,12 +456,11 @@ namespace StockGuard.ViewModels
                 await _firebase.UpdateProjectAsync(project);
 
                 await Shell.Current.DisplayAlert(
-                    "✅ Project Completed",
-                    $"{project.ProjectName} has been " +
-                    $"marked as completed.\n\n" +
-                    $"All tools have been returned.",
-                    "OK");
-
+                     "✅ Project Completed",
+                     $"{project.ProjectName} has been marked as completed.\n\n" +
+                     $"Borrowed tools were returned.\n" +
+                     $"Equipment currently On Hold remains held until explicitly released.",
+                     "OK");
                 await LoadProjectsAsync();
 
                 // Navigate to analytics

@@ -470,7 +470,8 @@ namespace StockGuard.ViewModels
                 if (!confirm) return;
 
                 var user = _auth.CurrentUser!;
-                var activeProject = await _firebase.GetActiveProjectAsync();
+                var projectId = Tool.BorrowedProjectId;
+                var projectName = Tool.BorrowedProjectName;
 
                 var request = new PauseRequest
                 {
@@ -478,8 +479,8 @@ namespace StockGuard.ViewModels
                     ToolName = Tool.ToolName,
                     WorkerId = user.UniqueKey,
                     WorkerName = user.FullName,
-                    ProjectId = activeProject?.ProjectId ?? string.Empty,
-                    ProjectName = activeProject?.ProjectName ?? string.Empty,
+                    ProjectId = projectId,
+                    ProjectName = projectName,
                     Reason = reason.Trim(),
                     Status = "Pending",
                     RequestDate = DateTime.Now
@@ -579,6 +580,7 @@ namespace StockGuard.ViewModels
                 await Shell.Current.DisplayAlert("Declined",
                     $"You declined {toolName} ({toolId}).", "OK");
             }
+            //}
             finally { IsBusy = false; }
         }
     }

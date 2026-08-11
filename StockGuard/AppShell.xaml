@@ -285,10 +285,10 @@
                         </Frame>
                     </Grid>-->
 
-                    <!--<Button x:Name="BtnAnalytics"
+                    <Button x:Name="BtnAnalytics"
                             Text="📊  Analytics"
                             Clicked="OnAnalyticsClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>-->
+                            Style="{StaticResource FlyoutItemStyle}"/>
 
                 </VerticalStackLayout>
             </ScrollView>

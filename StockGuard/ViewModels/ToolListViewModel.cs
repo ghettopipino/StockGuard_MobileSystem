@@ -62,6 +62,13 @@ namespace StockGuard.ViewModels
             private set => SetProperty(ref _damagedCount, value);
         }
 
+        private int _onHoldCount;
+        public int OnHoldCount
+        {
+            get => _onHoldCount;
+            private set => SetProperty(ref _onHoldCount, value);
+        }
+
         public string ToolCountLabel => $"{Tools.Count} tools in catalog";
 
         // ── Collections ───────────────────────────────────────────────────────
@@ -113,6 +120,7 @@ namespace StockGuard.ViewModels
 
                 AvailableCount = tools.Count(t => t.Status == "Available");
                 BorrowedCount = tools.Count(t => t.Status == "Borrowed");
+                OnHoldCount = tools.Count(t => t.Status == "OnHold");
                 DamagedCount = tools.Count(t => t.Status is "Damaged" or "UnderRepair");
 
                 OnPropertyChanged(nameof(ToolCountLabel));

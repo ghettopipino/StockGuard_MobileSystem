@@ -49,6 +49,7 @@ namespace StockGuard.ViewModels
                 OnPropertyChanged(nameof(StartDateLabel));
                 OnPropertyChanged(nameof(DurationLabel));
                 OnPropertyChanged(nameof(IsActive));
+                OnPropertyChanged(nameof(ShowReleaseSection));
             }
         }
 
@@ -82,6 +83,10 @@ namespace StockGuard.ViewModels
         public ObservableCollection<CatalogStockSummary>
             EquipmentSummary
         { get; } = new();
+
+        // ── OnHold ────────────────────────────────────
+        public ObservableCollection<Tool>
+            OnHoldTools { get; } = new();
 
         // ── Stats ─────────────────────────────────────────────────
         private int _workerCount;
@@ -131,6 +136,16 @@ namespace StockGuard.ViewModels
         }
         public bool NoEquipment => !HasEquipment;
 
+        private bool _hasOnHoldTools;
+        public bool HasOnHoldTools
+        {
+            get => _hasOnHoldTools;
+            private set => SetProperty(ref _hasOnHoldTools, value);
+        }
+
+        public bool ShowReleaseSection =>
+            Project?.Status == "Completed" && HasOnHoldTools;
+
         // ── Commands ──────────────────────────────────────────────
         public ICommand GoBackCommand { get; }
         public ICommand ToggleThemeCommand { get; }
@@ -141,6 +156,7 @@ namespace StockGuard.ViewModels
         public ICommand AddEquipmentCommand { get; }
         public ICommand RemoveEquipmentCommand { get; }
         public ICommand DistributeCommand { get; }
+        public ICommand ReleaseToolCommand { get; }
 
         // ── Constructor ───────────────────────────────────────────
         public ProjectDetailsViewModel(
@@ -185,6 +201,9 @@ namespace StockGuard.ViewModels
 
             RemoveWorkerCommand = new Command<User>(
                 async u => await RemoveWorkerAsync(u));
+
+            ReleaseToolCommand = new Command<Tool>(
+                async tool => await ReleaseToolAsync(tool));
         }
 
         // ── Load Project Details ──────────────────────────────────
@@ -227,6 +246,23 @@ namespace StockGuard.ViewModels
                 // Load equipment summary (also sets ToolCount/BorrowedCount)
                 var allTools = await _firebase.GetAllToolsAsync();
                 await LoadEquipmentSummaryAsync(allTools, workerKeys);
+
+                OnHoldTools.Clear();
+
+                var heldTools = allTools
+                    .Where(t =>
+                        t.Status == "OnHold" &&
+                        t.HoldProjectId == ProjectId)
+                    .OrderBy(t => t.ToolId)
+                    .ToList();
+
+                foreach (var tool in heldTools)
+                    OnHoldTools.Add(tool);
+
+                HasOnHoldTools = OnHoldTools.Count > 0;
+
+                OnPropertyChanged(nameof(ShowReleaseSection));
+                
             }
             catch (Exception ex)
             {
@@ -550,6 +586,124 @@ namespace StockGuard.ViewModels
                 $"{tool.ToolName} ({tool.ToolId}) is now assigned to {worker.FullName}.", "OK");
 
             await LoadAsync();
+        }
+
+        private async Task ReleaseToolAsync(Tool tool)
+        {
+            if (tool is null || IsBusy)
+                return;
+
+            if (Project is null || Project.Status != "Completed")
+            {
+                await Shell.Current.DisplayAlert(
+                    "Cannot Release",
+                    "Equipment can only be released from a completed project.",
+                    "OK");
+
+                return;
+            }
+
+            if (!tool.IsOnHold)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Cannot Release",
+                    "Only equipment currently On Hold can be released.",
+                    "OK");
+
+                return;
+            }
+
+            bool confirm = await Shell.Current.DisplayAlert(
+                "Release Equipment",
+                $"Release {tool.ToolName} ({tool.ToolId})?\n\n" +
+                $"Project: {tool.HoldProjectName}\n" +
+                $"Location: {tool.HoldLocation}\n" +
+                $"Last Borrower: {tool.LastBorrowerName}\n\n" +
+                $"The equipment will become Available.",
+                "Release",
+                "Cancel");
+
+            if (!confirm)
+                return;
+
+            IsBusy = true;
+
+            try
+            {
+                var user = _auth.CurrentUser!;
+
+                // Save details before clearing them
+                var holdProjectId = tool.HoldProjectId;
+                var holdProjectName = tool.HoldProjectName;
+                var holdLocation = tool.HoldLocation;
+                var lastBorrowerId = tool.LastBorrowerId;
+                var lastBorrowerName = tool.LastBorrowerName;
+
+                // Release tool
+                tool.Status = "Available";
+
+                tool.HoldProjectId = string.Empty;
+                tool.HoldProjectName = string.Empty;
+                tool.HoldLocation = string.Empty;
+
+                tool.LastBorrowerId = string.Empty;
+                tool.LastBorrowerName = string.Empty;
+                tool.HoldDate = null;
+
+                tool.AssignedWorkerId = string.Empty;
+                tool.AssignedWorkerName = string.Empty;
+
+                tool.BorrowedProjectId = string.Empty;
+                tool.BorrowedProjectName = string.Empty;
+
+                tool.BorrowDate = null;
+
+                var success = await _firebase.UpdateToolAsync(tool);
+
+                if (!success)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Could not release the equipment.",
+                        "OK");
+
+                    return;
+                }
+
+                // Audit trail
+                await _firebase.LogTransactionAsync(
+                    new TransactionLog
+                    {
+                        ToolId = tool.ToolId,
+                        ToolName = tool.ToolName,
+
+                        WorkerId = lastBorrowerId,
+                        WorkerName = lastBorrowerName,
+
+                        ProjectId = holdProjectId,
+                        ProjectName = holdProjectName,
+
+                        Action = "Released",
+
+                        Description =
+                            $"Released from completed project by {user.FullName}. " +
+                            $"Previous hold location: {holdLocation}.",
+
+                        Condition = tool.Condition,
+                        Date = DateTime.Now
+                    });
+
+                await Shell.Current.DisplayAlert(
+                    "✅ Equipment Released",
+                    $"{tool.ToolName} ({tool.ToolId}) is now Available.",
+                    "OK");
+
+                await LoadAsync();
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
     }
 }

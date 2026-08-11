@@ -27,8 +27,9 @@ public partial class AppShell : Shell
         {
             BtnDashboard,
             BtnProjects,     BtnCatalog,
-            BtnTools,     BtnWorkers,      BtnPause
-            //BtnDamage,    BtnTransactions, BtnAnalytics
+            BtnTools,     BtnWorkers,      BtnPause, 
+            //BtnDamage,    BtnTransactions,
+            BtnAnalytics
         };
 
         //SetActive(BtnDashboard);
@@ -127,8 +128,8 @@ public partial class AppShell : Shell
     //private async void OnTransactionsClicked(object s, EventArgs e)
     //    => await NavigateTo("//TransactionHistoryView", BtnTransactions);
 
-    //private async void OnAnalyticsClicked(object s, EventArgs e)
-    //    => await NavigateTo("//ProjectAnalyticsView", BtnAnalytics);
+    private async void OnAnalyticsClicked(object s, EventArgs e)
+        => await NavigateTo("//ProjectAnalyticsView", BtnAnalytics);
 
     // ── Logout ────────────────────────────────────────────────────────────────
     private async void OnLogoutClicked(object s, EventArgs e)
