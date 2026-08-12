@@ -155,10 +155,10 @@
                            CharacterSpacing="2"
                            Margin="12,0,0,6"/>-->
 
-                    <Button x:Name="BtnDashboard"
+                    <!--<Button x:Name="BtnDashboard"
                             Text="🏠  Dashboard"
                             Clicked="OnDashboardClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>
+                            Style="{StaticResource FlyoutItemStyle}"/>-->
 
                     <!-- ▌SECTION: Operations ────────────────────── -->
                     <Label Text="OPERATIONS"
@@ -215,10 +215,10 @@
 
                     <!-- Pause Requests — with badge -->
                     <Grid>
-                        <Button x:Name="BtnPause"
+                        <!--<Button x:Name="BtnPause"
                                 Text="⏸️  Pause Requests"
                                 Clicked="OnPauseClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>
+                                Style="{StaticResource FlyoutItemStyle}"/>-->
                         <Frame IsVisible="{Binding PendingPause,
                                Converter={StaticResource IntToBoolConverter}}"
                                BackgroundColor="#ef4444"
@@ -285,10 +285,10 @@
                         </Frame>
                     </Grid>-->
 
-                    <Button x:Name="BtnAnalytics"
+                    <!--<Button x:Name="BtnAnalytics"
                             Text="📊  Analytics"
                             Clicked="OnAnalyticsClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>
+                            Style="{StaticResource FlyoutItemStyle}"/>-->
 
                 </VerticalStackLayout>
             </ScrollView>
@@ -302,7 +302,7 @@
                          Color="{DynamicResource BorderSoft}"
                          Margin="0,0,0,12"/>
 
-                <Button Text="🚪  Logout"
+                <Button Text="  Logout"
                         Clicked="OnLogoutClicked"
                         BackgroundColor="{DynamicResource RedBg}"
                         TextColor="{DynamicResource Red}"

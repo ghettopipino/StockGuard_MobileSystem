@@ -61,14 +61,14 @@
                             </VerticalStackLayout>
                             <!--amp; QR Codes-->
 
-                            <Button Grid.Column="2"
+                            <!--<Button Grid.Column="2"
                                     Text="{Binding ThemeIcon}"
                                     Command="{Binding ToggleThemeCommand}"
                                     BackgroundColor="{DynamicResource BgElevated}"
                                     TextColor="{DynamicResource Text2}"
                                     FontSize="16" CornerRadius="8"
                                     WidthRequest="40" HeightRequest="36"
-                                    Padding="0"/>
+                                    Padding="0"/>-->
 
                             <Button Grid.Column="3"
                                     Text="🔄"
@@ -90,7 +90,7 @@
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0"
                                    HasShadow="False">
-                                <VerticalStackLayout Padding="10,14" Spacing="4"
+                                <VerticalStackLayout Padding="0,14" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="🔧" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -109,7 +109,7 @@
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0"
                                    HasShadow="False">
-                                <VerticalStackLayout Padding="10,14" Spacing="4"
+                                <VerticalStackLayout Padding="0,14" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="✅" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -128,7 +128,7 @@
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0"
                                    HasShadow="False">
-                                <VerticalStackLayout Padding="10,14" Spacing="4"
+                                <VerticalStackLayout Padding="0,14" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="📦" FontSize="20"
                                            HorizontalOptions="Center"/>
