@@ -2,6 +2,7 @@
 using ZXing.Net.Maui.Controls;
 using StockGuard.Services;
 using StockGuard.Views;
+using StockGuard.Models;
 
 namespace StockGuard.Views;
 
@@ -184,82 +185,167 @@ public partial class QrScannerView : ContentPage
     {
         try
         {
-            var allTools = await _firebase.GetAllToolsAsync();
-            var tool = allTools.FirstOrDefault(t => t.ToolId == toolId);
+            // Get fresh tool data
+            var allTools = await _firebase.GetAllToolsAsync(
+                forceRefresh: true);
+
+            var tool = allTools.FirstOrDefault(
+                t => t.ToolId == toolId);
 
             if (tool is null)
             {
-                await DisplayAlert("Not Found", $"No tool found with ID {toolId}.", "OK");
+                await DisplayAlert(
+                    "Not Found",
+                    $"No tool found with ID {toolId}.",
+                    "OK");
+
                 return;
             }
 
-            // Make sure the scanned unit is actually the equipment type
-            // the PE meant to distribute (e.g. scanned a drill by mistake
-            // while distributing welding machines).
+            // Make sure scanned tool matches the catalog
+            // the PE is currently distributing
             if (tool.CatalogId != CatalogId)
             {
-                await DisplayAlert("Wrong Equipment",
-                    $"{tool.ToolName} ({tool.ToolId}) doesn't match the " +
-                    $"equipment you're distributing.", "OK");
+                await DisplayAlert(
+                    "Wrong Equipment",
+                    $"{tool.ToolName} ({tool.ToolId}) doesn't match " +
+                    $"the equipment you're distributing.",
+                    "OK");
+
                 return;
             }
 
+            // Tool must still be available
             if (tool.Status != "Available")
             {
-                await DisplayAlert("Not Available",
-                    $"{tool.ToolName} ({tool.ToolId}) is currently {tool.Status}.", "OK");
+                await DisplayAlert(
+                    "Not Available",
+                    $"{tool.ToolName} ({tool.ToolId}) is currently " +
+                    $"{tool.Status}.",
+                    "OK");
+
                 return;
             }
 
-            var workerKeys = await _firebase.GetProjectWorkerKeysAsync(ProjectId);
-            var allUsers = await _firebase.GetAllUsersAsync();
+            // Get workers assigned to this project
+            var workerKeys = await _firebase
+                .GetProjectWorkerKeysAsync(ProjectId);
+
+            var allUsers = await _firebase
+                .GetAllUsersAsync();
 
             var workers = allUsers
-                .Where(u => u.Role == "Worker" &&
-                            u.AccountStatus == "Approved" &&
-                            workerKeys.Contains(u.UniqueKey))
+                .Where(u =>
+                    u.Role == "Worker" &&
+                    u.AccountStatus == "Approved" &&
+                    workerKeys.Contains(u.UniqueKey))
                 .ToList();
 
             if (workers.Count == 0)
             {
-                await DisplayAlert("No Workers",
-                    "Assign workers to this project first.", "OK");
+                await DisplayAlert(
+                    "No Workers",
+                    "Assign workers to this project first.",
+                    "OK");
+
                 return;
             }
 
-            var workerNames = workers.Select(w => w.FullName).ToArray();
-            var selectedWorkerName = await DisplayActionSheet(
-                $"Assign {tool.ToolName} ({tool.ToolId}) to:", "Cancel", null, workerNames);
+            // Select worker
+            var workerNames = workers
+                .Select(w => w.FullName)
+                .ToArray();
 
-            if (selectedWorkerName == null || selectedWorkerName == "Cancel") return;
+            var selectedWorkerName =
+                await DisplayActionSheet(
+                    $"Distribute {tool.ToolName} ({tool.ToolId}) to:",
+                    "Cancel",
+                    null,
+                    workerNames);
 
-            var worker = workers.FirstOrDefault(w => w.FullName == selectedWorkerName);
-            if (worker is null) return;
+            if (selectedWorkerName == null ||
+                selectedWorkerName == "Cancel")
+                return;
 
-            var projects = await _firebase.GetAllProjectsAsync();
-            var project = projects.FirstOrDefault(p => p.ProjectId == ProjectId);
+            var worker = workers.FirstOrDefault(
+                w => w.FullName == selectedWorkerName);
 
-            bool success = await _firebase.BorrowToolForProjectAsync(
-                tool.ToolId, tool.ToolName, worker.UniqueKey, worker.FullName,
-                ProjectId, project?.ProjectName ?? string.Empty,
-                _auth.CurrentUser?.FullName ?? "Project Engineer");
+            if (worker is null)
+                return;
+
+            // Get project information
+            var projects = await _firebase
+                .GetAllProjectsAsync();
+
+            var project = projects.FirstOrDefault(
+                p => p.ProjectId == ProjectId);
+
+            if (project is null)
+            {
+                await DisplayAlert(
+                    "Project Not Found",
+                    "Could not find the project information.",
+                    "OK");
+
+                return;
+            }
+
+            // Create pending distribution.
+            // IMPORTANT:
+            // Tool stays Available until worker accepts.
+            var assignment = new PreAssignment
+            {
+                ToolId = tool.ToolId,
+                ToolName = tool.ToolName,
+
+                WorkerId = worker.UniqueKey,
+                WorkerName = worker.FullName,
+
+                ProjectId = ProjectId,
+                ProjectName = project.ProjectName,
+
+                AssignedByName =
+                    _auth.CurrentUser?.FullName ??
+                    "Project Engineer",
+
+                Status = "Pending",
+                DateCreated = DateTime.Now
+            };
+
+            bool success =
+                await _firebase.CreatePreAssignmentAsync(
+                    assignment);
 
             if (!success)
             {
-                await DisplayAlert("Error",
-                    $"Could not assign {tool.ToolName} — it may have just been " +
-                    $"borrowed by someone else.", "OK");
+                await DisplayAlert(
+                    "Could Not Distribute",
+                    $"{tool.ToolName} could not be distributed.\n\n" +
+                    $"It may already have a pending distribution.",
+                    "OK");
+
                 return;
             }
 
-            await DisplayAlert("✅ Distributed",
-                $"{tool.ToolName} ({tool.ToolId}) assigned to {worker.FullName}.", "OK");
+            await DisplayAlert(
+                "✅ Distribution Sent",
+                $"{tool.ToolName} ({tool.ToolId}) was distributed " +
+                $"to {worker.FullName}.\n\n" +
+                $"The tool will remain Available until " +
+                $"{worker.FullName} accepts it.",
+                "OK");
 
             await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Could not distribute equipment.\n{ex.Message}", "OK");
+            System.Diagnostics.Debug.WriteLine(
+                $"HandleDistributeScan error: {ex.Message}");
+
+            await DisplayAlert(
+                "Error",
+                $"Could not distribute equipment.\n{ex.Message}",
+                "OK");
         }
         finally
         {

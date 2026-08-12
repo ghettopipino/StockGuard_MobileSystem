@@ -614,31 +614,8 @@ namespace StockGuard.Services
             catch { return false; }
         }
 
-        // ── SEED DATA ─────────────────────────────────────────────────────────
-
-        public async Task SeedToolsIfEmptyAsync()
-        {
-            try
-            {
-                var tools = await GetAllToolsAsync();
-                if (tools.Count > 0) return;
-
-                var sampleTools = new List<Tool>
-                {
-                    new Tool { ToolId = "PD-001", ToolName = "Power Drill",   Status = "Available", QrCode = "PD-001", CatalogId = "CAT-001" },
-                    new Tool { ToolId = "PD-002", ToolName = "Power Drill",   Status = "Available", QrCode = "PD-002", CatalogId = "CAT-001" },
-                    new Tool { ToolId = "PD-003", ToolName = "Power Drill",   Status = "Available", QrCode = "PD-003", CatalogId = "CAT-001" },
-                    new Tool { ToolId = "JH-001", ToolName = "Jack Hammer",   Status = "Available", QrCode = "JH-001", CatalogId = "CAT-002" },
-                    new Tool { ToolId = "JH-002", ToolName = "Jack Hammer",   Status = "Available", QrCode = "JH-002", CatalogId = "CAT-002" },
-                    new Tool { ToolId = "LS-001", ToolName = "L-Shape Ruler", Status = "Available", QrCode = "LS-001", CatalogId = "CAT-003" },
-                    new Tool { ToolId = "LS-002", ToolName = "L-Shape Ruler", Status = "Available", QrCode = "LS-002", CatalogId = "CAT-003" },
-                };
-
-                foreach (var tool in sampleTools)
-                    await CreateToolAsync(tool);
-            }
-            catch { }
-        }
+      
+        
 
         // ── TRANSFER REQUESTS ─────────────────────────────────────────────────
 
@@ -982,7 +959,48 @@ namespace StockGuard.Services
         }
 
         // ── PRE-ASSIGNMENTS ───────────────────────────────────────────────────
+        public async Task<bool> CreatePreAssignmentAsync(
+    PreAssignment assignment)
+        {
+            try
+            {
+                var tool = await GetToolByIdAsync(
+                    assignment.ToolId);
 
+                if (tool == null ||
+                    tool.Status != "Available")
+                    return false;
+
+                var existing = await _client
+                    .Child("preAssignments")
+                    .OnceAsync<PreAssignment>();
+
+                bool alreadyPending =
+                    existing.Any(x =>
+                        x.Object != null &&
+                        x.Object.ToolId == assignment.ToolId &&
+                        x.Object.Status == "Pending");
+
+                if (alreadyPending)
+                    return false;
+
+                assignment.Status = "Pending";
+                assignment.DateCreated = DateTime.Now;
+
+                await _client
+                    .Child("preAssignments")
+                    .PostAsync(assignment);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"CreatePreAssignmentAsync error: {ex.Message}");
+
+                return false;
+            }
+        }
         public async Task<bool> BorrowToolForProjectAsync(
     string toolId, string toolName,
     string workerId, string workerName,
@@ -1049,36 +1067,85 @@ namespace StockGuard.Services
         }
 
         public async Task<bool> ConfirmAssignmentAsync(
-            string assignmentKey, PreAssignment assignment)
+     string assignmentKey,
+     PreAssignment assignment)
         {
             try
             {
-                var tool = await GetToolByIdAsync(assignment.ToolId);
-                if (tool == null) return false;
+                var tool = await GetToolByIdAsync(
+                    assignment.ToolId);
 
-                if (tool.Status == "Borrowed")
-                    return false; // someone else already has it
+                if (tool == null)
+                    return false;
 
-                tool.AssignedWorkerId = assignment.WorkerId;
-                tool.AssignedWorkerName = assignment.WorkerName;
+                // Tool must still be available when worker accepts
+                if (tool.Status != "Available")
+                    return false;
+
+                tool.AssignedWorkerId =
+                    assignment.WorkerId;
+
+                tool.AssignedWorkerName =
+                    assignment.WorkerName;
+
+                tool.BorrowedProjectId =
+                    assignment.ProjectId;
+
+                tool.BorrowedProjectName =
+                    assignment.ProjectName;
+
                 tool.BorrowDate = DateTime.Now;
                 tool.Status = "Borrowed";
-                await UpdateToolAsync(tool);
 
-                await LogTransactionAsync(new TransactionLog
-                {
-                    ToolId = tool.ToolId,
-                    ToolName = tool.ToolName,
-                    WorkerId = assignment.WorkerId,
-                    WorkerName = assignment.WorkerName,
-                    Action = "Borrowed",
-                    Description =
-                        $"Accepted assignment from {assignment.AssignedByName}",
-                    Condition = tool.Condition,
-                    Date = DateTime.Now
-                });
+                // Clear old hold information if any
+                tool.HoldProjectId = string.Empty;
+                tool.HoldProjectName = string.Empty;
+                tool.HoldLocation = string.Empty;
+                tool.LastBorrowerId = string.Empty;
+                tool.LastBorrowerName = string.Empty;
+                tool.HoldDate = null;
+
+                // Clear old pre-assignment values on Tool,
+                // if these fields are still part of your model.
+                tool.PreAssignedWorkerId = string.Empty;
+                tool.PreAssignedWorkerName = string.Empty;
+
+                var updated =
+                    await UpdateToolAsync(tool);
+
+                if (!updated)
+                    return false;
+
+                await LogTransactionAsync(
+                    new TransactionLog
+                    {
+                        ToolId = tool.ToolId,
+                        ToolName = tool.ToolName,
+
+                        WorkerId =
+                            assignment.WorkerId,
+
+                        WorkerName =
+                            assignment.WorkerName,
+
+                        ProjectId =
+                            assignment.ProjectId,
+
+                        ProjectName =
+                            assignment.ProjectName,
+
+                        Action = "Borrowed",
+
+                        Description =
+                            $"Accepted distribution from " +
+                            $"{assignment.AssignedByName}",
+
+                        Condition = tool.Condition,
+                        Date = DateTime.Now
+                    });
 
                 assignment.Status = "Accepted";
+
                 await _client
                     .Child("preAssignments")
                     .Child(assignmentKey)
@@ -1090,9 +1157,11 @@ namespace StockGuard.Services
             {
                 System.Diagnostics.Debug.WriteLine(
                     $"ConfirmAssignmentAsync error: {ex.Message}");
+
                 return false;
             }
         }
+        
 
         public async Task<bool> DeclineAssignmentAsync(
             string assignmentKey, PreAssignment assignment)

@@ -30,7 +30,6 @@ public partial class App : Application
             try
             {
                 await auth.SeedDefaultAccountsAsync();
-                await firebase.SeedToolsIfEmptyAsync();
             }
             catch (Exception ex)
             {

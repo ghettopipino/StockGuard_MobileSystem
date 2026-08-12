@@ -433,58 +433,124 @@ namespace StockGuard.ViewModels
         private async Task AddEquipmentAsync()
         {
             var catalogs = await _firebase.GetAllCatalogsAsync();
+
             if (catalogs.Count == 0)
             {
-                await Shell.Current.DisplayAlert("No Catalog Items",
-                    "Create equipment catalog entries first.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "No Catalog Items",
+                    "Create equipment catalog entries first.",
+                    "OK");
+
                 return;
             }
 
-            var names = catalogs.Select(c => c.CatalogName).ToArray();
+            var names = catalogs
+                .Select(c => c.CatalogName)
+                .ToArray();
+
             var selected = await Shell.Current.DisplayActionSheet(
-                "Add Equipment to Project", "Cancel", null, names);
-            if (selected == null || selected == "Cancel") return;
+                "Add Equipment to Project",
+                "Cancel",
+                null,
+                names);
 
-            var catalog = catalogs.FirstOrDefault(c => c.CatalogName == selected);
-            if (catalog is null) return;
+            if (selected == null ||
+                selected == "Cancel")
+                return;
 
-            // ── Real available count, company-wide ─────────────────────
-            var allTools = await _firebase.GetAllToolsAsync();
-            var availableNow = allTools.Count(t =>
-                t.CatalogId == catalog.CatalogId && t.Status == "Available");
+            var catalog = catalogs.FirstOrDefault(
+                c => c.CatalogName == selected);
 
-            if (availableNow == 0)
+            if (catalog is null)
+                return;
+
+            // Get fresh tool data
+            var allTools = await _firebase.GetAllToolsAsync(
+                forceRefresh: true);
+
+            // Count ACTUAL currently available physical tools
+            int availableNow = allTools.Count(t =>
+                t.CatalogId == catalog.CatalogId &&
+                t.Status == "Available");
+
+            if (availableNow <= 0)
             {
-                await Shell.Current.DisplayAlert("None Available",
-                    $"All {catalog.CatalogName} units are currently borrowed elsewhere.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "None Available",
+                    $"There are currently no available " +
+                    $"{catalog.CatalogName} units.",
+                    "OK");
+
                 return;
             }
 
+            // Get current requirement for this project
+            var requirements = await _firebase
+                .GetProjectEquipmentRequirementsAsync(ProjectId);
+
+            var existingRequirement =
+                requirements.FirstOrDefault(r =>
+                    r.CatalogId == catalog.CatalogId);
+
+            int currentRequired =
+                existingRequirement?.QuantityNeeded ?? 0;
+
+            // Ask how many MORE to add
             var qtyText = await Shell.Current.DisplayPromptAsync(
-                "Quantity Needed",
-                $"How many {catalog.CatalogName} does this project need?\n\n" +
-                $"({availableNow} currently available company-wide)",
-                "Save", "Cancel",
-                keyboard: Microsoft.Maui.Keyboard.Numeric, initialValue: "1");
+                "Add Equipment",
+                $"How many more {catalog.CatalogName} " +
+                $"do you want to add?\n\n" +
+                $"Currently in project: {currentRequired}\n" +
+                $"Available company-wide: {availableNow}",
+                "Add",
+                "Cancel",
+                keyboard: Microsoft.Maui.Keyboard.Numeric,
+                initialValue: "1");
 
-            if (qtyText == null) return;
+            if (qtyText == null)
+                return;
 
-            if (!int.TryParse(qtyText, out var qty) || qty <= 0)
+            if (!int.TryParse(qtyText, out var qty) ||
+                qty <= 0)
             {
-                await Shell.Current.DisplayAlert("Invalid", "Enter a valid quantity.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "Invalid",
+                    "Enter a valid quantity.",
+                    "OK");
+
                 return;
             }
 
+            // Cannot add more than the number of
+            // physical tools currently available
             if (qty > availableNow)
             {
-                await Shell.Current.DisplayAlert("Not Enough Available",
-                    $"Only {availableNow} {catalog.CatalogName} are currently available " +
-                    $"company-wide. Enter {availableNow} or fewer.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "Not Enough Available",
+                    $"Only {availableNow} " +
+                    $"{catalog.CatalogName} unit(s) " +
+                    $"are currently available.",
+                    "OK");
+
                 return;
             }
 
-            await _firebase.SetProjectEquipmentRequirementAsync(
-                ProjectId, catalog.CatalogId, catalog.CatalogName, qty);
+            // ADD to existing requirement instead of replacing it
+            int newQuantity =
+                currentRequired + qty;
+
+            await _firebase
+                .SetProjectEquipmentRequirementAsync(
+                    ProjectId,
+                    catalog.CatalogId,
+                    catalog.CatalogName,
+                    newQuantity);
+
+            await Shell.Current.DisplayAlert(
+                "✅ Equipment Added",
+                $"{qty} {catalog.CatalogName} unit(s) added.\n\n" +
+                $"Project total: {newQuantity}",
+                "OK");
 
             await LoadAsync();
         }
@@ -540,50 +606,108 @@ namespace StockGuard.ViewModels
 
         private async Task DistributeManualAsync(CatalogStockSummary item)
         {
-            var allTools = await _firebase.GetAllToolsAsync();
+            var allTools = await _firebase.GetAllToolsAsync(
+                forceRefresh: true);
+
             var available = allTools
-                .Where(t => t.CatalogId == item.CatalogId && t.Status == "Available")
+                .Where(t =>
+                    t.CatalogId == item.CatalogId &&
+                    t.Status == "Available")
                 .ToList();
 
             if (available.Count == 0)
             {
-                await Shell.Current.DisplayAlert("None Available",
-                    $"No available units of {item.CatalogName} in inventory.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "None Available",
+                    $"No available units of {item.CatalogName} in inventory.",
+                    "OK");
+
                 return;
             }
 
-            var toolIds = available.Select(t => t.ToolId).ToArray();
-            var selectedToolId = await Shell.Current.DisplayActionSheet(
-                $"Select {item.CatalogName} unit:", "Cancel", null, toolIds);
-            if (selectedToolId == null || selectedToolId == "Cancel") return;
+            var toolIds = available
+                .Select(t => t.ToolId)
+                .ToArray();
 
-            var tool = available.FirstOrDefault(t => t.ToolId == selectedToolId);
-            if (tool is null) return;
+            var selectedToolId =
+                await Shell.Current.DisplayActionSheet(
+                    $"Select {item.CatalogName} unit:",
+                    "Cancel",
+                    null,
+                    toolIds);
 
-            var workerNames = AssignedWorkers.Select(w => w.FullName).ToArray();
-            var selectedWorkerName = await Shell.Current.DisplayActionSheet(
-                $"Assign {tool.ToolName} ({tool.ToolId}) to:", "Cancel", null, workerNames);
-            if (selectedWorkerName == null || selectedWorkerName == "Cancel") return;
+            if (selectedToolId == null ||
+                selectedToolId == "Cancel")
+                return;
 
-            var worker = AssignedWorkers.FirstOrDefault(w => w.FullName == selectedWorkerName);
-            if (worker is null) return;
+            var tool = available.FirstOrDefault(
+                t => t.ToolId == selectedToolId);
 
-            bool success = await _firebase.BorrowToolForProjectAsync(
-                tool.ToolId, tool.ToolName, worker.UniqueKey, worker.FullName,
-                ProjectId, Project?.ProjectName ?? string.Empty,
-                _auth.CurrentUser?.FullName ?? "Project Engineer");
+            if (tool is null)
+                return;
+
+            var workerNames = AssignedWorkers
+                .Select(w => w.FullName)
+                .ToArray();
+
+            var selectedWorkerName =
+                await Shell.Current.DisplayActionSheet(
+                    $"Distribute {tool.ToolName} ({tool.ToolId}) to:",
+                    "Cancel",
+                    null,
+                    workerNames);
+
+            if (selectedWorkerName == null ||
+                selectedWorkerName == "Cancel")
+                return;
+
+            var worker = AssignedWorkers.FirstOrDefault(
+                w => w.FullName == selectedWorkerName);
+
+            if (worker is null)
+                return;
+
+            var assignment = new PreAssignment
+            {
+                ToolId = tool.ToolId,
+                ToolName = tool.ToolName,
+
+                WorkerId = worker.UniqueKey,
+                WorkerName = worker.FullName,
+
+                ProjectId = ProjectId,
+                ProjectName = Project?.ProjectName ?? string.Empty,
+
+                AssignedByName =
+                    _auth.CurrentUser?.FullName ?? "Project Engineer",
+
+                Status = "Pending",
+                DateCreated = DateTime.Now
+            };
+
+            bool success =
+                await _firebase.CreatePreAssignmentAsync(
+                    assignment);
 
             if (!success)
             {
-                await Shell.Current.DisplayAlert("Error",
-                    $"Could not assign {tool.ToolName} — it may have just been " +
-                    $"borrowed by someone else. Please try again.", "OK");
+                await Shell.Current.DisplayAlert(
+                    "Could Not Distribute",
+                    $"{tool.ToolName} could not be distributed.\n\n" +
+                    $"It may already have a pending distribution.",
+                    "OK");
+
                 await LoadAsync();
                 return;
             }
 
-            await Shell.Current.DisplayAlert("✅ Distributed",
-                $"{tool.ToolName} ({tool.ToolId}) is now assigned to {worker.FullName}.", "OK");
+            await Shell.Current.DisplayAlert(
+                "✅ Distribution Sent",
+                $"{tool.ToolName} ({tool.ToolId}) was distributed " +
+                $"to {worker.FullName}.\n\n" +
+                $"The tool will remain Available until " +
+                $"{worker.FullName} accepts it.",
+                "OK");
 
             await LoadAsync();
         }
