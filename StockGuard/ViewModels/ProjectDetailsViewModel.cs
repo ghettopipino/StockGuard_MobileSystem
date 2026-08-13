@@ -444,47 +444,116 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            var names = catalogs
-                .Select(c => c.CatalogName)
-                .ToArray();
-
-            var selected = await Shell.Current.DisplayActionSheet(
-                "Add Equipment to Project",
+            // ── SEARCH EQUIPMENT ─────────────────────────────────────
+            var search = await Shell.Current.DisplayPromptAsync(
+                "Find Equipment",
+                "Search for the equipment you want to add:",
+                "Search",
                 "Cancel",
-                null,
-                names);
+                placeholder: "e.g. Power Drill");
 
-            if (selected == null ||
-                selected == "Cancel")
+            if (search == null)
                 return;
 
-            var catalog = catalogs.FirstOrDefault(
-                c => c.CatalogName == selected);
+            search = search.Trim();
 
-            if (catalog is null)
+            var matches = string.IsNullOrWhiteSpace(search)
+                ? catalogs
+                : catalogs
+                    .Where(c =>
+                        c.CatalogName.Contains(
+                            search,
+                            StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+            if (matches.Count == 0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "No Match Found",
+                    $"No equipment matched \"{search}\".",
+                    "OK");
+
+                return;
+            }
+
+            EquipmentCatalog? catalog = null;
+
+            // If only one result, use it directly
+            if (matches.Count == 1)
+            {
+                catalog = matches[0];
+            }
+            else
+            {
+                var names = matches
+                    .Select(c => c.CatalogName)
+                    .ToArray();
+
+                var selected = await Shell.Current.DisplayActionSheet(
+                    "Select Equipment",
+                    "Cancel",
+                    null,
+                    names);
+
+                if (selected == null ||
+                    selected == "Cancel")
+                    return;
+
+                catalog = matches.FirstOrDefault(
+                    c => c.CatalogName == selected);
+            }
+
+            if (catalog == null)
                 return;
 
-            // Get fresh tool data
+            // ── GET TRUE COMPANY AVAILABILITY ────────────────────────
+
             var allTools = await _firebase.GetAllToolsAsync(
                 forceRefresh: true);
 
-            // Count ACTUAL currently available physical tools
-            int availableNow = allTools.Count(t =>
+            var allocations = await _firebase
+                .GetAllActiveProjectEquipmentRequirementsAsync();
+
+            // Physical tools still marked Available
+            int physicalAvailable = allTools.Count(t =>
                 t.CatalogId == catalog.CatalogId &&
                 t.Status == "Available");
+
+            // Actual physical tools already borrowed by workers
+            int actualBorrowed = allTools.Count(t =>
+                t.CatalogId == catalog.CatalogId &&
+                t.Status == "Borrowed");
+
+            // Total project allocations for this catalog
+            int totalAllocated = allocations
+                .Where(a =>
+                    a.CatalogId == catalog.CatalogId)
+                .Sum(a => a.QuantityNeeded);
+
+            // Borrowed physical tools already consume
+            // part of the project allocation
+            int remainingReserved = Math.Max(
+                0,
+                totalAllocated - actualBorrowed);
+
+            // True quantity still available at company/shop level
+            int availableNow = Math.Max(
+                0,
+                physicalAvailable - remainingReserved);
 
             if (availableNow <= 0)
             {
                 await Shell.Current.DisplayAlert(
                     "None Available",
                     $"There are currently no available " +
-                    $"{catalog.CatalogName} units.",
+                    $"{catalog.CatalogName} units remaining.",
                     "OK");
 
                 return;
             }
 
-            // Get current requirement for this project
+            // ── CURRENT PROJECT QUANTITY ──────────────────────────────
+
             var requirements = await _firebase
                 .GetProjectEquipmentRequirementsAsync(ProjectId);
 
@@ -495,12 +564,12 @@ namespace StockGuard.ViewModels
             int currentRequired =
                 existingRequirement?.QuantityNeeded ?? 0;
 
-            // Ask how many MORE to add
+            // ── ASK QUANTITY ──────────────────────────────────────────
+
             var qtyText = await Shell.Current.DisplayPromptAsync(
-                "Add Equipment",
-                $"How many more {catalog.CatalogName} " +
-                $"do you want to add?\n\n" +
-                $"Currently in project: {currentRequired}\n" +
+                $"Add {catalog.CatalogName}",
+                $"How many more do you want to add?\n\n" +
+                $"Currently in this project: {currentRequired}\n" +
                 $"Available company-wide: {availableNow}",
                 "Add",
                 "Cancel",
@@ -514,42 +583,52 @@ namespace StockGuard.ViewModels
                 qty <= 0)
             {
                 await Shell.Current.DisplayAlert(
-                    "Invalid",
+                    "Invalid Quantity",
                     "Enter a valid quantity.",
                     "OK");
 
                 return;
             }
 
-            // Cannot add more than the number of
-            // physical tools currently available
             if (qty > availableNow)
             {
                 await Shell.Current.DisplayAlert(
                     "Not Enough Available",
                     $"Only {availableNow} " +
                     $"{catalog.CatalogName} unit(s) " +
-                    $"are currently available.",
+                    $"are still available company-wide.",
                     "OK");
 
                 return;
             }
 
-            // ADD to existing requirement instead of replacing it
+            // ── SAVE ALLOCATION ───────────────────────────────────────
+
             int newQuantity =
                 currentRequired + qty;
 
-            await _firebase
+            bool saved = await _firebase
                 .SetProjectEquipmentRequirementAsync(
                     ProjectId,
                     catalog.CatalogId,
                     catalog.CatalogName,
                     newQuantity);
 
+            if (!saved)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    "Could not update the project equipment allocation.",
+                    "OK");
+
+                return;
+            }
+
             await Shell.Current.DisplayAlert(
-                "✅ Equipment Added",
+                "Equipment Added",
                 $"{qty} {catalog.CatalogName} unit(s) added.\n\n" +
-                $"Project total: {newQuantity}",
+                $"Project total: {newQuantity}\n" +
+                $"Company available remaining: {availableNow - qty}",
                 "OK");
 
             await LoadAsync();

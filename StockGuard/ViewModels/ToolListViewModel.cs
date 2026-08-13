@@ -107,27 +107,75 @@ namespace StockGuard.ViewModels
         // ── Load ──────────────────────────────────────────────────────────────
         public async Task LoadToolsAsync()
         {
-            if (string.IsNullOrEmpty(CatalogId)) return;
+            if (string.IsNullOrEmpty(CatalogId))
+                return;
 
             IsBusy = true;
+
             try
             {
-                var tools = await _firebase.GetToolsByCatalogAsync(CatalogId);
+                // Get fresh physical tools
+                var tools = await _firebase
+                    .GetToolsByCatalogAsync(CatalogId);
+
+                // Get project allocations
+                var allocations = await _firebase
+                    .GetAllActiveProjectEquipmentRequirementsAsync();
 
                 Tools.Clear();
+
                 foreach (var tool in tools.OrderBy(t => t.ToolId))
+                {
                     Tools.Add(tool);
+                }
 
-                AvailableCount = tools.Count(t => t.Status == "Available");
-                BorrowedCount = tools.Count(t => t.Status == "Borrowed");
-                OnHoldCount = tools.Count(t => t.Status == "OnHold");
-                DamagedCount = tools.Count(t => t.Status is "Damaged" or "UnderRepair");
+                // ── PHYSICAL TOOL STATES ─────────────────────────────
 
+                int physicalAvailable = tools.Count(t =>
+                    t.Status == "Available");
+
+                int actualBorrowed = tools.Count(t =>
+                    t.Status == "Borrowed");
+
+                OnHoldCount = tools.Count(t =>
+                    t.Status == "OnHold");
+
+                DamagedCount = tools.Count(t =>
+                    t.Status is "Damaged" or "UnderRepair");
+
+                // ── PROJECT ALLOCATION ────────────────────────────────
+
+                int allocated = allocations
+                    .Where(a => a.CatalogId == CatalogId)
+                    .Sum(a => a.QuantityNeeded);
+
+              
+                // Borrowed tools already consume part
+                // of the allocated quantity.
+                //
+                // Example:
+                // Allocated = 3
+                // Worker borrowed = 1
+                // Still reserved = 2
+                int remainingReserved = Math.Max(
+                    0,
+                    allocated - actualBorrowed);
+
+                // Company/shop availability
+                AvailableCount = Math.Max(
+                    0,
+                    physicalAvailable - remainingReserved);
+
+                // From company perspective, all allocated
+                // equipment is already under PE/project custody.
+                BorrowedCount = allocated;
+           
                 OnPropertyChanged(nameof(ToolCountLabel));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine($"LoadTools error: {ex.Message}");
+                System.Diagnostics.Debug.WriteLine(
+                    $"LoadTools error: {ex.Message}");
             }
             finally
             {

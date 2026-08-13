@@ -49,8 +49,8 @@ namespace StockGuard.Models
         public bool IsLost => Status == "Lost";
         [JsonIgnore]
         public bool IsAvailable =>
-    Status == "Available";
-        
+             Status == "Available";
+
         [JsonIgnore]
         public bool IsBorrowed =>
             Status == "Borrowed";

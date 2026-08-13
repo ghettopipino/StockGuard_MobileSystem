@@ -132,7 +132,7 @@
                                        FontAttributes="Bold"
                                        TextColor="{DynamicResource Amber}"
                                        HorizontalOptions="Center"/>
-                                <Label Text="Borrowed"
+                                <Label Text="Allocated"
                                        FontSize="10"
                                        TextColor="{DynamicResource Text3}"
                                        HorizontalOptions="Center"/>

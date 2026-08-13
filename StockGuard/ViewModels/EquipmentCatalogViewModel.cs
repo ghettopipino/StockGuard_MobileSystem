@@ -153,46 +153,118 @@ namespace StockGuard.ViewModels
         public async Task LoadCatalogsAsync()
         {
             IsBusy = true;
+
             try
             {
-                var catalogs = await _firebase.GetAllCatalogsAsync();
-                var allTools = await _firebase.GetAllToolsAsync();
+                var catalogs =
+                    await _firebase.GetAllCatalogsAsync();
+
+                var allTools =
+                    await _firebase.GetAllToolsAsync(
+                        forceRefresh: true);
+
+                // Get equipment quantities allocated
+                // to all non-completed projects.
+                var allocations =
+                    await _firebase
+                        .GetAllActiveProjectEquipmentRequirementsAsync();
 
                 if (!string.IsNullOrWhiteSpace(SearchText))
+                {
                     catalogs = catalogs
-                        .Where(c => c.CatalogName.Contains(
-                            SearchText, StringComparison.OrdinalIgnoreCase))
+                        .Where(c =>
+                            c.CatalogName.Contains(
+                                SearchText,
+                                StringComparison.OrdinalIgnoreCase))
                         .ToList();
+                }
 
                 TotalCatalogs = catalogs.Count;
                 TotalTools = allTools.Count;
-                AvailableTools = allTools.Count(t => t.Status == "Available");
+
+                int totalCompanyAvailable = 0;
 
                 Catalogs.Clear();
+
                 foreach (var catalog in catalogs)
                 {
-                    var tools = allTools.Where(t => t.CatalogId == catalog.CatalogId).ToList();
-                    var available = tools.Count(t => t.Status == "Available");
-                    var borrowed = tools.Count(t => t.Status == "Borrowed");
-                    var damaged = tools.Count(t => t.Status is "Damaged" or "UnderRepair");
+                    var tools = allTools
+                        .Where(t =>
+                            t.CatalogId == catalog.CatalogId)
+                        .ToList();
 
-                    Catalogs.Add(new CatalogDisplayItem(catalog)
-                    {
-                        TotalTools = tools.Count,
-                        AvailableTools = available,
-                        BorrowedTools = borrowed,
-                        DamagedTools = damaged
-                    });
+                    // Actual physical statuses
+                    int physicalAvailable =
+                        tools.Count(t =>
+                            t.Status == "Available");
+
+                    int physicallyBorrowed =
+                        tools.Count(t =>
+                            t.Status == "Borrowed");
+
+                    int damaged =
+                        tools.Count(t =>
+                            t.Status is "Damaged" or "UnderRepair");
+
+                    // How many units of this catalog have been
+                    // allocated to projects.
+                    int allocated =
+                        allocations
+                            .Where(a =>
+                                a.CatalogId == catalog.CatalogId)
+                            .Sum(a => a.QuantityNeeded);
+
+                    // Borrowed tools already consume part of the
+                    // project's allocation.
+                    //
+                    // Example:
+                    // Allocated = 3
+                    // Worker accepted = 1
+                    // Still reserved = 2
+                    int remainingReserved =
+                        Math.Max(
+                            0,
+                            allocated - physicallyBorrowed);
+
+                    // Physical available minus units that are
+                    // reserved for projects but not distributed yet.
+                    int companyAvailable =
+                        Math.Max(
+                            0,
+                            physicalAvailable - remainingReserved);
+
+                    // Company perspective:
+                    // everything allocated to a project is treated
+                    // as borrowed/accountable outside company stock.
+                    int companyBorrowed =
+                        allocated;
+
+                    totalCompanyAvailable += companyAvailable;
+
+                    Catalogs.Add(
+                        new CatalogDisplayItem(catalog)
+                        {
+                            TotalTools = tools.Count,
+                            AvailableTools = companyAvailable,
+                            BorrowedTools = companyBorrowed,
+                            DamagedTools = damaged
+                        });
                 }
 
-                HasCatalogs = Catalogs.Count > 0;
+                AvailableTools = totalCompanyAvailable;
+
+                HasCatalogs =
+                    Catalogs.Count > 0;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
                     $"LoadCatalogs error: {ex.Message}");
             }
-            finally { IsBusy = false; }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task RefreshAsync()

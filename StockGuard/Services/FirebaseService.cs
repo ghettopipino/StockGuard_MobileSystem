@@ -913,7 +913,8 @@ namespace StockGuard.Services
                 "tools", "transactions", "borrowRequests",
                 "transferRequests", "damageReports", "pauseRequests",
                 "users", "projects", "projectTools",
-                "projectWorkers", "catalogs"
+                "projectWorkers",    "projectEquipment",   // ADD THIS
+                 "catalogs"
             };
 
             foreach (var node in nodes)
@@ -1242,6 +1243,41 @@ namespace StockGuard.Services
                     ?? new List<ProjectEquipmentRequirement>();
             }
             catch { return new List<ProjectEquipmentRequirement>(); }
+        }
+
+        public async Task<List<ProjectEquipmentRequirement>>
+    GetAllActiveProjectEquipmentRequirementsAsync()
+        {
+            try
+            {
+                var projects = await GetAllProjectsAsync();
+
+                var activeProjects = projects
+                    .Where(p => p.Status != "Completed")
+                    .ToList();
+
+                var requirements =
+                    new List<ProjectEquipmentRequirement>();
+
+                foreach (var project in activeProjects)
+                {
+                    var projectRequirements =
+                        await GetProjectEquipmentRequirementsAsync(
+                            project.ProjectId);
+
+                    requirements.AddRange(projectRequirements);
+                }
+
+                return requirements;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllActiveProjectEquipmentRequirementsAsync error: " +
+                    $"{ex.Message}");
+
+                return new List<ProjectEquipmentRequirement>();
+            }
         }
 
         public async Task<bool> RemoveProjectEquipmentRequirementAsync(string projectId, string catalogId)
