@@ -159,37 +159,57 @@
 
                             <Grid ColumnDefinitions="Auto,*"
                                   RowDefinitions="Auto,Auto,Auto"
-                                  ColumnSpacing="12" RowSpacing="12">
+                                  ColumnSpacing="12"
+                                  RowSpacing="12">
 
-                                <Label Grid.Row="0" Grid.Column="0"
-                                       Text="👷 Worker" FontSize="12"
+                                <!-- Worker -->
+                                <Label Grid.Row="0"
+                                       Grid.Column="0"
+                                       Text="Worker"
+                                       FontSize="12"
                                        TextColor="{DynamicResource Text3}"
                                        VerticalOptions="Center"/>
-                                <Label Grid.Row="0" Grid.Column="1"
+
+                                <Label Grid.Row="0"
+                                       Grid.Column="1"
                                        Text="{Binding AssignedWorkerName}"
-                                       FontSize="13" FontAttributes="Bold"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
                                        TextColor="{DynamicResource Text1}"
                                        VerticalOptions="Center"/>
 
-                                <Label Grid.Row="1" Grid.Column="0"
-                                       Text="📅 Borrowed" FontSize="12"
+                                <!-- Borrowed -->
+                                <Label Grid.Row="1"
+                                       Grid.Column="0"
+                                       Text="Borrowed"
+                                       FontSize="12"
                                        TextColor="{DynamicResource Text3}"
                                        VerticalOptions="Center"/>
-                                <Label Grid.Row="1" Grid.Column="1"
+
+                                <Label Grid.Row="1"
+                                       Grid.Column="1"
                                        Text="{Binding BorrowDateDisplay}"
-                                       FontSize="13" FontAttributes="Bold"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
                                        TextColor="{DynamicResource Text1}"
                                        VerticalOptions="Center"/>
 
-                                <Label Grid.Row="2" Grid.Column="0"
-                                       Text="🔍 Condition" FontSize="12"
+                                <!-- Condition -->
+                                <Label Grid.Row="2"
+                                       Grid.Column="0"
+                                       Text="Condition"
+                                       FontSize="12"
                                        TextColor="{DynamicResource Text3}"
                                        VerticalOptions="Center"/>
-                                <Label Grid.Row="2" Grid.Column="1"
+
+                                <Label Grid.Row="2"
+                                       Grid.Column="1"
                                        Text="{Binding ConditionText}"
-                                       FontSize="13" FontAttributes="Bold"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
                                        TextColor="{DynamicResource Text1}"
                                        VerticalOptions="Center"/>
+
                             </Grid>
                         </VerticalStackLayout>
                     </Frame>
@@ -234,10 +254,10 @@
                     </Frame>
 
                      <!--── ACTIONS ───────────────────────────--> 
-                    <Label Text="Available Actions"
+                    <!--<Label Text="Available Actions"
                            FontSize="15" FontAttributes="Bold"
                            TextColor="{DynamicResource Text1}"
-                           Margin="0,6,0,0"/>
+                           Margin="0,6,0,0"/>-->
 
                     <VerticalStackLayout Padding="20,0" Spacing="10"
                                          IsVisible="{Binding IsNotLoading}">
@@ -292,13 +312,13 @@
                             </VerticalStackLayout>
                         </Frame>
 
-                        <Button IsVisible="{Binding ShowPause}"
+                        <!--<Button IsVisible="{Binding ShowPause}"
                                 Text="⏸️  Pause Borrowing"
                                 Command="{Binding PauseCommand}"
                                 BackgroundColor="#7c3aed"
                                 TextColor="White"
                                 FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+                                CornerRadius="12" HeightRequest="50"/>-->
 
                         <Button IsVisible="{Binding ShowResume}"
                                 Text="▶️  Resume Borrowing"
@@ -308,21 +328,21 @@
                                 FontSize="14" FontAttributes="Bold"
                                 CornerRadius="12" HeightRequest="50"/>
 
-                        <Button IsVisible="{Binding ShowTransfer}"
+                        <!--<Button IsVisible="{Binding ShowTransfer}"
                                 Text="🔄  Transfer Tool"
                                 Command="{Binding TransferCommand}"
                                 BackgroundColor="{DynamicResource BgElevated}"
                                 TextColor="{DynamicResource Text1}"
                                 FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+                                CornerRadius="12" HeightRequest="50"/>-->
 
-                        <Button IsVisible="{Binding ShowReportDamage}"
+                        <!--<Button IsVisible="{Binding ShowReportDamage}"
                                 Text="⚠️  Report Damage"
                                 Command="{Binding ReportDamageCommand}"
                                 BackgroundColor="{DynamicResource RedBg}"
                                 TextColor="{DynamicResource Red}"
                                 FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+                                CornerRadius="12" HeightRequest="50"/>-->
 
                         <Button IsVisible="{Binding ShowRequestBorrow}"
                                 Text="📩  Request to Borrow"
@@ -334,14 +354,14 @@
 
                     </VerticalStackLayout>
 
-                    <Button Text="📋  View Transaction History"
+                    <!--<Button Text="📋  View Transaction History"
                             Command="{Binding ViewHistoryCommand}"
                             BackgroundColor="{DynamicResource BgCard}"
                             TextColor="{DynamicResource Text2}"
                             BorderColor="{DynamicResource BorderColor}"
                             BorderWidth="1"
                             FontSize="13" CornerRadius="12"
-                            HeightRequest="46" Margin="0,4,0,0"/>
+                            HeightRequest="46" Margin="0,4,0,0"/>-->
 
                     <ActivityIndicator IsRunning="{Binding IsBusy}"
                                        IsVisible="{Binding IsBusy}"

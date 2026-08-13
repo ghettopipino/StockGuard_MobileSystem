@@ -138,6 +138,8 @@
                                        HorizontalOptions="Center"/>
                             </VerticalStackLayout>
                         </Frame>
+                        
+                        
 
                         <Frame Grid.Column="2"
                                BackgroundColor="{DynamicResource BgCard}"
@@ -151,7 +153,23 @@
                                 Spacing="4"
                                 HorizontalOptions="Center">
 
+
+
+                                <!-- DAMAGE -->
                                 <Label
+                                    Text="{Binding DamagedCount}"
+                                    FontSize="22"
+                                    FontAttributes="Bold"
+                                    TextColor="#ef4444"
+                                    HorizontalOptions="Center"/>
+
+                                <Label
+                                    Text="Damaged"
+                                    FontSize="10"   
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
+
+                                <!--<Label
                                 Text="{Binding OnHoldCount}"
                                 FontSize="22"
                                 FontAttributes="Bold"
@@ -162,7 +180,7 @@
                                 Text="On Hold"
                                 FontSize="10"
                                 TextColor="{DynamicResource Text3}"
-                                HorizontalOptions="Center"/>
+                                HorizontalOptions="Center"/>-->
 
                             </VerticalStackLayout>
                         </Frame>
