@@ -194,63 +194,155 @@ namespace StockGuard.ViewModels
         public async Task LoadAsync(bool forceRefresh = false)
         {
             IsBusy = true;
+
             try
             {
-                var toolsTask = _firebase.GetAllToolsAsync(forceRefresh);
-                var catalogsTask = _firebase.GetAllCatalogsAsync(forceRefresh);
-                await Task.WhenAll(toolsTask, catalogsTask);
+                var toolsTask =
+                    _firebase.GetAllToolsAsync(forceRefresh);
 
-                _allTools = toolsTask.Result ?? new List<Tool>();
-                _allCatalogs = catalogsTask.Result ?? new List<EquipmentCatalog>();
+                var catalogsTask =
+                    _firebase.GetAllCatalogsAsync(forceRefresh);
 
-                // Stats reflect the full unfiltered set
+                var allocationsTask =
+                    _firebase.GetAllActiveProjectEquipmentRequirementsAsync();
+
+                await Task.WhenAll(
+                    toolsTask,
+                    catalogsTask,
+                    allocationsTask);
+
+                _allTools =
+                    toolsTask.Result ??
+                    new List<Tool>();
+
+                _allCatalogs =
+                    catalogsTask.Result ??
+                    new List<EquipmentCatalog>();
+
+                var allocations =
+                    allocationsTask.Result ??
+                    new List<ProjectEquipmentRequirement>();
+
+                // ── COMPANY-LEVEL STATS ───────────────────────────────
+
                 TotalTools = _allTools.Count;
-                AvailableTools = _allTools.Count(t => t.Status == "Available");
-                BorrowedTools = _allTools.Count(t => t.Status == "Borrowed");
 
-                // ── Catalog picker ────────────────────────────────────────────
-                bool isFirstLoad = Catalogs.Count == 0;
+                int totalCompanyAvailable = 0;
+                int totalCompanyAllocated = 0;
+
+                foreach (var catalog in _allCatalogs)
+                {
+                    var catalogTools = _allTools
+                        .Where(t =>
+                            t.CatalogId == catalog.CatalogId)
+                        .ToList();
+
+                    // Actual physical Available tools
+                    int physicalAvailable =
+                        catalogTools.Count(t =>
+                            t.Status == "Available");
+
+                    // Actual tools already accepted by workers
+                    int actualBorrowed =
+                        catalogTools.Count(t =>
+                            t.Status == "Borrowed");
+
+                    // Total quantity allocated to active projects
+                    int allocated =
+                        allocations
+                            .Where(a =>
+                                a.CatalogId == catalog.CatalogId)
+                            .Sum(a => a.QuantityNeeded);
+
+                    // Borrowed physical tools already consume
+                    // part of the project's allocation
+                    int remainingReserved =
+                        Math.Max(
+                            0,
+                            allocated - actualBorrowed);
+
+                    // True company/shop availability
+                    int companyAvailable =
+                        Math.Max(
+                            0,
+                            physicalAvailable -
+                            remainingReserved);
+
+                    totalCompanyAvailable +=
+                        companyAvailable;
+
+                    totalCompanyAllocated +=
+                        allocated;
+                }
+
+                AvailableTools =
+                    totalCompanyAvailable;
+
+                // Company perspective:
+                // allocated equipment is already under
+                // project / PE accountability
+                BorrowedTools =
+                    totalCompanyAllocated;
+
+                // ── CATALOG PICKER ────────────────────────────────────
+
+                bool isFirstLoad =
+                    Catalogs.Count == 0;
 
                 if (isFirstLoad || forceRefresh)
                 {
-                    var previouslySelectedId = _selectedCatalog?.CatalogId;
+                    var previouslySelectedId =
+                        _selectedCatalog?.CatalogId;
 
                     Catalogs.Clear();
 
-                    // "Select a catalog" placeholder — CatalogId = null signals
-                    // that no real catalog is chosen yet (NoCatalogSelected = true).
-                    Catalogs.Add(new EquipmentCatalog
-                    {
-                        CatalogId = null,           // <-- null sentinel, not empty string
-                        CatalogName = "Select a catalog…"
-                    });
+                    Catalogs.Add(
+                        new EquipmentCatalog
+                        {
+                            CatalogId = null,
+                            CatalogName =
+                                "Select a catalog…"
+                        });
 
-                    foreach (var c in _allCatalogs.OrderBy(c => c.CatalogName))
+                    foreach (var c in
+                        _allCatalogs.OrderBy(
+                            c => c.CatalogName))
+                    {
                         Catalogs.Add(c);
+                    }
 
                     if (isFirstLoad)
                     {
-                        // Start with the placeholder selected → no tools rendered
-                        _selectedCatalog = Catalogs[0];
+                        _selectedCatalog =
+                            Catalogs[0];
                     }
                     else
                     {
-                        // Pull-to-refresh: restore previous selection if still valid
-                        _selectedCatalog = Catalogs
-                            .FirstOrDefault(c => c.CatalogId == previouslySelectedId)
+                        _selectedCatalog =
+                            Catalogs.FirstOrDefault(
+                                c =>
+                                    c.CatalogId ==
+                                    previouslySelectedId)
                             ?? Catalogs[0];
                     }
 
-                    OnPropertyChanged(nameof(SelectedCatalog));
-                    OnPropertyChanged(nameof(NoCatalogSelected));
+                    OnPropertyChanged(
+                        nameof(SelectedCatalog));
+
+                    OnPropertyChanged(
+                        nameof(NoCatalogSelected));
                 }
 
-                // Only apply filters (and render tools) if a real catalog is chosen.
-                // If the placeholder is still active, just clear the list.
+                // ── TOOL LIST ─────────────────────────────────────────
+
                 if (NoCatalogSelected)
                 {
-                    _filteredTools = new List<Tool>();
-                    Tools = new ObservableCollection<Tool>();
+                    _filteredTools =
+                        new List<Tool>();
+
+                    Tools =
+                        new ObservableCollection<Tool>();
+
                     _currentPage = 0;
                 }
                 else
@@ -261,7 +353,8 @@ namespace StockGuard.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"[ToolDetailsVM] Load error: {ex.Message}");
+                    $"[ToolDetailsVM] Load error: " +
+                    $"{ex.Message}");
             }
             finally
             {

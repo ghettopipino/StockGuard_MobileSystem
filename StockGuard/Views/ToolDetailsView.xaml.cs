@@ -13,7 +13,8 @@ public partial class ToolDetailsView : ContentPage
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
         if (BindingContext is ToolDetailsViewModel vm)
-            await vm.LoadAsync();
+            await vm.LoadAsync(forceRefresh: true);
     }
 }
