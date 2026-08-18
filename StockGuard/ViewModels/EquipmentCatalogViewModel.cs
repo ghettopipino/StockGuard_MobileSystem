@@ -164,7 +164,7 @@ namespace StockGuard.ViewModels
                         forceRefresh: true);
 
                 // Get equipment quantities allocated
-                // to all non-completed projects.
+                // to active projects.
                 var allocations =
                     await _firebase
                         .GetAllActiveProjectEquipmentRequirementsAsync();
@@ -182,76 +182,76 @@ namespace StockGuard.ViewModels
                 TotalCatalogs = catalogs.Count;
                 TotalTools = allTools.Count;
 
-                int totalCompanyAvailable = 0;
+                int totalAvailable = 0;
 
                 Catalogs.Clear();
 
                 foreach (var catalog in catalogs)
                 {
                     var tools = allTools
-                        .Where(t =>
-                            t.CatalogId == catalog.CatalogId)
-                        .ToList();
+    .Where(t =>
+        t.CatalogId == catalog.CatalogId)
+    .ToList();
 
-                    // Actual physical statuses
-                    int physicalAvailable =
-                        tools.Count(t =>
-                            t.Status == "Available");
+                    // ── PHYSICAL TOOL STATES ─────────────────────────────
 
-                    int physicallyBorrowed =
-                        tools.Count(t =>
-                            t.Status == "Borrowed");
+                    int physicalAvailable = tools.Count(t =>
+                        t.Status == "Available");
 
-                    int damaged =
-                        tools.Count(t =>
-                            t.Status is "Damaged" or "UnderRepair");
+                    int actualBorrowed = tools.Count(t =>
+                        t.Status == "Borrowed" ||
+                        t.Status == "PendingPause" ||
+                        t.Status == "PendingReturn");
 
-                    // How many units of this catalog have been
-                    // allocated to projects.
-                    int allocated =
-                        allocations
-                            .Where(a =>
-                                a.CatalogId == catalog.CatalogId)
-                            .Sum(a => a.QuantityNeeded);
+                    int onHold = tools.Count(t =>
+                        t.Status == "OnHold");
 
-                    // Borrowed tools already consume part of the
-                    // project's allocation.
-                    //
-                    // Example:
-                    // Allocated = 3
-                    // Worker accepted = 1
-                    // Still reserved = 2
-                    int remainingReserved =
-                        Math.Max(
-                            0,
-                            allocated - physicallyBorrowed);
+                    int damaged = tools.Count(t =>
+                        t.Status == "Damaged" ||
+                        t.Status == "UnderRepair");
 
-                    // Physical available minus units that are
-                    // reserved for projects but not distributed yet.
-                    int companyAvailable =
-                        Math.Max(
-                            0,
-                            physicalAvailable - remainingReserved);
+                    // ── PROJECT ALLOCATION ────────────────────────────────
 
-                    // Company perspective:
-                    // everything allocated to a project is treated
-                    // as borrowed/accountable outside company stock.
-                    int companyBorrowed =
-                        allocated;
+                    int allocated = allocations
+                        .Where(a =>
+                            a.CatalogId == catalog.CatalogId)
+                        .Sum(a => a.QuantityNeeded);
 
-                    totalCompanyAvailable += companyAvailable;
+                    // Tools already under project custody
+                    int alreadyInProjectCustody =
+                        actualBorrowed + onHold;
+
+                    // Allocation that is still reserved but has not
+                    // physically left Available stock yet
+                    int remainingReserved = Math.Max(
+                        0,
+                        allocated - alreadyInProjectCustody);
+
+                    // Actual company/shop availability
+                    int companyAvailable = Math.Max(
+                        0,
+                        physicalAvailable - remainingReserved);
+
+                    totalAvailable += companyAvailable;
 
                     Catalogs.Add(
                         new CatalogDisplayItem(catalog)
                         {
                             TotalTools = tools.Count,
+
                             AvailableTools = companyAvailable,
-                            BorrowedTools = companyBorrowed,
+
+                            // SAME behavior as ToolList:
+                            // allocated equipment counts as Borrowed
+                            BorrowedTools = allocated,
+
+                            OnHoldTools = onHold,
+
                             DamagedTools = damaged
                         });
                 }
 
-                AvailableTools = totalCompanyAvailable;
+                AvailableTools = totalAvailable;
 
                 HasCatalogs =
                     Catalogs.Count > 0;
@@ -266,6 +266,7 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
+
 
         private async Task RefreshAsync()
         {

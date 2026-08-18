@@ -866,6 +866,8 @@ namespace StockGuard.Services
             catch { return string.Empty; }
         }
 
+
+
         public async Task<bool> UpdatePauseRequestAsync(
             string key, PauseRequest request)
         {
@@ -904,18 +906,100 @@ namespace StockGuard.Services
             catch { return new List<PauseRequestResult>(); }
         }
 
+
+        // ── RETURN REQUESTS ───────────────────────────────────────────────────────
+
+        public async Task<string> CreateReturnRequestAsync(ReturnRequest request)
+        {
+            try
+            {
+                var result = await _client
+                    .Child("returnRequests")
+                    .PostAsync(request);
+
+                return result.Key;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"CreateReturnRequestAsync error: {ex.Message}");
+
+                return string.Empty;
+            }
+        }
+
+        public async Task<bool> UpdateReturnRequestAsync(
+            string key,
+            ReturnRequest request)
+        {
+            try
+            {
+                await _client
+                    .Child("returnRequests")
+                    .Child(key)
+                    .PutAsync(request);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"UpdateReturnRequestAsync error: {ex.Message}");
+
+                return false;
+            }
+        }
+
+        public async Task<List<ReturnRequestResult>> GetAllReturnRequestsRawAsync()
+        {
+            try
+            {
+                var result = await _client
+                    .Child("returnRequests")
+                    .OnceAsync<ReturnRequest>();
+
+                if (result == null)
+                    return new List<ReturnRequestResult>();
+
+                return result
+                    .Where(r => r.Object != null)
+                    .Select(r => new ReturnRequestResult
+                    {
+                        Key = r.Key,
+                        Request = r.Object
+                    })
+                    .OrderByDescending(r => r.Request.RequestDate)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllReturnRequestsRawAsync error: {ex.Message}");
+
+                return new List<ReturnRequestResult>();
+            }
+        }
+
         // ── GLOBAL REAL-TIME LISTENER ─────────────────────────────────────────
 
         public void StartGlobalListener(Action onChanged)
         {
             var nodes = new[]
-            {
-                "tools", "transactions", "borrowRequests",
-                "transferRequests", "damageReports", "pauseRequests",
-                "users", "projects", "projectTools",
-                "projectWorkers",    "projectEquipment",   // ADD THIS
-                 "catalogs"
-            };
+                {
+                    "tools",
+                    "transactions",
+                    "borrowRequests",
+                    "transferRequests",
+                    "damageReports",
+                    "pauseRequests",
+                    "returnRequests",
+                    "users",
+                    "projects",
+                    "projectTools",
+                    "projectWorkers",
+                    "projectEquipment",
+                    "catalogs"
+                };
 
             foreach (var node in nodes)
             {

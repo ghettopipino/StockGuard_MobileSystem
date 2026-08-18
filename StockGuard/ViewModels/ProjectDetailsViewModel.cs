@@ -404,30 +404,58 @@ namespace StockGuard.ViewModels
                 $"&projectId={ProjectId}");
         }
 
-        private async Task LoadEquipmentSummaryAsync(List<Tool> allTools, List<string> workerKeys)
+        private async Task LoadEquipmentSummaryAsync(
+    List<Tool> allTools,
+    List<string> workerKeys)
         {
-            var requirements = await _firebase.GetProjectEquipmentRequirementsAsync(ProjectId);
+            var requirements =
+                await _firebase
+                    .GetProjectEquipmentRequirementsAsync(ProjectId);
 
             EquipmentSummary.Clear();
+
             foreach (var req in requirements)
             {
                 var borrowedCount = allTools.Count(t =>
-                    t.CatalogId == req.CatalogId &&
-                    t.Status == "Borrowed" &&
-                     t.BorrowedProjectId == ProjectId);
+                 t.CatalogId == req.CatalogId &&
+                 (
+                     // Active borrowing / pending requests
+                     (
+                         t.BorrowedProjectId == ProjectId &&
+                         (
+                             t.Status == "Borrowed" ||
+                             t.Status == "PendingPause" ||
+                             t.Status == "PendingReturn"
+                         )
+                     )
 
-                EquipmentSummary.Add(new CatalogStockSummary
-                {
-                    CatalogId = req.CatalogId,
-                    CatalogName = req.CatalogName,
-                    QuantityNeeded = req.QuantityNeeded,
-                    BorrowedCount = borrowedCount
-                });
+                     ||
+
+                     // Paused equipment belongs to its hold project
+                     (
+                         t.HoldProjectId == ProjectId &&
+                         t.Status == "OnHold"
+                     )
+                 ));
+
+                EquipmentSummary.Add(
+                    new CatalogStockSummary
+                    {
+                        CatalogId = req.CatalogId,
+                        CatalogName = req.CatalogName,
+                        QuantityNeeded = req.QuantityNeeded,
+                        BorrowedCount = borrowedCount
+                    });
             }
 
-            ToolCount = requirements.Sum(r => r.QuantityNeeded);
-            BorrowedCount = EquipmentSummary.Sum(e => e.BorrowedCount);
-            HasEquipment = EquipmentSummary.Count > 0;
+            ToolCount =
+                requirements.Sum(r => r.QuantityNeeded);
+
+            BorrowedCount =
+                EquipmentSummary.Sum(e => e.BorrowedCount);
+
+            HasEquipment =
+                EquipmentSummary.Count > 0;
         }
 
         private async Task AddEquipmentAsync()
@@ -506,7 +534,7 @@ namespace StockGuard.ViewModels
             if (catalog == null)
                 return;
 
-            // ── GET TRUE COMPANY AVAILABILITY ────────────────────────
+            // ── GET AVAILABLE QUANTITY FOR PROJECT ALLOCATION ───────────
 
             var allTools = await _firebase.GetAllToolsAsync(
                 forceRefresh: true);
@@ -514,39 +542,32 @@ namespace StockGuard.ViewModels
             var allocations = await _firebase
                 .GetAllActiveProjectEquipmentRequirementsAsync();
 
-            // Physical tools still marked Available
-            int physicalAvailable = allTools.Count(t =>
+            // All usable physical units of this equipment type.
+            // Damaged, under repair, and lost tools should not be
+            // available for new project allocation.
+            int totalUsableTools = allTools.Count(t =>
                 t.CatalogId == catalog.CatalogId &&
-                t.Status == "Available");
+                t.Status != "Damaged" &&
+                t.Status != "UnderRepair" &&
+                t.Status != "Lost");
 
-            // Actual physical tools already borrowed by workers
-            int actualBorrowed = allTools.Count(t =>
-                t.CatalogId == catalog.CatalogId &&
-                t.Status == "Borrowed");
-
-            // Total project allocations for this catalog
+            // Total quantity already allocated to projects.
             int totalAllocated = allocations
                 .Where(a =>
                     a.CatalogId == catalog.CatalogId)
                 .Sum(a => a.QuantityNeeded);
 
-            // Borrowed physical tools already consume
-            // part of the project allocation
-            int remainingReserved = Math.Max(
-                0,
-                totalAllocated - actualBorrowed);
-
-            // True quantity still available at company/shop level
+            // Quantity that can still be allocated.
             int availableNow = Math.Max(
                 0,
-                physicalAvailable - remainingReserved);
+                totalUsableTools - totalAllocated);
 
             if (availableNow <= 0)
             {
                 await Shell.Current.DisplayAlert(
                     "None Available",
-                    $"There are currently no available " +
-                    $"{catalog.CatalogName} units remaining.",
+                    $"All usable {catalog.CatalogName} units " +
+                    $"are already allocated to projects.",
                     "OK");
 
                 return;

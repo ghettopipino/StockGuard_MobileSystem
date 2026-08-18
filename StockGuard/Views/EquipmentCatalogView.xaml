@@ -96,10 +96,9 @@
                                             </FormattedString>
                                         </Label.FormattedText>
                                     </Label>
-                                    <Label Text="{Binding StatusSummary}"
-                                           FontSize="12" TextColor="{DynamicResource Text2}"/>
+                                   
 
-                                    <Grid ColumnDefinitions="*,*,*" Margin="0,6,0,0">
+                                    <Grid ColumnDefinitions="*,*,*,*" Margin="0,6,0,0">
                                         <Label Grid.Column="0" HorizontalOptions="Center">
                                             <Label.FormattedText>
                                                 <FormattedString>
@@ -117,6 +116,17 @@
                                             </Label.FormattedText>
                                         </Label>
                                         <Label Grid.Column="2" HorizontalOptions="Center">
+                                            <Label.FormattedText>
+                                                <FormattedString>
+                                                    <Span Text="{Binding OnHoldTools}"
+                                                          FontAttributes="Bold"
+                                                          TextColor="{DynamicResource Amber}"/>
+                                                    <Span Text=" On Hold"
+                                                          FontSize="10"/>
+                                                </FormattedString>
+                                            </Label.FormattedText>
+                                        </Label>
+                                        <Label Grid.Column="3" HorizontalOptions="Center">
                                             <Label.FormattedText>
                                                 <FormattedString>
                                                     <Span Text="{Binding DamagedTools}" FontAttributes="Bold" TextColor="{DynamicResource Red}"/>

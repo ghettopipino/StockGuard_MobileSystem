@@ -58,6 +58,8 @@ namespace StockGuard.ViewModels
                 OnPropertyChanged(nameof(IsAssignedToMe));
                 OnPropertyChanged(nameof(ShowPause));
                 OnPropertyChanged(nameof(ShowResume));
+                OnPropertyChanged(nameof(ShowReturn));
+                OnPropertyChanged(nameof(ShowPendingReturn));
                 OnPropertyChanged(nameof(ShowConfirmReceipt));
                 OnPropertyChanged(nameof(ShowPendingPause));
                 OnPropertyChanged(nameof(ShowDeclineReceipt));
@@ -107,6 +109,12 @@ namespace StockGuard.ViewModels
 
         public bool ShowResume =>
             Tool != null && IsAssignedToMe && Tool.IsOnHold;
+
+        public bool ShowReturn =>
+            Tool != null && IsAssignedToMe && (Tool.IsBorrowed || Tool.IsOnHold);
+
+        public bool ShowPendingReturn =>
+            Tool != null && IsAssignedToMe && Tool.Status == "PendingReturn";
 
         public bool ShowTransfer =>
             Tool != null && IsAssignedToMe && Tool.IsBorrowed;
@@ -275,47 +283,145 @@ namespace StockGuard.ViewModels
         }
 
         // ── RETURN ────────────────────────────────────────────────────────────
+        // ── RETURN ────────────────────────────────────────────────────────────────
         private async Task ReturnAsync()
         {
-            if (Tool is null || IsBusy) return;
+            if (Tool is null || IsBusy)
+                return;
+
+            if (!IsAssignedToMe)
+                return;
+
+            if (!(Tool.IsBorrowed || Tool.IsOnHold))
+                return;
+
             IsBusy = true;
+
             try
             {
                 var condition = await Shell.Current.DisplayActionSheet(
-                    "Tool Condition On Return", "Cancel", null,
-                    "Good", "Minor Damage", "Major Damage");
-                if (condition == null || condition == "Cancel") return;
+                    "Tool Condition On Return",
+                    "Cancel",
+                    null,
+                    "Good",
+                    "Minor Damage",
+                    "Major Damage");
 
-                var prevCondition = Tool.Condition;
-                var toolName = Tool.ToolName;
-                var toolId = Tool.ToolId;
+                if (condition == null || condition == "Cancel")
+                    return;
 
-                Tool.Status = "Available";
-                Tool.AssignedWorkerId = string.Empty;
-                Tool.AssignedWorkerName = string.Empty;
-                Tool.Condition = condition;
-                Tool.BorrowDate = null;
+                bool confirm = await Shell.Current.DisplayAlert(
+                    "Return Tool",
+                    $"Submit {Tool.ToolName} ({Tool.ToolId}) for return?\n\n" +
+                    "Please bring the tool to the Project Engineer for physical inspection. " +
+                    "The tool will remain assigned to you until the return is verified.",
+                    "Submit Return",
+                    "Cancel");
 
-                var success = await _firebase.UpdateToolAsync(Tool);
-                if (!success)
+                if (!confirm)
+                    return;
+
+                var user = _auth.CurrentUser;
+
+                if (user == null)
                 {
-                    await Shell.Current.DisplayAlert("Error", "Could not return tool. Try again.", "OK");
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Your user session could not be found.",
+                        "OK");
+
                     return;
                 }
 
-                await LogAsync("Returned", $"Returned in {condition} condition", condition);
+                var request = new ReturnRequest
+                {
+                    ToolId = Tool.ToolId,
+                    ToolName = Tool.ToolName,
 
-                if (prevCondition != condition && condition != "Good")
-                    await Shell.Current.DisplayAlert("⚠️ Condition Changed",
-                        $"Tool condition changed from {prevCondition} to {condition}.\n\nProject Engineer has been notified.", "OK");
+                    WorkerId = user.UniqueKey,
+                    WorkerName = user.FullName,
+
+                    ProjectId = Tool.BorrowedProjectId ?? string.Empty,
+                    ProjectName = Tool.BorrowedProjectName ?? string.Empty,
+
+                    ReportedCondition = condition,
+                    VerifiedCondition = string.Empty,
+
+                    Status = "Pending",
+                    RequestDate = DateTime.Now
+                };
+
+                var requestKey =
+                    await _firebase.CreateReturnRequestAsync(request);
+
+                if (string.IsNullOrEmpty(requestKey))
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Could not submit the return request. Please check your connection and try again.",
+                        "OK");
+
+                    return;
+                }
+
+                // IMPORTANT:
+                // Worker remains accountable until PE verifies.
+                Tool.Status = "PendingReturn";
+
+                // Do NOT clear:
+                // AssignedWorkerId
+                // AssignedWorkerName
+                // BorrowDate
+                // BorrowedProjectId
+                // BorrowedProjectName
+
+                var updated =
+                    await _firebase.UpdateToolAsync(Tool);
+
+                if (!updated)
+                {
+                    request.Status = "Rejected";
+                    request.Notes =
+                        "Return request cancelled because tool status could not be updated.";
+
+                    await _firebase.UpdateReturnRequestAsync(
+                        requestKey,
+                        request);
+
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "The return request could not be completed because the tool status failed to update.",
+                        "OK");
+
+                    return;
+                }
+
+                await LogAsync(
+                    "Return Requested",
+                    $"Return requested. Worker reported condition: {condition}. Awaiting Project Engineer verification.",
+                    condition);
 
                 await LoadToolAsync();
-                await Shell.Current.DisplayAlert("✅ Tool Returned",
-                    $"You returned {toolName} ({toolId}) successfully.", "OK");
-            }
-            finally { IsBusy = false; }
-        }
 
+                await Shell.Current.DisplayAlert(
+                    "Return Request Submitted",
+                    $"{Tool.ToolName} ({Tool.ToolId}) is now pending return verification.\n\n" +
+                    "Please bring the tool to the Project Engineer. " +
+                    "You remain responsible for the tool until the Project Engineer confirms the return.",
+                    "OK");
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    $"Could not submit return request.\n{ex.Message}",
+                    "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
         // ── TRANSFER ──────────────────────────────────────────────────────────
         private async Task TransferAsync()
         {
@@ -504,26 +610,104 @@ namespace StockGuard.ViewModels
         }
 
         // ── RESUME ────────────────────────────────────────────────────────────
+        // ── RESUME ────────────────────────────────────────────────────────────────
         private async Task ResumeAsync()
         {
-            if (Tool is null || IsBusy) return;
+            if (Tool is null || IsBusy)
+                return;
+
+            if (!IsAssignedToMe)
+                return;
+
+            if (!Tool.IsOnHold)
+                return;
+
             IsBusy = true;
+
             try
             {
-                bool confirm = await Shell.Current.DisplayAlert("▶️ Resume Borrowing",
-                    $"Resume borrowing {Tool.ToolName} ({Tool.ToolId})?\n\nYou are taking the tool from the project site storage.",
-                    "Resume", "Cancel");
-                if (!confirm) return;
+                bool confirm =
+                    await Shell.Current.DisplayAlert(
+                        "Resume Borrowing",
+                        $"Resume using {Tool.ToolName} ({Tool.ToolId})?\n\n" +
+                        "You are taking the tool back from project site storage.",
+                        "Resume",
+                        "Cancel");
 
+                if (!confirm)
+                    return;
+
+                // Return to active borrowed state.
                 Tool.Status = "Borrowed";
-                Tool.BorrowDate = DateTime.Now;
-                await _firebase.UpdateToolAsync(Tool);
-                await LogAsync("Resumed", "Resumed borrowing from site storage", Tool.Condition);
+
+                // IMPORTANT:
+                // Do NOT change:
+                //
+                // AssignedWorkerId
+                // AssignedWorkerName
+                // BorrowedProjectId
+                // BorrowedProjectName
+                // BorrowDate
+                //
+                // This is still the same borrowing session.
+
+                // Clear temporary hold information.
+                Tool.HoldProjectId =
+                    string.Empty;
+
+                Tool.HoldProjectName =
+                    string.Empty;
+
+                Tool.HoldLocation =
+                    string.Empty;
+
+                Tool.HoldDate =
+                    null;
+
+                Tool.LastBorrowerId =
+                    string.Empty;
+
+                Tool.LastBorrowerName =
+                    string.Empty;
+
+                var success =
+                    await _firebase
+                        .UpdateToolAsync(Tool);
+
+                if (!success)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Could not resume borrowing. Please try again.",
+                        "OK");
+
+                    return;
+                }
+
+                await LogAsync(
+                    "Resumed",
+                    "Resumed borrowing from project site storage",
+                    Tool.Condition);
+
                 await LoadToolAsync();
-                await Shell.Current.DisplayAlert("▶️ Borrowing Resumed",
-                    $"You have resumed borrowing {Tool.ToolName} ({Tool.ToolId}).", "OK");
+
+                await Shell.Current.DisplayAlert(
+                    "Borrowing Resumed",
+                    $"You resumed using " +
+                    $"{Tool.ToolName} ({Tool.ToolId}).",
+                    "OK");
             }
-            finally { IsBusy = false; }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    $"Could not resume borrowing.\n{ex.Message}",
+                    "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         // ── CONFIRM RECEIPT ───────────────────────────────────────────────────

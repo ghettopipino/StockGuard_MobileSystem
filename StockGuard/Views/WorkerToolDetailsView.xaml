@@ -312,13 +312,13 @@
                             </VerticalStackLayout>
                         </Frame>
 
-                        <!--<Button IsVisible="{Binding ShowPause}"
+                        <Button IsVisible="{Binding ShowPause}"
                                 Text="⏸️  Pause Borrowing"
                                 Command="{Binding PauseCommand}"
                                 BackgroundColor="#7c3aed"
                                 TextColor="White"
                                 FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>-->
+                                CornerRadius="12" HeightRequest="50"/>
 
                         <Button IsVisible="{Binding ShowResume}"
                                 Text="▶️  Resume Borrowing"
@@ -327,7 +327,40 @@
                                 TextColor="White"
                                 FontSize="14" FontAttributes="Bold"
                                 CornerRadius="12" HeightRequest="50"/>
+                       
+                        
+                        <Button IsVisible="{Binding ShowReturn}"
+                                Text="Return Tool"
+                                Command="{Binding ReturnCommand}"
+                                BackgroundColor="{DynamicResource BgElevated}"
+                                TextColor="{DynamicResource Blue}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                BorderWidth="1"
+                                FontSize="14"
+                                FontAttributes="Bold"
+                                CornerRadius="12"
+                                HeightRequest="50"/>
 
+                        <Frame IsVisible="{Binding ShowPendingReturn}"
+                               BackgroundColor="{DynamicResource BgElevated}"
+                               BorderColor="{DynamicResource Amber}"
+                               CornerRadius="12"
+                               Padding="16"
+                               HasShadow="False">
+
+                            <VerticalStackLayout Spacing="6">
+
+                                <Label Text="Return pending verification"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Amber}"/>
+
+                                <Label Text="Please bring the tool to the Project Engineer. You remain responsible for it until the return is physically verified."
+                                       FontSize="12"
+                                       TextColor="{DynamicResource Text2}"/>
+
+                            </VerticalStackLayout>
+                        </Frame>
                         <!--<Button IsVisible="{Binding ShowTransfer}"
                                 Text="🔄  Transfer Tool"
                                 Command="{Binding TransferCommand}"

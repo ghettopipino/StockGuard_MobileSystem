@@ -1,280 +1,814 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:StockGuard.ViewModels"
-             xmlns:models="clr-namespace:StockGuard.Models"
-             x:Class="StockGuard.Views.PauseRequestsView"
-             x:DataType="vm:PauseRequestsViewModel"
-             Shell.NavBarIsVisible="False"
-             BackgroundColor="{DynamicResource BgBase}">
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:StockGuard.ViewModels"
+    xmlns:models="clr-namespace:StockGuard.Models"
+    x:Class="StockGuard.Views.PauseRequestsView"
+    x:DataType="vm:PauseRequestsViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{DynamicResource BgBase}">
 
     <Grid>
+
         <RefreshView
             IsRefreshing="{Binding IsRefreshing}"
             Command="{Binding RefreshCommand}"
             RefreshColor="{DynamicResource Blue}">
+
             <ScrollView>
-                <VerticalStackLayout Spacing="0" Padding="0,0,0,40">
 
-                    <!-- ── HEADER ──────────────────────────── -->
-                    <!-- ☰ replaces ← — PauseRequestsView is a FlyoutItem root page -->
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                          ColumnSpacing="10"
-                          Padding="20,52,20,16"
-                          BackgroundColor="{DynamicResource BgSurface}">
+                <VerticalStackLayout
+                    Spacing="0"
+                    Padding="0,0,0,40">
 
-                        <Button Grid.Column="0"
-                                Text="☰"
-                                Command="{Binding OpenFlyoutCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="18" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
+                    <!-- ═════════════════════════════════════════════
+                         HEADER
+                    ═════════════════════════════════════════════ -->
 
-                        <VerticalStackLayout Grid.Column="1"
-                                             VerticalOptions="Center" Spacing="1">
-                            <Label Text="Pause Requests"
-                                   FontSize="16" FontAttributes="Bold"
-                                   TextColor="{DynamicResource Text1}"/>
-                            <Label Text="Verify and approve tool pause requests"
-                                   FontSize="11"
-                                   TextColor="{DynamicResource Text3}"/>
+                    <Grid
+                        ColumnDefinitions="Auto,*,Auto,Auto"
+                        ColumnSpacing="10"
+                        Padding="20,52,20,16"
+                        BackgroundColor="{DynamicResource BgSurface}">
+
+                        <Button
+                            Grid.Column="0"
+                            Text="☰"
+                            Command="{Binding OpenFlyoutCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
+
+                        <VerticalStackLayout
+                            Grid.Column="1"
+                            VerticalOptions="Center"
+                            Spacing="1">
+
+                            <Label
+                                Text="Pause &amp; Return"
+                                FontSize="16"
+                                FontAttributes="Bold"
+                                TextColor="{DynamicResource Text1}"/>
+
+                            <Label
+                                Text="Verify equipment custody requests"
+                                FontSize="11"
+                                TextColor="{DynamicResource Text3}"/>
+
                         </VerticalStackLayout>
 
-                        <Button Grid.Column="2"
-                                Text="{Binding ThemeIcon}"
-                                Command="{Binding ToggleThemeCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="16" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
+                        <Button
+                            Grid.Column="2"
+                            Text="{Binding ThemeIcon}"
+                            Command="{Binding ToggleThemeCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="16"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
 
-                        <Button Grid.Column="3"
-                                Text="🔄"
-                                Command="{Binding RefreshCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="16" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
+                        <Button
+                            Grid.Column="3"
+                            Text="↻"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
+
                     </Grid>
 
-                    <!-- ── STATS ───────────────────────────── -->
-                    <Grid ColumnDefinitions="*,*"
-                          ColumnSpacing="10"
-                          Padding="20,14">
 
-                        <Frame Grid.Column="0"
-                               BackgroundColor="{DynamicResource BgCard}"
-                               BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14" Padding="0" HasShadow="False">
-                            <VerticalStackLayout Padding="10,14" Spacing="4"
-                                HorizontalOptions="Center">
-                                <Label Text="⏳" FontSize="20"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="{Binding PendingCount}"
-                                       FontSize="26" FontAttributes="Bold"
-                                       TextColor="{DynamicResource Amber}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="Pending" FontSize="10"
-                                       TextColor="{DynamicResource Text3}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Frame>
+                    <!-- ═════════════════════════════════════════════
+                         MODE BUTTONS
+                    ═════════════════════════════════════════════ -->
 
-                        <Frame Grid.Column="1"
-                               BackgroundColor="{DynamicResource BgCard}"
-                               BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14" Padding="0" HasShadow="False">
-                            <VerticalStackLayout Padding="10,14" Spacing="4"
-                                HorizontalOptions="Center">
-                                <Label Text="✅" FontSize="20"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="{Binding ApprovedCount}"
-                                       FontSize="26" FontAttributes="Bold"
-                                       TextColor="{DynamicResource Green}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="Approved" FontSize="10"
-                                       TextColor="{DynamicResource Text3}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Frame>
+                    <Grid
+                        ColumnDefinitions="*,*"
+                        ColumnSpacing="8"
+                        Padding="20,14,20,4">
+
+                        <Button
+                            Grid.Column="0"
+                            Text="Pause Requests"
+                            Command="{Binding ShowPauseCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Blue}"
+                            BorderColor="{DynamicResource Blue}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="44"/>
+
+                        <Button
+                            Grid.Column="1"
+                            Text="Return Requests"
+                            Command="{Binding ShowReturnCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Green}"
+                            BorderColor="{DynamicResource Green}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="44"/>
+
                     </Grid>
 
-                    <!-- ── LOADING ─────────────────────────── -->
+
+                    <!-- ═════════════════════════════════════════════
+                         STATS
+                         These automatically change based on mode.
+                    ═════════════════════════════════════════════ -->
+
+                    <Grid
+                        ColumnDefinitions="*,*"
+                        ColumnSpacing="10"
+                        Padding="20,10,20,14">
+
+                        <Frame
+                            Grid.Column="0"
+                            BackgroundColor="{DynamicResource BgCard}"
+                            BorderColor="{DynamicResource BorderColor}"
+                            CornerRadius="14"
+                            Padding="0"
+                            HasShadow="False">
+
+                            <VerticalStackLayout
+                                Padding="0,14"
+                                Spacing="4"
+                                HorizontalOptions="Center">
+
+                                <Label
+                                    Text="Pending"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
+
+                                <Label
+                                    Text="{Binding PendingCount}"
+                                    FontSize="26"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Amber}"
+                                    HorizontalOptions="Center"/>
+
+                            </VerticalStackLayout>
+
+                        </Frame>
+
+                        <Frame
+                            Grid.Column="1"
+                            BackgroundColor="{DynamicResource BgCard}"
+                            BorderColor="{DynamicResource BorderColor}"
+                            CornerRadius="14"
+                            Padding="0"
+                            HasShadow="False">
+
+                            <VerticalStackLayout
+                                Padding="0,14"
+                                Spacing="4"
+                                HorizontalOptions="Center">
+
+                                <Label
+                                    Text="Approved"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
+
+                                <Label
+                                    Text="{Binding ApprovedCount}"
+                                    FontSize="26"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Green}"
+                                    HorizontalOptions="Center"/>
+
+                            </VerticalStackLayout>
+
+                        </Frame>
+
+                    </Grid>
+
+
+                    <!-- ═════════════════════════════════════════════
+                         LOADING
+                    ═════════════════════════════════════════════ -->
+
                     <ActivityIndicator
                         IsRunning="{Binding IsBusy}"
                         IsVisible="{Binding IsBusy}"
                         Color="{DynamicResource Blue}"
                         HorizontalOptions="Center"
-                        Margin="0,10"/>
+                        Margin="0,8"/>
 
-                    <!-- ── PENDING SECTION ─────────────────── -->
-                    <Label Text="⏳  Pending Verification"
-                           FontSize="14" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text1}"
-                           Padding="20,10,20,6"/>
 
-                    <Frame IsVisible="{Binding NoPending}"
-                           BackgroundColor="{DynamicResource BgCard}"
-                           BorderColor="{DynamicResource BorderSoft}"
-                           CornerRadius="14" Padding="24"
-                           HasShadow="False" Margin="20,0">
-                        <VerticalStackLayout Spacing="8" HorizontalOptions="Center">
-                            <Label Text="✅" FontSize="36" HorizontalOptions="Center"/>
-                            <Label Text="No pending pause requests"
-                                   FontSize="13"
-                                   TextColor="{DynamicResource Text3}"
-                                   HorizontalOptions="Center"/>
-                        </VerticalStackLayout>
-                    </Frame>
+                    <!-- ═════════════════════════════════════════════
+                         PAUSE MODE
+                    ═════════════════════════════════════════════ -->
 
                     <VerticalStackLayout
-                        BindableLayout.ItemsSource="{Binding PendingRequests}"
-                        Padding="20,0" Spacing="10">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="models:PauseRequestItem">
-                                <Frame BackgroundColor="{DynamicResource BgCard}"
-                                       BorderColor="#f59e0b"
-                                       CornerRadius="16" Padding="0"
-                                       HasShadow="False">
-                                    <VerticalStackLayout Spacing="0">
+                        IsVisible="{Binding IsPauseMode}"
+                        Spacing="0">
 
-                                        <VerticalStackLayout Padding="16,14,16,12" Spacing="6">
-                                            <HorizontalStackLayout Spacing="8">
-                                                <Label Text="⏸️" FontSize="18"/>
-                                                <VerticalStackLayout Spacing="2">
-                                                    <Label Text="{Binding ToolName}"
-                                                           FontSize="15" FontAttributes="Bold"
-                                                           TextColor="{DynamicResource Text1}"/>
-                                                    <Label Text="{Binding ToolId}"
-                                                           FontSize="12"
-                                                           TextColor="{DynamicResource Text3}"/>
-                                                </VerticalStackLayout>
-                                            </HorizontalStackLayout>
+                        <Label
+                            Text="Pending Pause Verification"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"
+                            Padding="20,10,20,6"/>
 
-                                            <HorizontalStackLayout Spacing="6">
-                                                <Label Text="👷" FontSize="12"/>
-                                                <Label Text="{Binding WorkerName}"
-                                                       FontSize="13"
-                                                       TextColor="{DynamicResource Text2}"/>
-                                            </HorizontalStackLayout>
 
-                                            <HorizontalStackLayout Spacing="6">
-                                                <Label Text="📍" FontSize="12"/>
-                                                <Label Text="{Binding ProjectName}"
-                                                       FontSize="12"
-                                                       TextColor="{DynamicResource Text3}"/>
-                                            </HorizontalStackLayout>
+                        <!-- EMPTY PAUSE -->
 
-                                            <Frame BackgroundColor="{DynamicResource BgElevated}"
-                                                   BorderColor="Transparent"
-                                                   CornerRadius="8" Padding="12,8"
-                                                   HasShadow="False">
-                                                <VerticalStackLayout Spacing="3">
-                                                    <Label Text="Reason" FontSize="10"
-                                                           FontAttributes="Bold"
-                                                           TextColor="{DynamicResource Text3}"/>
-                                                    <Label Text="{Binding Reason}"
-                                                           FontSize="13"
-                                                           TextColor="{DynamicResource Text2}"/>
-                                                </VerticalStackLayout>
-                                            </Frame>
+                        <Frame
+                            IsVisible="{Binding NoPendingPause}"
+                            BackgroundColor="{DynamicResource BgCard}"
+                            BorderColor="{DynamicResource BorderSoft}"
+                            CornerRadius="14"
+                            Padding="24"
+                            HasShadow="False"
+                            Margin="20,0">
 
-                                            <Label Text="{Binding DateLabel}"
-                                                   FontSize="11"
-                                                   TextColor="{DynamicResource Text3}"/>
-                                        </VerticalStackLayout>
+                            <VerticalStackLayout
+                                Spacing="6"
+                                HorizontalOptions="Center">
 
-                                        <BoxView HeightRequest="1"
-                                                 Color="{DynamicResource BorderSoft}"/>
+                                <Label
+                                    Text="No pending pause requests"
+                                    FontSize="13"
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
 
-                                        <Frame BackgroundColor="#1a1400"
-                                               BorderColor="Transparent"
-                                               CornerRadius="0" Padding="14,10"
-                                               HasShadow="False">
-                                            <Label Text="⚠️  Physically verify the tool is in site storage before approving"
-                                                   FontSize="11"
-                                                   TextColor="{DynamicResource Amber}"
-                                                   HorizontalTextAlignment="Center"/>
-                                        </Frame>
+                            </VerticalStackLayout>
 
-                                        <Grid ColumnDefinitions="*,*" ColumnSpacing="0">
-                                            <Button Grid.Column="0"
-                                                    Text="✅  Approve"
+                        </Frame>
+
+
+                        <!-- PENDING PAUSE REQUESTS -->
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding PendingRequests}"
+                            Padding="20,0"
+                            Spacing="10">
+
+                            <BindableLayout.ItemTemplate>
+
+                                <DataTemplate
+                                    x:DataType="models:PauseRequestItem">
+
+                                    <Frame
+                                        BackgroundColor="{DynamicResource BgCard}"
+                                        BorderColor="{DynamicResource Amber}"
+                                        CornerRadius="16"
+                                        Padding="0"
+                                        HasShadow="False">
+
+                                        <VerticalStackLayout
+                                            Spacing="0">
+
+                                            <VerticalStackLayout
+                                                Padding="16,14,16,12"
+                                                Spacing="7">
+
+                                                <Label
+                                                    Text="PAUSE REQUEST"
+                                                    FontSize="10"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Amber}"/>
+
+                                                <Label
+                                                    Text="{Binding ToolName}"
+                                                    FontSize="15"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text1}"/>
+
+                                                <Label
+                                                    Text="{Binding ToolId}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+
+                                                <Grid
+                                                    ColumnDefinitions="Auto,*"
+                                                    RowDefinitions="Auto,Auto"
+                                                    ColumnSpacing="10"
+                                                    RowSpacing="5">
+
+                                                    <Label
+                                                        Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        Text="Worker"
+                                                        FontSize="11"
+                                                        TextColor="{DynamicResource Text3}"/>
+
+                                                    <Label
+                                                        Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Text="{Binding WorkerName}"
+                                                        FontSize="12"
+                                                        TextColor="{DynamicResource Text2}"/>
+
+                                                    <Label
+                                                        Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Text="Project"
+                                                        FontSize="11"
+                                                        TextColor="{DynamicResource Text3}"/>
+
+                                                    <Label
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Text="{Binding ProjectName}"
+                                                        FontSize="12"
+                                                        TextColor="{DynamicResource Text2}"/>
+
+                                                </Grid>
+
+
+                                                <Frame
+                                                    BackgroundColor="{DynamicResource BgElevated}"
+                                                    BorderColor="Transparent"
+                                                    CornerRadius="8"
+                                                    Padding="12,8"
+                                                    HasShadow="False">
+
+                                                    <VerticalStackLayout
+                                                        Spacing="3">
+
+                                                        <Label
+                                                            Text="Reason"
+                                                            FontSize="10"
+                                                            FontAttributes="Bold"
+                                                            TextColor="{DynamicResource Text3}"/>
+
+                                                        <Label
+                                                            Text="{Binding Reason}"
+                                                            FontSize="13"
+                                                            TextColor="{DynamicResource Text2}"/>
+
+                                                    </VerticalStackLayout>
+
+                                                </Frame>
+
+
+                                                <Label
+                                                    Text="{Binding DateLabel}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+                                            </VerticalStackLayout>
+
+
+                                            <BoxView
+                                                HeightRequest="1"
+                                                Color="{DynamicResource BorderSoft}"/>
+
+
+                                            <Label
+                                                Text="Physically verify the tool at the storage location before approving."
+                                                FontSize="11"
+                                                TextColor="{DynamicResource Amber}"
+                                                HorizontalTextAlignment="Center"
+                                                Padding="14,10"/>
+
+
+                                            <Grid
+                                                ColumnDefinitions="*,*">
+
+                                                <Button
+                                                    Grid.Column="0"
+                                                    Text="Approve"
                                                     CommandParameter="{Binding .}"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}}, Path=ApproveCommand}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                                                                      Path=ApproveCommand}"
                                                     BackgroundColor="{DynamicResource Green}"
                                                     TextColor="White"
-                                                    FontSize="13" FontAttributes="Bold"
-                                                    CornerRadius="0" HeightRequest="48"/>
-                                            <Button Grid.Column="1"
-                                                    Text="❌  Reject"
+                                                    FontSize="13"
+                                                    FontAttributes="Bold"
+                                                    CornerRadius="0"
+                                                    HeightRequest="48"/>
+
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Text="Reject"
                                                     CommandParameter="{Binding .}"
-                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}}, Path=RejectCommand}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                                                                      Path=RejectCommand}"
                                                     BackgroundColor="{DynamicResource RedBg}"
                                                     TextColor="{DynamicResource Red}"
-                                                    FontSize="13" FontAttributes="Bold"
-                                                    CornerRadius="0" HeightRequest="48"/>
-                                        </Grid>
-                                    </VerticalStackLayout>
-                                </Frame>
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
-                    </VerticalStackLayout>
+                                                    FontSize="13"
+                                                    FontAttributes="Bold"
+                                                    CornerRadius="0"
+                                                    HeightRequest="48"/>
 
-                    <!-- ── RECENTLY PROCESSED ─────────────── -->
-                    <Label Text="📋  Recently Processed"
-                           FontSize="14" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text1}"
-                           Padding="20,20,20,6"/>
+                                            </Grid>
 
-                    <VerticalStackLayout
-                        BindableLayout.ItemsSource="{Binding ProcessedRequests}"
-                        Padding="20,0" Spacing="8">
-                        <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="models:PauseRequestItem">
-                                <Frame BackgroundColor="{DynamicResource BgCard}"
-                                       BorderColor="{DynamicResource BorderColor}"
-                                       CornerRadius="12" Padding="14"
-                                       HasShadow="False">
-                                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-
-                                        <Label Grid.Column="0"
-                                               Text="{Binding StatusIcon}"
-                                               FontSize="22" VerticalOptions="Center"/>
-
-                                        <VerticalStackLayout Grid.Column="1" Spacing="3">
-                                            <Label Text="{Binding ToolName}"
-                                                   FontSize="14" FontAttributes="Bold"
-                                                   TextColor="{DynamicResource Text1}"/>
-                                            <Label Text="{Binding WorkerName}"
-                                                   FontSize="12"
-                                                   TextColor="{DynamicResource Text2}"/>
-                                            <Label Text="{Binding DateLabel}"
-                                                   FontSize="11"
-                                                   TextColor="{DynamicResource Text3}"/>
                                         </VerticalStackLayout>
 
-                                        <Frame Grid.Column="2"
-                                               BackgroundColor="{DynamicResource BgElevated}"
-                                               BorderColor="Transparent"
-                                               CornerRadius="8" Padding="8,4"
-                                               HasShadow="False" VerticalOptions="Center">
-                                            <Label Text="{Binding Status}"
-                                                   FontSize="11" FontAttributes="Bold"
-                                                   TextColor="{Binding StatusColor}"/>
-                                        </Frame>
-                                    </Grid>
-                                </Frame>
-                            </DataTemplate>
-                        </BindableLayout.ItemTemplate>
+                                    </Frame>
+
+                                </DataTemplate>
+
+                            </BindableLayout.ItemTemplate>
+
+                        </VerticalStackLayout>
+
+
+                        <!-- PROCESSED PAUSE -->
+
+                        <Label
+                            Text="Recently Processed"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"
+                            Padding="20,20,20,6"/>
+
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding ProcessedRequests}"
+                            Padding="20,0"
+                            Spacing="8">
+
+                            <BindableLayout.ItemTemplate>
+
+                                <DataTemplate
+                                    x:DataType="models:PauseRequestItem">
+
+                                    <Frame
+                                        BackgroundColor="{DynamicResource BgCard}"
+                                        BorderColor="{DynamicResource BorderColor}"
+                                        CornerRadius="12"
+                                        Padding="14"
+                                        HasShadow="False">
+
+                                        <Grid
+                                            ColumnDefinitions="*,Auto"
+                                            ColumnSpacing="12">
+
+                                            <VerticalStackLayout
+                                                Grid.Column="0"
+                                                Spacing="3">
+
+                                                <Label
+                                                    Text="{Binding ToolName}"
+                                                    FontSize="14"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text1}"/>
+
+                                                <Label
+                                                    Text="{Binding WorkerName}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text2}"/>
+
+                                                <Label
+                                                    Text="{Binding DateLabel}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+                                            </VerticalStackLayout>
+
+                                            <Frame
+                                                Grid.Column="1"
+                                                BackgroundColor="{DynamicResource BgElevated}"
+                                                BorderColor="Transparent"
+                                                CornerRadius="8"
+                                                Padding="8,4"
+                                                HasShadow="False"
+                                                VerticalOptions="Center">
+
+                                                <Label
+                                                    Text="{Binding Status}"
+                                                    FontSize="11"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{Binding StatusColor}"/>
+
+                                            </Frame>
+
+                                        </Grid>
+
+                                    </Frame>
+
+                                </DataTemplate>
+
+                            </BindableLayout.ItemTemplate>
+
+                        </VerticalStackLayout>
+
+                    </VerticalStackLayout>
+
+
+                    <!-- ═════════════════════════════════════════════
+                         RETURN MODE
+                    ═════════════════════════════════════════════ -->
+
+                    <VerticalStackLayout
+                        IsVisible="{Binding IsReturnMode}"
+                        Spacing="0">
+
+                        <Label
+                            Text="Pending Return Verification"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"
+                            Padding="20,10,20,6"/>
+
+
+                        <!-- EMPTY RETURN -->
+
+                        <Frame
+                            IsVisible="{Binding NoPendingReturn}"
+                            BackgroundColor="{DynamicResource BgCard}"
+                            BorderColor="{DynamicResource BorderSoft}"
+                            CornerRadius="14"
+                            Padding="24"
+                            HasShadow="False"
+                            Margin="20,0">
+
+                            <Label
+                                Text="No pending return requests"
+                                FontSize="13"
+                                TextColor="{DynamicResource Text3}"
+                                HorizontalOptions="Center"/>
+
+                        </Frame>
+
+
+                        <!-- PENDING RETURN REQUESTS -->
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding PendingReturnRequests}"
+                            Padding="20,0"
+                            Spacing="10">
+
+                            <BindableLayout.ItemTemplate>
+
+                                <DataTemplate
+                                    x:DataType="models:ReturnRequestResult">
+
+                                    <Frame
+                                        BackgroundColor="{DynamicResource BgCard}"
+                                        BorderColor="{DynamicResource Green}"
+                                        CornerRadius="16"
+                                        Padding="0"
+                                        HasShadow="False">
+
+                                        <VerticalStackLayout
+                                            Spacing="0">
+
+                                            <VerticalStackLayout
+                                                Padding="16,14,16,12"
+                                                Spacing="7">
+
+                                                <Label
+                                                    Text="RETURN REQUEST"
+                                                    FontSize="10"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Green}"/>
+
+                                                <Label
+                                                    Text="{Binding Request.ToolName}"
+                                                    FontSize="15"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text1}"/>
+
+                                                <Label
+                                                    Text="{Binding Request.ToolId}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+
+                                                <Grid
+                                                    ColumnDefinitions="Auto,*"
+                                                    RowDefinitions="Auto,Auto"
+                                                    ColumnSpacing="10"
+                                                    RowSpacing="5">
+
+                                                    <Label
+                                                        Grid.Row="0"
+                                                        Grid.Column="0"
+                                                        Text="Worker"
+                                                        FontSize="11"
+                                                        TextColor="{DynamicResource Text3}"/>
+
+                                                    <Label
+                                                        Grid.Row="0"
+                                                        Grid.Column="1"
+                                                        Text="{Binding Request.WorkerName}"
+                                                        FontSize="12"
+                                                        TextColor="{DynamicResource Text2}"/>
+
+
+                                                    <Label
+                                                        Grid.Row="1"
+                                                        Grid.Column="0"
+                                                        Text="Project"
+                                                        FontSize="11"
+                                                        TextColor="{DynamicResource Text3}"/>
+
+                                                    <Label
+                                                        Grid.Row="1"
+                                                        Grid.Column="1"
+                                                        Text="{Binding Request.ProjectName}"
+                                                        FontSize="12"
+                                                        TextColor="{DynamicResource Text2}"/>
+
+                                                </Grid>
+
+
+                                                <!-- WORKER REPORTED CONDITION -->
+
+                                                <Frame
+                                                    BackgroundColor="{DynamicResource BgElevated}"
+                                                    BorderColor="Transparent"
+                                                    CornerRadius="8"
+                                                    Padding="12,8"
+                                                    HasShadow="False">
+
+                                                    <VerticalStackLayout
+                                                        Spacing="3">
+
+                                                        <Label
+                                                            Text="Reported Condition"
+                                                            FontSize="10"
+                                                            FontAttributes="Bold"
+                                                            TextColor="{DynamicResource Text3}"/>
+
+                                                        <Label
+                                                            Text="{Binding Request.ReportedCondition}"
+                                                            FontSize="13"
+                                                            FontAttributes="Bold"
+                                                            TextColor="{DynamicResource Text2}"/>
+
+                                                    </VerticalStackLayout>
+
+                                                </Frame>
+
+
+                                                <Label
+                                                    Text="{Binding Request.RequestDate,
+                                                                   StringFormat='{0:MMM d, yyyy h:mm tt}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+                                            </VerticalStackLayout>
+
+
+                                            <BoxView
+                                                HeightRequest="1"
+                                                Color="{DynamicResource BorderSoft}"/>
+
+
+                                            <Label
+                                                Text="Physically receive and verify the tool before approving the return."
+                                                FontSize="11"
+                                                TextColor="{DynamicResource Green}"
+                                                HorizontalTextAlignment="Center"
+                                                Padding="14,10"/>
+
+
+                                            <Grid
+                                                ColumnDefinitions="*,*">
+
+                                                <Button
+                                                    Grid.Column="0"
+                                                    Text="Approve Return"
+                                                    CommandParameter="{Binding .}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                                                                      Path=ApproveReturnCommand}"
+                                                    BackgroundColor="{DynamicResource Green}"
+                                                    TextColor="White"
+                                                    FontSize="13"
+                                                    FontAttributes="Bold"
+                                                    CornerRadius="0"
+                                                    HeightRequest="48"/>
+
+                                                <Button
+                                                    Grid.Column="1"
+                                                    Text="Reject"
+                                                    CommandParameter="{Binding .}"
+                                                    Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                                                                      Path=RejectReturnCommand}"
+                                                    BackgroundColor="{DynamicResource RedBg}"
+                                                    TextColor="{DynamicResource Red}"
+                                                    FontSize="13"
+                                                    FontAttributes="Bold"
+                                                    CornerRadius="0"
+                                                    HeightRequest="48"/>
+
+                                            </Grid>
+
+                                        </VerticalStackLayout>
+
+                                    </Frame>
+
+                                </DataTemplate>
+
+                            </BindableLayout.ItemTemplate>
+
+                        </VerticalStackLayout>
+
+
+                        <!-- PROCESSED RETURNS -->
+
+                        <Label
+                            Text="Recently Processed"
+                            FontSize="14"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"
+                            Padding="20,20,20,6"/>
+
+
+                        <VerticalStackLayout
+                            BindableLayout.ItemsSource="{Binding ProcessedReturnRequests}"
+                            Padding="20,0"
+                            Spacing="8">
+
+                            <BindableLayout.ItemTemplate>
+
+                                <DataTemplate
+                                    x:DataType="models:ReturnRequestResult">
+
+                                    <Frame
+                                        BackgroundColor="{DynamicResource BgCard}"
+                                        BorderColor="{DynamicResource BorderColor}"
+                                        CornerRadius="12"
+                                        Padding="14"
+                                        HasShadow="False">
+
+                                        <Grid
+                                            ColumnDefinitions="*,Auto"
+                                            ColumnSpacing="12">
+
+                                            <VerticalStackLayout
+                                                Grid.Column="0"
+                                                Spacing="3">
+
+                                                <Label
+                                                    Text="{Binding Request.ToolName}"
+                                                    FontSize="14"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text1}"/>
+
+                                                <Label
+                                                    Text="{Binding Request.WorkerName}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text2}"/>
+
+                                                <Label
+                                                    Text="{Binding Request.RequestDate,
+                                                                   StringFormat='{0:MMM d, yyyy h:mm tt}'}"
+                                                    FontSize="11"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+                                            </VerticalStackLayout>
+
+
+                                            <Frame
+                                                Grid.Column="1"
+                                                BackgroundColor="{DynamicResource BgElevated}"
+                                                BorderColor="Transparent"
+                                                CornerRadius="8"
+                                                Padding="8,4"
+                                                HasShadow="False"
+                                                VerticalOptions="Center">
+
+                                                <Label
+                                                    Text="{Binding Request.Status}"
+                                                    FontSize="11"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text2}"/>
+
+                                            </Frame>
+
+                                        </Grid>
+
+                                    </Frame>
+
+                                </DataTemplate>
+
+                            </BindableLayout.ItemTemplate>
+
+                        </VerticalStackLayout>
+
                     </VerticalStackLayout>
 
                 </VerticalStackLayout>
+
             </ScrollView>
+
         </RefreshView>
+
     </Grid>
+
 </ContentPage>

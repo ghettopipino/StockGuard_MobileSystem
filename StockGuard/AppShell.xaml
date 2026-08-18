@@ -207,18 +207,19 @@
                     </Grid>
 
                     <!-- ▌SECTION: Reports & Admin ────────────────── -->
-                    <!--<Label Text="REPORTS &amp; ADMIN"
+                    <Label Text="REPORTS &amp; ADMIN"
                            FontSize="10" FontAttributes="Bold"
                            TextColor="{DynamicResource Text3}"
                            CharacterSpacing="2"
-                           Margin="12,16,0,6"/>-->
+                           Margin="12,16,0,6"/>
 
                     <!-- Pause Requests — with badge -->
                     <Grid>
-                        <!--<Button x:Name="BtnPause"
-                                Text="⏸️  Pause Requests"
+                        <Button x:Name="BtnPause"
+                                Text=" Pause and Return"
                                 Clicked="OnPauseClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>-->
+                                Style="{StaticResource FlyoutItemStyle}"/>
+                        
                         <Frame IsVisible="{Binding PendingPause,
                                Converter={StaticResource IntToBoolConverter}}"
                                BackgroundColor="#ef4444"

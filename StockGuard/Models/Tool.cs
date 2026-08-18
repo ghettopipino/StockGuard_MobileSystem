@@ -63,7 +63,9 @@ namespace StockGuard.Models
         public bool IsPendingPause =>
             Status == "PendingPause";
 
-        
+        public bool IsPendingReturn => 
+            Status == "PendingReturn";
+
         public string StatusColor => Status switch
         {
             "Available" => "#10b981",
