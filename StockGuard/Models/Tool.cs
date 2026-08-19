@@ -15,6 +15,12 @@ namespace StockGuard.Models
         public string Status { get; set; } = "Available";
         public string AssignedWorkerId { get; set; } = string.Empty;
         public string AssignedWorkerName { get; set; } = string.Empty;
+
+        [JsonProperty("assignedById")]
+        public string AssignedById { get; set; } = string.Empty;
+
+        [JsonProperty("assignedByName")]
+        public string AssignedByName { get; set; } = string.Empty;
         public string Condition { get; set; } = "Good";
         public string QrCode { get; set; } = string.Empty;
         public DateTime? BorrowDate { get; set; }
@@ -58,6 +64,11 @@ namespace StockGuard.Models
         [JsonIgnore]
         public bool IsOnHold =>
             Status == "OnHold";
+
+        [JsonIgnore]
+        public bool HasAssignmentInfo =>
+            !string.IsNullOrWhiteSpace(AssignedWorkerId) ||
+            !string.IsNullOrWhiteSpace(BorrowedProjectId);
 
         [JsonIgnore]
         public bool IsPendingPause =>

@@ -159,32 +159,70 @@ namespace StockGuard.ViewModels
         public async Task LoadProjectsAsync()
         {
             IsBusy = true;
+
             try
             {
-                var projects =
+                var user = _auth.CurrentUser;
+
+                if (user == null)
+                {
+                    Projects.Clear();
+
+                    TotalProjects = 0;
+                    ActiveCount = 0;
+                    CompletedCount = 0;
+                    ActiveProject = null;
+                    HasProjects = false;
+
+                    return;
+                }
+
+                // Get all projects from Firebase
+                var allProjects =
                     await _firebase.GetAllProjectsAsync();
 
-                TotalProjects = projects.Count;
-                ActiveCount = projects
-                    .Count(p => p.Status == "Active");
-                CompletedCount = projects
-                    .Count(p => p.Status == "Completed");
+                // IMPORTANT:
+                // A Project Engineer can only manage
+                // projects that they created.
+                var projects = allProjects
+                    .Where(p =>
+                        p.CreatedBy == user.UniqueKey)
+                    .ToList();
 
-                ActiveProject = projects.FirstOrDefault(
-                    p => p.Status == "Active");
+                // ── Stats for THIS PE only ────────────────────────
+
+                TotalProjects = projects.Count;
+
+                ActiveCount = projects.Count(p =>
+                    p.Status == "Active");
+
+                CompletedCount = projects.Count(p =>
+                    p.Status == "Completed");
+
+                ActiveProject = projects.FirstOrDefault(p =>
+                    p.Status == "Active");
+
+                // ── Display projects ──────────────────────────────
 
                 Projects.Clear();
-                foreach (var project in projects)
-                    Projects.Add(project);
 
-                HasProjects = Projects.Count > 0;
+                foreach (var project in projects)
+                {
+                    Projects.Add(project);
+                }
+
+                HasProjects =
+                    Projects.Count > 0;
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
                     $"LoadProjects error: {ex.Message}");
             }
-            finally { IsBusy = false; }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         private async Task RefreshAsync()
@@ -256,8 +294,9 @@ namespace StockGuard.ViewModels
                 var existing =
                     await _firebase.GetAllProjectsAsync();
 
-                foreach (var p in existing
-                    .Where(p => p.Status == "Active"))
+                foreach (var p in existing.Where(p =>
+                    p.CreatedBy == user.UniqueKey &&
+                    p.Status == "Active"))
                 {
                     p.Status = "Paused";
                     await _firebase.UpdateProjectAsync(p);

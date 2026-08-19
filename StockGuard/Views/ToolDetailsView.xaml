@@ -342,16 +342,48 @@
                                                        Converter={StaticResource StatusColorConverter}}"/>
                                         </HorizontalStackLayout>
 
-                                        <Label IsVisible="{Binding IsBorrowed}"
-                                               FontSize="11"
-                                               TextColor="{DynamicResource Text3}">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="👷 "/>
-                                                    <Span Text="{Binding AssignedWorkerName}"/>
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
+                                        <VerticalStackLayout IsVisible="{Binding HasAssignmentInfo}"
+                     Spacing="3"
+                     Margin="0,4,0,0">
+
+                                            <Grid ColumnDefinitions="70,*">
+                                                <Label Grid.Column="0"
+               Text="Worker"
+               FontSize="11"
+               TextColor="{DynamicResource Text3}"/>
+
+                                                <Label Grid.Column="1"
+               Text="{Binding AssignedWorkerName}"
+               FontSize="11"
+               FontAttributes="Bold"
+               TextColor="{DynamicResource Text2}"/>
+                                            </Grid>
+
+                                            <Grid ColumnDefinitions="70,*">
+                                                <Label Grid.Column="0"
+               Text="Project"
+               FontSize="11"
+               TextColor="{DynamicResource Text3}"/>
+
+                                                <Label Grid.Column="1"
+               Text="{Binding BorrowedProjectName}"
+               FontSize="11"
+               TextColor="{DynamicResource Text2}"/>
+                                            </Grid>
+
+                                            <Grid ColumnDefinitions="70,*">
+                                                <Label Grid.Column="0"
+               Text="Assigned by"
+               FontSize="11"
+               TextColor="{DynamicResource Text3}"/>
+
+                                                <Label Grid.Column="1"
+               Text="{Binding AssignedByName}"
+               FontSize="11"
+               TextColor="{DynamicResource Text2}"/>
+                                            </Grid>
+
+                                        </VerticalStackLayout>
                                     </VerticalStackLayout>
 
                                     <Border Grid.Column="2"

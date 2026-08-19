@@ -158,57 +158,89 @@
                             <BoxView HeightRequest="1" Color="{DynamicResource BorderSoft}"/>
 
                             <Grid ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto"
-                                  ColumnSpacing="12"
-                                  RowSpacing="12">
+      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+      ColumnSpacing="12"
+      RowSpacing="12">
 
                                 <!-- Worker -->
                                 <Label Grid.Row="0"
-                                       Grid.Column="0"
-                                       Text="Worker"
-                                       FontSize="12"
-                                       TextColor="{DynamicResource Text3}"
-                                       VerticalOptions="Center"/>
+           Grid.Column="0"
+           Text="Worker"
+           FontSize="12"
+           TextColor="{DynamicResource Text3}"
+           VerticalOptions="Center"/>
 
                                 <Label Grid.Row="0"
-                                       Grid.Column="1"
-                                       Text="{Binding AssignedWorkerName}"
-                                       FontSize="13"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Text1}"
-                                       VerticalOptions="Center"/>
+           Grid.Column="1"
+           Text="{Binding AssignedWorkerName}"
+           FontSize="13"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource Text1}"
+           VerticalOptions="Center"/>
+
+                                <!-- Project -->
+                                <Label Grid.Row="1"
+           Grid.Column="0"
+           Text="Project"
+           FontSize="12"
+           TextColor="{DynamicResource Text3}"
+           VerticalOptions="Center"/>
+
+                                <Label Grid.Row="1"
+           Grid.Column="1"
+           Text="{Binding ProjectName}"
+           FontSize="13"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource Text1}"
+           VerticalOptions="Center"/>
+
+                                <!-- Assigned By -->
+                                <Label Grid.Row="2"
+           Grid.Column="0"
+           Text="Assigned by"
+           FontSize="12"
+           TextColor="{DynamicResource Text3}"
+           VerticalOptions="Center"/>
+
+                                <Label Grid.Row="2"
+           Grid.Column="1"
+           Text="{Binding AssignedByName}"
+           FontSize="13"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource Text1}"
+           VerticalOptions="Center"/>
 
                                 <!-- Borrowed -->
-                                <Label Grid.Row="1"
-                                       Grid.Column="0"
-                                       Text="Borrowed"
-                                       FontSize="12"
-                                       TextColor="{DynamicResource Text3}"
-                                       VerticalOptions="Center"/>
+                                <Label Grid.Row="3"
+           Grid.Column="0"
+           Text="Borrowed"
+           FontSize="12"
+           TextColor="{DynamicResource Text3}"
+           VerticalOptions="Center"/>
 
-                                <Label Grid.Row="1"
-                                       Grid.Column="1"
-                                       Text="{Binding BorrowDateDisplay}"
-                                       FontSize="13"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Text1}"
-                                       VerticalOptions="Center"/>
+                                <Label Grid.Row="3"
+           Grid.Column="1"
+           Text="{Binding BorrowDateDisplay}"
+           FontSize="13"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource Text1}"
+           VerticalOptions="Center"/>
 
                                 <!-- Condition -->
-                                <Label Grid.Row="2"
-                                       Grid.Column="0"
-                                       Text="Condition"
-                                       FontSize="12"
-                                       TextColor="{DynamicResource Text3}"
-                                       VerticalOptions="Center"/>
+                                <Label Grid.Row="4"
+           Grid.Column="0"
+           Text="Condition"
+           FontSize="12"
+           TextColor="{DynamicResource Text3}"
+           VerticalOptions="Center"/>
 
-                                <Label Grid.Row="2"
-                                       Grid.Column="1"
-                                       Text="{Binding ConditionText}"
-                                       FontSize="13"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Text1}"
-                                       VerticalOptions="Center"/>
+                                <Label Grid.Row="4"
+           Grid.Column="1"
+           Text="{Binding ConditionText}"
+           FontSize="13"
+           FontAttributes="Bold"
+           TextColor="{DynamicResource Text1}"
+           VerticalOptions="Center"/>
 
                             </Grid>
                         </VerticalStackLayout>
@@ -299,36 +331,9 @@
                                 FontSize="14" FontAttributes="Bold"
                                 CornerRadius="12" HeightRequest="50"/>
 
-                        <Frame IsVisible="{Binding ShowPendingPause}"
-                               BackgroundColor="#1a1400"
-                               BorderColor="{DynamicResource Amber}"
-                               CornerRadius="12" Padding="16" HasShadow="False">
-                            <VerticalStackLayout Spacing="6">
-                                <Label Text="⏳ Pause request pending"
-                                       FontSize="13" FontAttributes="Bold"
-                                       TextColor="{DynamicResource Amber}"/>
-                                <Label Text="Waiting for Project Engineer to physically verify and approve your pause request."
-                                       FontSize="12" TextColor="{DynamicResource Text2}"/>
-                            </VerticalStackLayout>
-                        </Frame>
-
-                        <Button IsVisible="{Binding ShowPause}"
-                                Text="⏸️  Pause Borrowing"
-                                Command="{Binding PauseCommand}"
-                                BackgroundColor="#7c3aed"
-                                TextColor="White"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
-
-                        <Button IsVisible="{Binding ShowResume}"
-                                Text="▶️  Resume Borrowing"
-                                Command="{Binding ResumeCommand}"
-                                BackgroundColor="{DynamicResource Green}"
-                                TextColor="White"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
-                       
                         
+                      
+                       
                         <Button IsVisible="{Binding ShowReturn}"
                                 Text="Return Tool"
                                 Command="{Binding ReturnCommand}"
@@ -369,13 +374,13 @@
                                 FontSize="14" FontAttributes="Bold"
                                 CornerRadius="12" HeightRequest="50"/>-->
 
-                        <!--<Button IsVisible="{Binding ShowReportDamage}"
+                        <Button IsVisible="{Binding ShowReportDamage}"
                                 Text="⚠️  Report Damage"
                                 Command="{Binding ReportDamageCommand}"
                                 BackgroundColor="{DynamicResource RedBg}"
                                 TextColor="{DynamicResource Red}"
                                 FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>-->
+                                CornerRadius="12" HeightRequest="50"/>
 
                         <Button IsVisible="{Binding ShowRequestBorrow}"
                                 Text="📩  Request to Borrow"

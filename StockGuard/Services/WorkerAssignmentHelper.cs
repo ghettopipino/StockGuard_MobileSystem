@@ -80,12 +80,40 @@ namespace StockGuard.Services
             var worker = workers.FirstOrDefault(w => w.FullName == selectedWorkerName);
             if (worker is null) return false;
 
-            // ── Borrow directly — no pending step ────────────────────
-            bool success = await firebase.BorrowToolForProjectAsync(
-                tool.ToolId, tool.ToolName,
-                worker.UniqueKey, worker.FullName,
-                projectId, project.ProjectName,
-                auth.CurrentUser?.FullName ?? "Project Engineer");
+            // ── CREATE PENDING ASSIGNMENT ─────────────────────────────
+
+            var currentPE = auth.CurrentUser;
+
+            if (currentPE == null)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    "Project Engineer could not be identified.",
+                    "OK");
+
+                return false;
+            }
+
+            var assignment = new PreAssignment
+            {
+                ToolId = tool.ToolId,
+                ToolName = tool.ToolName,
+
+                WorkerId = worker.UniqueKey,
+                WorkerName = worker.FullName,
+
+                ProjectId = project.ProjectId,
+                ProjectName = project.ProjectName,
+
+                AssignedById = currentPE.UniqueKey,
+                AssignedByName = currentPE.FullName,
+
+                Status = "Pending",
+                DateCreated = DateTime.Now
+            };
+
+            bool success =
+                await firebase.CreatePreAssignmentAsync(assignment);
 
             if (!success)
             {
@@ -98,10 +126,12 @@ namespace StockGuard.Services
             }
 
             await Shell.Current.DisplayAlert(
-                "✅ Equipment Assigned",
-                $"{tool.ToolName} ({tool.ToolId}) assigned to {worker.FullName} " +
-                $"on {project.ProjectName}.",
-                "OK");
+                  "Assignment Sent",
+                  $"{tool.ToolName} ({tool.ToolId}) was assigned to " +
+                  $"{worker.FullName} for {project.ProjectName}.\n\n" +
+                  $"The worker must confirm receipt before the equipment " +
+                  $"becomes Borrowed.",
+                  "OK");
 
             return true;
         }

@@ -1087,10 +1087,14 @@ namespace StockGuard.Services
             }
         }
         public async Task<bool> BorrowToolForProjectAsync(
-    string toolId, string toolName,
-    string workerId, string workerName,
-    string projectId, string projectName,
-    string assignedByName)
+         string toolId,
+         string toolName,
+         string workerId,
+         string workerName,
+         string projectId,
+         string projectName,
+         string assignedById,
+         string assignedByName)
         {
             try
             {
@@ -1152,20 +1156,24 @@ namespace StockGuard.Services
         }
 
         public async Task<bool> ConfirmAssignmentAsync(
-     string assignmentKey,
-     PreAssignment assignment)
+    string assignmentKey,
+    PreAssignment assignment)
         {
             try
             {
-                var tool = await GetToolByIdAsync(
-                    assignment.ToolId);
+                var tool =
+                    await GetToolByIdAsync(
+                        assignment.ToolId);
 
                 if (tool == null)
                     return false;
 
-                // Tool must still be available when worker accepts
+                // The tool must still be Available
+                // when the worker confirms receipt.
                 if (tool.Status != "Available")
                     return false;
+
+                // ── WORKER ACCOUNTABILITY ─────────────────────────────
 
                 tool.AssignedWorkerId =
                     assignment.WorkerId;
@@ -1173,27 +1181,37 @@ namespace StockGuard.Services
                 tool.AssignedWorkerName =
                     assignment.WorkerName;
 
+                // ── PROJECT TRACKING ──────────────────────────────────
+
                 tool.BorrowedProjectId =
                     assignment.ProjectId;
 
                 tool.BorrowedProjectName =
                     assignment.ProjectName;
 
-                tool.BorrowDate = DateTime.Now;
-                tool.Status = "Borrowed";
+                // ── PROJECT ENGINEER TRACKING ─────────────────────────
+                // Reuse the fields you already have in Tool.cs.
 
-                // Clear old hold information if any
-                tool.HoldProjectId = string.Empty;
-                tool.HoldProjectName = string.Empty;
-                tool.HoldLocation = string.Empty;
-                tool.LastBorrowerId = string.Empty;
-                tool.LastBorrowerName = string.Empty;
-                tool.HoldDate = null;
+                tool.AssignedById =
+                    assignment.AssignedById;
 
-                // Clear old pre-assignment values on Tool,
-                // if these fields are still part of your model.
-                tool.PreAssignedWorkerId = string.Empty;
-                tool.PreAssignedWorkerName = string.Empty;
+                tool.AssignedByName =
+                    assignment.AssignedByName;
+
+                // ── STATUS ────────────────────────────────────────────
+
+                tool.BorrowDate =
+                    DateTime.Now;
+
+                tool.Status =
+                    "Borrowed";
+
+                // Clear temporary pre-assignment values.
+                tool.PreAssignedWorkerId =
+                    string.Empty;
+
+                tool.PreAssignedWorkerName =
+                    string.Empty;
 
                 var updated =
                     await UpdateToolAsync(tool);
@@ -1201,11 +1219,16 @@ namespace StockGuard.Services
                 if (!updated)
                     return false;
 
+                // ── AUDIT TRAIL ───────────────────────────────────────
+
                 await LogTransactionAsync(
                     new TransactionLog
                     {
-                        ToolId = tool.ToolId,
-                        ToolName = tool.ToolName,
+                        ToolId =
+                            tool.ToolId,
+
+                        ToolName =
+                            tool.ToolName,
 
                         WorkerId =
                             assignment.WorkerId,
@@ -1219,17 +1242,26 @@ namespace StockGuard.Services
                         ProjectName =
                             assignment.ProjectName,
 
-                        Action = "Borrowed",
+                        Action =
+                            "Borrowed",
 
                         Description =
-                            $"Accepted distribution from " +
-                            $"{assignment.AssignedByName}",
+                            $"Equipment assigned by " +
+                            $"{assignment.AssignedByName} " +
+                            $"and accepted by " +
+                            $"{assignment.WorkerName}.",
 
-                        Condition = tool.Condition,
-                        Date = DateTime.Now
+                        Condition =
+                            tool.Condition,
+
+                        Date =
+                            DateTime.Now
                     });
 
-                assignment.Status = "Accepted";
+                // ── UPDATE PRE-ASSIGNMENT ─────────────────────────────
+
+                assignment.Status =
+                    "Accepted";
 
                 await _client
                     .Child("preAssignments")
@@ -1246,7 +1278,6 @@ namespace StockGuard.Services
                 return false;
             }
         }
-        
 
         public async Task<bool> DeclineAssignmentAsync(
             string assignmentKey, PreAssignment assignment)

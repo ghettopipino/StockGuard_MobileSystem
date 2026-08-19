@@ -704,110 +704,238 @@ namespace StockGuard.ViewModels
                     $"{nameof(QrScannerView)}?mode=Distribute&projectId={ProjectId}&catalogId={item.CatalogId}");
         }
 
-        private async Task DistributeManualAsync(CatalogStockSummary item)
+        private async Task DistributeManualAsync(
+     CatalogStockSummary item)
         {
-            var allTools = await _firebase.GetAllToolsAsync(
-                forceRefresh: true);
+            if (item is null || IsBusy)
+                return;
 
-            var available = allTools
-                .Where(t =>
-                    t.CatalogId == item.CatalogId &&
-                    t.Status == "Available")
-                .ToList();
+            if (Project == null)
+                return;
 
-            if (available.Count == 0)
+            var user = _auth.CurrentUser;
+
+            if (user == null)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    "Current Project Engineer could not be identified.",
+                    "OK");
+
+                return;
+            }
+
+            // ── CHECK HOW MANY PROJECT UNITS ARE STILL DISTRIBUTABLE ──
+
+            int projectAvailable = item.AvailableCount;
+
+            if (projectAvailable <= 0)
             {
                 await Shell.Current.DisplayAlert(
                     "None Available",
-                    $"No available units of {item.CatalogName} in inventory.",
+                    $"All allocated {item.CatalogName} units " +
+                    $"for this project have already been distributed.",
                     "OK");
 
                 return;
             }
 
-            var toolIds = available
-                .Select(t => t.ToolId)
-                .ToArray();
-
-            var selectedToolId =
-                await Shell.Current.DisplayActionSheet(
-                    $"Select {item.CatalogName} unit:",
-                    "Cancel",
-                    null,
-                    toolIds);
-
-            if (selectedToolId == null ||
-                selectedToolId == "Cancel")
-                return;
-
-            var tool = available.FirstOrDefault(
-                t => t.ToolId == selectedToolId);
-
-            if (tool is null)
-                return;
-
-            var workerNames = AssignedWorkers
-                .Select(w => w.FullName)
-                .ToArray();
-
-            var selectedWorkerName =
-                await Shell.Current.DisplayActionSheet(
-                    $"Distribute {tool.ToolName} ({tool.ToolId}) to:",
-                    "Cancel",
-                    null,
-                    workerNames);
-
-            if (selectedWorkerName == null ||
-                selectedWorkerName == "Cancel")
-                return;
-
-            var worker = AssignedWorkers.FirstOrDefault(
-                w => w.FullName == selectedWorkerName);
-
-            if (worker is null)
-                return;
-
-            var assignment = new PreAssignment
-            {
-                ToolId = tool.ToolId,
-                ToolName = tool.ToolName,
-
-                WorkerId = worker.UniqueKey,
-                WorkerName = worker.FullName,
-
-                ProjectId = ProjectId,
-                ProjectName = Project?.ProjectName ?? string.Empty,
-
-                AssignedByName =
-                    _auth.CurrentUser?.FullName ?? "Project Engineer",
-
-                Status = "Pending",
-                DateCreated = DateTime.Now
-            };
-
-            bool success =
-                await _firebase.CreatePreAssignmentAsync(
-                    assignment);
-
-            if (!success)
+            if (AssignedWorkers.Count == 0)
             {
                 await Shell.Current.DisplayAlert(
-                    "Could Not Distribute",
-                    $"{tool.ToolName} could not be distributed.\n\n" +
-                    $"It may already have a pending distribution.",
+                    "No Workers",
+                    "Assign workers to this project before distributing equipment.",
                     "OK");
 
-                await LoadAsync();
                 return;
             }
 
-            await Shell.Current.DisplayAlert(
-                "✅ Distribution Sent",
-                $"{tool.ToolName} ({tool.ToolId}) was distributed " +
-                $"to {worker.FullName}.\n\n" +
-                $"The tool will remain Available until " +
-                $"{worker.FullName} accepts it.",
-                "OK");
+            // ── LOAD PHYSICAL TOOLS ───────────────────────────────────
+
+            var allTools =
+                await _firebase.GetAllToolsAsync(
+                    forceRefresh: true);
+
+            var availableTools = allTools
+                .Where(t =>
+                    t.CatalogId == item.CatalogId &&
+                    t.Status == "Available")
+                .OrderBy(t => t.ToolId)
+                .ToList();
+
+            if (availableTools.Count == 0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "None Available",
+                    $"No physical {item.CatalogName} units " +
+                    $"are currently available.",
+                    "OK");
+
+                return;
+            }
+
+            // Never allow more than:
+            // 1. project allocation still available
+            // 2. physical tools actually available
+            int maxCanDistribute =
+                Math.Min(
+                    projectAvailable,
+                    availableTools.Count);
+
+            // ── ASK QUANTITY ──────────────────────────────────────────
+
+            var qtyText =
+                await Shell.Current.DisplayPromptAsync(
+                    $"Distribute {item.CatalogName}",
+                    $"How many units do you want to distribute?\n\n" +
+                    $"Available for this project: {projectAvailable}\n" +
+                    $"Physical units available: {availableTools.Count}\n" +
+                    $"Maximum: {maxCanDistribute}",
+                    "Continue",
+                    "Cancel",
+                    keyboard: Microsoft.Maui.Keyboard.Numeric,
+                    initialValue: "1");
+
+            if (qtyText == null)
+                return;
+
+            if (!int.TryParse(qtyText, out int quantity) ||
+                quantity <= 0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Invalid Quantity",
+                    "Enter a valid quantity.",
+                    "OK");
+
+                return;
+            }
+
+            if (quantity > maxCanDistribute)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Not Enough Available",
+                    $"You can only distribute up to " +
+                    $"{maxCanDistribute} unit(s).",
+                    "OK");
+
+                return;
+            }
+
+            // ── DISTRIBUTE EACH PHYSICAL TOOL ONE-BY-ONE ──────────────
+
+            int distributed = 0;
+
+            for (int i = 1; i <= quantity; i++)
+            {
+                // ── SELECT PHYSICAL TOOL ──────────────────────────────
+
+                var toolIds = availableTools
+                    .Select(t => t.ToolId)
+                    .ToArray();
+
+                var selectedToolId =
+                    await Shell.Current.DisplayActionSheet(
+                        $"Tool {i} of {quantity} — Select Physical Unit",
+                        "Stop",
+                        null,
+                        toolIds);
+
+                if (selectedToolId == null ||
+                    selectedToolId == "Stop")
+                {
+                    break;
+                }
+
+                var tool = availableTools
+                    .FirstOrDefault(t =>
+                        t.ToolId == selectedToolId);
+
+                if (tool == null)
+                    continue;
+
+                // ── SELECT WORKER ─────────────────────────────────────
+
+                var workerNames = AssignedWorkers
+                    .Select(w => w.FullName)
+                    .ToArray();
+
+                var selectedWorkerName =
+                    await Shell.Current.DisplayActionSheet(
+                        $"{tool.ToolName} ({tool.ToolId}) — Assign To",
+                        "Stop",
+                        null,
+                        workerNames);
+
+                if (selectedWorkerName == null ||
+                    selectedWorkerName == "Stop")
+                {
+                    break;
+                }
+
+                var worker = AssignedWorkers
+                    .FirstOrDefault(w =>
+                        w.FullName == selectedWorkerName);
+
+                if (worker == null)
+                    continue;
+
+                // ── CREATE EXISTING PRE-ASSIGNMENT ────────────────────
+
+                var assignment = new PreAssignment
+                {
+                    ToolId = tool.ToolId,
+                    ToolName = tool.ToolName,
+
+                    WorkerId = worker.UniqueKey,
+                    WorkerName = worker.FullName,
+
+                    ProjectId = ProjectId,
+                    ProjectName = Project.ProjectName,
+
+                    AssignedById = user.UniqueKey,
+                    AssignedByName = user.FullName,
+
+                    Status = "Pending",
+                    DateCreated = DateTime.Now
+                };
+
+                bool success =
+                    await _firebase.CreatePreAssignmentAsync(
+                        assignment);
+
+                if (!success)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Could Not Distribute",
+                        $"{tool.ToolName} ({tool.ToolId}) " +
+                        $"could not be distributed.\n\n" +
+                        $"It may already have a pending assignment.",
+                        "OK");
+
+                    continue;
+                }
+
+                distributed++;
+
+                // IMPORTANT:
+                // Remove this physical tool from the local list
+                // so the PE cannot select the same Tool ID twice
+                // during this distribution session.
+                availableTools.Remove(tool);
+            }
+
+            // ── RESULT ────────────────────────────────────────────────
+
+            if (distributed > 0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Distribution Sent",
+                    $"{distributed} {item.CatalogName} unit(s) " +
+                    $"were distributed successfully.\n\n" +
+                    $"Each worker must confirm receipt before " +
+                    $"the equipment becomes Borrowed.",
+                    "OK");
+            }
 
             await LoadAsync();
         }

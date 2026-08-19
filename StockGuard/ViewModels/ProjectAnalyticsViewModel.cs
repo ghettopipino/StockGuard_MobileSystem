@@ -45,12 +45,7 @@ namespace StockGuard.ViewModels
             get => _frequentlyInvolvedWorkers;
             private set { _frequentlyInvolvedWorkers = value; OnPropertyChanged(); }
         }
-        private int _disputedReports;
-        public int DisputedReports
-        {
-            get => _disputedReports;
-            private set => SetProperty(ref _disputedReports, value);
-        }
+        
 
         // ── Theme ─────────────────────────────────────────────────────────────
         public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
@@ -157,7 +152,7 @@ namespace StockGuard.ViewModels
         }
         public bool HasMostActiveWorker =>
             MostActiveWorker != null && MostActiveWorker.Borrows > 0;
-
+            
         // ── Tool usage ────────────────────────────────────────────────────────
         // Web: ViewBag.ToolUsage / MostUsedTool
         public ObservableCollection<ToolStatItem> ToolStats { get; } = new();
@@ -402,8 +397,7 @@ namespace StockGuard.ViewModels
                 .OrderByDescending(w => w.IncidentCount)
                 .ToList();
 
-            // Disputed report count
-            DisputedReports = _allReports.Count(r => r.IsDisputed);
+            
         }
     }
 }

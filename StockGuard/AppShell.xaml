@@ -238,10 +238,10 @@
                         </Frame>
                     </Grid>
 
-                    <!-- Damage Report — with badge --><!--
+                    <!-- Damage Report — with badge -->
                     <Grid>
                         <Button x:Name="BtnDamage"
-                                Text="⚠️  Damage Report"
+                                Text="  Damage Report"
                                 Clicked="OnDamageClicked"
                                 Style="{StaticResource FlyoutItemStyle}"/>
                         <Frame IsVisible="{Binding PendingDamage,
@@ -260,7 +260,7 @@
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center"/>
                         </Frame>
-                    </Grid>-->
+                    </Grid>
 
                     <!-- Transactions — with badge --><!--
                     <Grid>

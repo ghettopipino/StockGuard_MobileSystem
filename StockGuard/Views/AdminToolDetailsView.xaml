@@ -174,7 +174,7 @@
 
                             <!-- Info grid -->
                             <Grid ColumnDefinitions="Auto,*"
-                                  RowDefinitions="Auto,Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto"
                                   ColumnSpacing="12" RowSpacing="14">
 
                                 <Label Grid.Row="0" Grid.Column="0"
@@ -216,6 +216,31 @@
                                        FontSize="13" FontAttributes="Bold"
                                        TextColor="{DynamicResource Text1}"
                                        VerticalOptions="Center"/>
+                                <Label Grid.Row="4"
+                                       Grid.Column="0"
+                                       Text="Project"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource Text3}"/>
+
+                                <Label Grid.Row="4"
+                                       Grid.Column="1"
+                                       Text="{Binding ProjectName}"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Text1}"/>
+
+                                <Label Grid.Row="5"
+                                       Grid.Column="0"
+                                       Text="Assigned by"
+                                       FontSize="12"
+                                       TextColor="{DynamicResource Text3}"/>
+
+                                <Label Grid.Row="5"
+                                       Grid.Column="1"
+                                       Text="{Binding AssignedByName}"
+                                       FontSize="13"
+                                       FontAttributes="Bold"
+                                       TextColor="{DynamicResource Text1}"/>
                             </Grid>
                         </VerticalStackLayout>
                     </Frame>

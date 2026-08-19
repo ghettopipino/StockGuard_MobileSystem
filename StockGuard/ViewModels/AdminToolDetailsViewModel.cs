@@ -62,6 +62,8 @@ namespace StockGuard.ViewModels
                 OnPropertyChanged(nameof(IsBorrowed));
                 OnPropertyChanged(nameof(IsAvailable));
                 OnPropertyChanged(nameof(IsDamaged));
+                OnPropertyChanged(nameof(ProjectName));
+                OnPropertyChanged(nameof(AssignedByName));
             }
         }
 
@@ -92,6 +94,15 @@ namespace StockGuard.ViewModels
             string.IsNullOrEmpty(Tool?.Condition)
                 ? "Good"
                 : Tool.Condition;
+        public string ProjectName =>
+            string.IsNullOrWhiteSpace(Tool?.BorrowedProjectName)
+        ? "—"
+        : Tool.BorrowedProjectName;
+
+        public string AssignedByName =>
+            string.IsNullOrWhiteSpace(Tool?.AssignedByName)
+                ? "—"
+                : Tool.AssignedByName;
 
         // ── Catalog name ──────────────────────────────────────────────────────
         private string _catalogName = string.Empty;

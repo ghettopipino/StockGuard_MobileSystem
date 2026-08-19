@@ -237,6 +237,10 @@ namespace StockGuard.ViewModels
                     await _firebase
                         .GetAllReturnRequestsRawAsync();
 
+                var allTools =
+                await _firebase.GetAllToolsAsync(
+                    forceRefresh: true);
+
                 // ── Clear ─────────────────────────────────────
 
                 PendingRequests.Clear();
@@ -287,12 +291,23 @@ namespace StockGuard.ViewModels
                 // ═══════════════════════════════════════════════
 
                 var pendingReturn =
-                    returnRequests
-                        .Where(r =>
-                            r.Request.Status == "Pending")
-                        .OrderByDescending(r =>
-                            r.Request.RequestDate)
-                        .ToList();
+                 returnRequests
+                     .Where(r =>
+                     {
+                         if (r.Request.Status != "Pending")
+                             return false;
+
+                         var tool = allTools.FirstOrDefault(t =>
+                             t.ToolId == r.Request.ToolId);
+
+                         // A return is only really pending when
+                         // the physical tool is PendingReturn.
+                         return tool != null &&
+                                tool.Status == "PendingReturn";
+                     })
+                     .OrderByDescending(r =>
+                         r.Request.RequestDate)
+                     .ToList();
 
                 var processedReturn =
                     returnRequests
@@ -726,20 +741,84 @@ namespace StockGuard.ViewModels
         // ═══════════════════════════════════════════════════════════
 
         private async Task ApproveReturnAsync(
-            ReturnRequestResult item)
+     ReturnRequestResult item)
         {
             if (item is null || IsBusy)
                 return;
 
             var request = item.Request;
 
+            // ── PE PHYSICAL INSPECTION ─────────────────────────────
+
+            var condition =
+                await Shell.Current.DisplayActionSheet(
+                    "Equipment Condition",
+                    "Cancel",
+                    null,
+                    "Good",
+                    "Damaged");
+
+            if (string.IsNullOrWhiteSpace(condition) ||
+                condition == "Cancel")
+            {
+                return;
+            }
+
+            string severity = string.Empty;
+            string damageDescription = string.Empty;
+
+            // ── IF DAMAGED ─────────────────────────────────────────
+
+            if (condition == "Damaged")
+            {
+                var selectedSeverity =
+                    await Shell.Current.DisplayActionSheet(
+                        "Damage Severity",
+                        "Cancel",
+                        null,
+                        "Minor Damage",
+                        "Major Damage");
+
+                if (string.IsNullOrWhiteSpace(selectedSeverity) ||
+                    selectedSeverity == "Cancel")
+                {
+                    return;
+                }
+
+                severity = selectedSeverity;
+
+                var description =
+                    await Shell.Current.DisplayPromptAsync(
+                        "Damage Description",
+                        "Describe the damage found during inspection:",
+                        "Continue",
+                        "Cancel",
+                        placeholder:
+                            "e.g. Power cable damaged");
+
+                if (string.IsNullOrWhiteSpace(description))
+                    return;
+
+                damageDescription =
+                    description.Trim();
+            }
+
+            // ── CONFIRM ─────────────────────────────────────────────
+
+            string conditionDetails =
+                condition == "Damaged"
+                    ? $"Condition: Damaged\n" +
+                      $"Severity: {severity}"
+                    : "Condition: Good";
+
             bool confirm =
                 await Shell.Current.DisplayAlert(
                     "Approve Return",
-                    $"Confirm that you have physically received and verified " +
+                    $"Confirm that you physically received " +
                     $"{request.ToolName} ({request.ToolId}).\n\n" +
                     $"Worker: {request.WorkerName}\n" +
-                    $"Reported Condition: {request.ReportedCondition}",
+                    $"Project: {request.ProjectName}\n" +
+                    $"{conditionDetails}",
                     "Approve Return",
                     "Cancel");
 
@@ -756,28 +835,39 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current user could not be identified.",
+                        "Current Project Engineer could not be identified.",
                         "OK");
 
                     return;
                 }
 
                 var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            request.ToolId);
+                    await _firebase.GetToolByIdAsync(
+                        request.ToolId);
 
                 if (tool == null)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "The tool could not be found.",
+                        "The equipment could not be found.",
                         "OK");
 
                     return;
                 }
 
-                // Save details before clearing custody.
+                if (tool.Status != "PendingReturn")
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Invalid Return",
+                        "This equipment is no longer pending return.",
+                        "OK");
+
+                    await LoadAsync();
+                    return;
+                }
+
+                // ── SAVE ACCOUNTABILITY BEFORE CLEARING TOOL ───────
+
                 string workerId =
                     request.WorkerId;
 
@@ -790,13 +880,13 @@ namespace StockGuard.ViewModels
                 string projectName =
                     request.ProjectName;
 
-                string condition =
-                    request.ReportedCondition;
-
-                // ── Return Request ────────────────────────────
+                // ── UPDATE RETURN REQUEST ───────────────────────────
 
                 request.Status =
                     "Approved";
+
+                request.VerifiedCondition =
+                    condition;
 
                 request.ReviewedDate =
                     DateTime.Now;
@@ -807,17 +897,10 @@ namespace StockGuard.ViewModels
                 request.ReviewedByName =
                     user.FullName;
 
-                // For now we keep the worker-reported condition.
-                // Damage verification will be handled in the
-                // Damage Report feature afterward.
-                request.VerifiedCondition =
-                    request.ReportedCondition;
-
                 var requestUpdated =
-                    await _firebase
-                        .UpdateReturnRequestAsync(
-                            item.Key,
-                            request);
+                    await _firebase.UpdateReturnRequestAsync(
+                        item.Key,
+                        request);
 
                 if (!requestUpdated)
                 {
@@ -829,67 +912,49 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ── Tool Becomes Available ────────────────────
+                // ───────────────────────────────────────────────────
+                // GOOD RETURN
+                // ───────────────────────────────────────────────────
 
-                tool.Status =
-                    "Available";
-
-                tool.Condition =
-                    request.VerifiedCondition;
-
-                // Return ENDS worker accountability.
-                tool.AssignedWorkerId =
-                    string.Empty;
-
-                tool.AssignedWorkerName =
-                    string.Empty;
-
-                tool.BorrowDate =
-                    null;
-
-                tool.BorrowedProjectId =
-                    string.Empty;
-
-                tool.BorrowedProjectName =
-                    string.Empty;
-
-                // Clear any OnHold information too.
-                tool.HoldProjectId =
-                    string.Empty;
-
-                tool.HoldProjectName =
-                    string.Empty;
-
-                tool.HoldLocation =
-                    string.Empty;
-
-                tool.HoldDate =
-                    null;
-
-                tool.LastBorrowerId =
-                    string.Empty;
-
-                tool.LastBorrowerName =
-                    string.Empty;
-
-                var toolUpdated =
-                    await _firebase
-                        .UpdateToolAsync(tool);
-
-                if (!toolUpdated)
+                if (condition == "Good")
                 {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Return request was approved, but the tool could not be updated.",
-                        "OK");
+                    tool.Status =
+                        "Available";
 
-                    return;
-                }
+                    tool.Condition =
+                        "Good";
 
-                // ── Transaction ───────────────────────────────
+                    // Physical return accepted.
+                    // Worker/project custody ends here.
+                    tool.AssignedWorkerId =
+                        string.Empty;
 
-                await _firebase
-                    .LogTransactionAsync(
+                    tool.AssignedWorkerName =
+                        string.Empty;
+
+                    tool.BorrowedProjectId =
+                        string.Empty;
+
+                    tool.BorrowedProjectName =
+                        string.Empty;
+
+                    tool.BorrowDate =
+                        null;
+
+                    var toolUpdated =
+                        await _firebase.UpdateToolAsync(tool);
+
+                    if (!toolUpdated)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "Return was approved, but the equipment could not be updated.",
+                            "OK");
+
+                        return;
+                    }
+
+                    await _firebase.LogTransactionAsync(
                         new TransactionLog
                         {
                             ToolId =
@@ -914,22 +979,170 @@ namespace StockGuard.ViewModels
                                 "Returned",
 
                             Description =
-                                $"Return physically verified and approved by " +
-                                $"{user.FullName}.",
+                                $"Return inspected and approved by " +
+                                $"{user.FullName}. Equipment returned " +
+                                $"in good condition.",
 
                             Condition =
-                                condition,
+                                "Good",
 
                             Date =
                                 DateTime.Now
                         });
 
-                await Shell.Current.DisplayAlert(
-                    "Return Approved",
-                    $"{tool.ToolName} ({tool.ToolId}) has been returned successfully.\n\n" +
-                    $"The equipment is now Available and " +
-                    $"{workerName} is no longer accountable for it.",
-                    "OK");
+                    await Shell.Current.DisplayAlert(
+                        "Return Approved",
+                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
+                        "Condition: Good\n" +
+                        "The equipment is now Available.",
+                        "OK");
+                }
+
+                // ───────────────────────────────────────────────────
+                // DAMAGED RETURN
+                // ───────────────────────────────────────────────────
+
+                else
+                {
+                    // Create damage report BEFORE clearing
+                    // accountability from the physical Tool.
+                    var damageReport =
+                        new DamageReport
+                        {
+                            ToolId =
+                                tool.ToolId,
+
+                            ToolName =
+                                tool.ToolName,
+
+                            WorkerId =
+                                workerId,
+
+                            WorkerName =
+                                workerName,
+
+                            ProjectId =
+                                projectId,
+
+                            ProjectName =
+                                projectName,
+
+                            ProjectEngineerId =
+                                user.UniqueKey,
+
+                            ProjectEngineerName =
+                                user.FullName,
+
+                            Description =
+                                damageDescription,
+
+                            Severity =
+                                severity,
+
+                            Status =
+                                "Pending",
+
+                            ReportDate =
+                                DateTime.Now
+                        };
+
+                    var damageReportKey =
+                        await _firebase.SubmitDamageReportAsync(
+                            damageReport);
+
+                    if (string.IsNullOrEmpty(damageReportKey))
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "The return was approved, but the damage report could not be created.",
+                            "OK");
+
+                        return;
+                    }
+
+                    // Returned physically, but NOT available
+                    // for use because PE found damage.
+                    tool.Status =
+                        "Damaged";
+
+                    tool.Condition =
+                        severity;
+
+                    // The DamageReport now preserves who had it
+                    // and which project it came from.
+                    //
+                    // Physical custody has returned to company/PE.
+                    tool.AssignedWorkerId =
+                        string.Empty;
+
+                    tool.AssignedWorkerName =
+                        string.Empty;
+
+                    tool.BorrowedProjectId =
+                        string.Empty;
+
+                    tool.BorrowedProjectName =
+                        string.Empty;
+
+                    tool.BorrowDate =
+                        null;
+
+                    var toolUpdated =
+                        await _firebase.UpdateToolAsync(tool);
+
+                    if (!toolUpdated)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "The damage report was created, but the equipment status could not be updated.",
+                            "OK");
+
+                        return;
+                    }
+
+                    await _firebase.LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
+
+                            ToolName =
+                                tool.ToolName,
+
+                            WorkerId =
+                                workerId,
+
+                            WorkerName =
+                                workerName,
+
+                            ProjectId =
+                                projectId,
+
+                            ProjectName =
+                                projectName,
+
+                            Action =
+                                "Returned Damaged",
+
+                            Description =
+                                $"Return inspected by {user.FullName}. " +
+                                $"Damage found: {severity} — " +
+                                $"{damageDescription}",
+
+                            Condition =
+                                severity,
+
+                            Date =
+                                DateTime.Now
+                        });
+
+                    await Shell.Current.DisplayAlert(
+                        "Damaged Return Accepted",
+                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
+                        $"Damage: {severity}\n" +
+                        "A damage report was created automatically.",
+                        "OK");
+                }
 
                 await LoadAsync();
             }
@@ -951,7 +1164,7 @@ namespace StockGuard.ViewModels
         // ═══════════════════════════════════════════════════════════
 
         private async Task RejectReturnAsync(
-            ReturnRequestResult item)
+    ReturnRequestResult item)
         {
             if (item is null || IsBusy)
                 return;
@@ -963,7 +1176,10 @@ namespace StockGuard.ViewModels
                     "Reject Return",
                     $"Reject the return request for " +
                     $"{request.ToolName} ({request.ToolId})?\n\n" +
-                    $"The worker will remain accountable for this tool.",
+                    "Use Reject only when the physical return was " +
+                    "not accepted or could not be completed.\n\n" +
+                    $"The equipment will remain assigned to " +
+                    $"{request.WorkerName}.",
                     "Reject",
                     "Cancel");
 
@@ -980,11 +1196,40 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current user could not be identified.",
+                        "Current Project Engineer could not be identified.",
                         "OK");
 
                     return;
                 }
+
+                var tool =
+                    await _firebase.GetToolByIdAsync(
+                        request.ToolId);
+
+                if (tool == null)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "The equipment could not be found.",
+                        "OK");
+
+                    return;
+                }
+
+                // Reject is only valid while the return
+                // is actually pending.
+                if (tool.Status != "PendingReturn")
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Invalid Return",
+                        "This equipment is no longer pending return.",
+                        "OK");
+
+                    await LoadAsync();
+                    return;
+                }
+
+                // ── UPDATE REQUEST ──────────────────────────────────
 
                 request.Status =
                     "Rejected";
@@ -999,10 +1244,9 @@ namespace StockGuard.ViewModels
                     user.FullName;
 
                 var requestUpdated =
-                    await _firebase
-                        .UpdateReturnRequestAsync(
-                            item.Key,
-                            request);
+                    await _firebase.UpdateReturnRequestAsync(
+                        item.Key,
+                        request);
 
                 if (!requestUpdated)
                 {
@@ -1014,46 +1258,76 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            request.ToolId);
+                // ── RESTORE WORKER CUSTODY ─────────────────────────
 
-                if (tool != null)
+                tool.Status =
+                    "Borrowed";
+
+                tool.AssignedWorkerId =
+                    request.WorkerId;
+
+                tool.AssignedWorkerName =
+                    request.WorkerName;
+
+                tool.BorrowedProjectId =
+                    request.ProjectId;
+
+                tool.BorrowedProjectName =
+                    request.ProjectName;
+
+                var toolUpdated =
+                    await _firebase.UpdateToolAsync(tool);
+
+                if (!toolUpdated)
                 {
-                    // If the return came from OnHold,
-                    // the hold information still exists.
-                    bool wasOnHold =
-                        !string.IsNullOrWhiteSpace(
-                            tool.HoldProjectId) ||
-                        tool.HoldDate.HasValue;
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "The request was rejected, but the equipment status could not be restored.",
+                        "OK");
 
-                    tool.Status =
-                        wasOnHold
-                            ? "OnHold"
-                            : "Borrowed";
-
-                    // Accountability stays with worker.
-                    tool.AssignedWorkerId =
-                        request.WorkerId;
-
-                    tool.AssignedWorkerName =
-                        request.WorkerName;
-
-                    tool.BorrowedProjectId =
-                        request.ProjectId;
-
-                    tool.BorrowedProjectName =
-                        request.ProjectName;
-
-                    await _firebase
-                        .UpdateToolAsync(tool);
+                    return;
                 }
+
+                await _firebase.LogTransactionAsync(
+                    new TransactionLog
+                    {
+                        ToolId =
+                            tool.ToolId,
+
+                        ToolName =
+                            tool.ToolName,
+
+                        WorkerId =
+                            request.WorkerId,
+
+                        WorkerName =
+                            request.WorkerName,
+
+                        ProjectId =
+                            request.ProjectId,
+
+                        ProjectName =
+                            request.ProjectName,
+
+                        Action =
+                            "Return Rejected",
+
+                        Description =
+                            $"Return rejected by {user.FullName}. " +
+                            $"Equipment remains assigned to " +
+                            $"{request.WorkerName}.",
+
+                        Condition =
+                            tool.Condition,
+
+                        Date =
+                            DateTime.Now
+                    });
 
                 await Shell.Current.DisplayAlert(
                     "Return Rejected",
-                    $"{request.ToolName} remains under " +
-                    $"{request.WorkerName}'s responsibility.",
+                    $"{request.ToolName} remains assigned to " +
+                    $"{request.WorkerName}.",
                     "OK");
 
                 await LoadAsync();
@@ -1070,5 +1344,6 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
-    }
+
+     }
 }
