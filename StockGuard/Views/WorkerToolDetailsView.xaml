@@ -20,7 +20,7 @@
             <VerticalStackLayout Spacing="0" Padding="0,0,0,40">
 
                 <!-- ── HEADER ──────────────────────────────── -->
-                <Grid ColumnDefinitions="Auto,*,Auto,Auto"
+                <Grid ColumnDefinitions="Auto,*,Auto"
                       ColumnSpacing="10"
                       Padding="20,52,20,16"
                       BackgroundColor="{DynamicResource BgSurface}">
@@ -55,7 +55,7 @@
                             WidthRequest="40" HeightRequest="36"
                             Padding="0"/>-->
 
-                    <Button Grid.Column="3"
+                    <Button Grid.Column="2"
                             Text="🔄"
                             Command="{Binding RefreshCommand}"
                             BackgroundColor="{DynamicResource BgElevated}"
@@ -277,7 +277,7 @@
                                        HorizontalOptions="Center"
                                        CharacterSpacing="3"/>
                             </Frame>
-                            <Label Text="📋  Workers can scan this QR to access tool details"
+                            <Label Text="Scan this QR to open tool details"
                                    FontSize="11"
                                    TextColor="{DynamicResource Text3}"
                                    HorizontalOptions="Center"
@@ -291,107 +291,169 @@
                            TextColor="{DynamicResource Text1}"
                            Margin="0,6,0,0"/>-->
 
-                    <VerticalStackLayout Padding="20,0" Spacing="10"
-                                         IsVisible="{Binding IsNotLoading}">
+                    <VerticalStackLayout Padding="20,0"
+                     Spacing="10"
+                     IsVisible="{Binding IsNotLoading}">
 
+                        <!-- PRE-ASSIGNMENT -->
                         <Frame IsVisible="{Binding ShowConfirmReceipt}"
-                               BackgroundColor="#0f1c35"
-                               BorderColor="{DynamicResource Blue}"
-                               CornerRadius="12" Padding="16" HasShadow="False">
+           BackgroundColor="#0f1c35"
+           BorderColor="{DynamicResource Blue}"
+           CornerRadius="12"
+           Padding="16"
+           HasShadow="False">
+
                             <VerticalStackLayout Spacing="6">
-                                <Label Text="📋 Pre-assigned to you"
-                                       FontSize="13" FontAttributes="Bold"
-                                       TextColor="{DynamicResource Blue}"/>
+
+                                <Label Text="Pre-assigned to you"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource Blue}"/>
+
                                 <Label Text="This tool has been assigned to you by the Project Engineer. Confirm receipt to start using it."
-                                       FontSize="12" TextColor="{DynamicResource Text2}"/>
+                   FontSize="12"
+                   TextColor="{DynamicResource Text2}"/>
+
                             </VerticalStackLayout>
+
                         </Frame>
 
                         <Button IsVisible="{Binding ShowConfirmReceipt}"
-                                Text="✅  Confirm Receipt"
-                                Command="{Binding ConfirmReceiptCommand}"
-                                BackgroundColor="{DynamicResource Blue}"
-                                TextColor="White"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+            Text="Confirm Receipt"
+            Command="{Binding ConfirmReceiptCommand}"
+            BackgroundColor="{DynamicResource Blue}"
+            TextColor="White"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
 
                         <Button IsVisible="{Binding ShowDeclineReceipt}"
-                                Text="❌  Decline"
-                                Command="{Binding DeclineCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Red}"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+            Text="Decline"
+            Command="{Binding DeclineCommand}"
+            BackgroundColor="{DynamicResource BgElevated}"
+            TextColor="{DynamicResource Red}"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
 
+
+                        <!-- NORMAL BORROW -->
                         <Button IsVisible="{Binding ShowBorrow}"
-                                Text="📦  Borrow Tool"
-                                Command="{Binding BorrowCommand}"
-                                BackgroundColor="{DynamicResource Blue}"
-                                TextColor="White"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
+            Text="Borrow Tool"
+            Command="{Binding BorrowCommand}"
+            BackgroundColor="{DynamicResource Blue}"
+            TextColor="White"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
 
-                        
-                      
-                       
+
+                        <!-- BORROWED TOOL ACTIONS -->
+                        <Button IsVisible="{Binding ShowEndDayCheckIn}"
+            Text="End Day Check-In"
+            Command="{Binding EndDayCheckInCommand}"
+            BackgroundColor="{DynamicResource BgElevated}"
+            TextColor="{DynamicResource Blue}"
+            BorderColor="{DynamicResource BorderColor}"
+            BorderWidth="1"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
+
                         <Button IsVisible="{Binding ShowReturn}"
-                                Text="Return Tool"
-                                Command="{Binding ReturnCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Blue}"
-                                BorderColor="{DynamicResource BorderColor}"
-                                BorderWidth="1"
-                                FontSize="14"
-                                FontAttributes="Bold"
-                                CornerRadius="12"
-                                HeightRequest="50"/>
+            Text="Return Tool"
+            Command="{Binding ReturnCommand}"
+            BackgroundColor="{DynamicResource BgElevated}"
+            TextColor="{DynamicResource Blue}"
+            BorderColor="{DynamicResource BorderColor}"
+            BorderWidth="1"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
+
+                        <Button IsVisible="{Binding ShowReportDamage}"
+            Text="Report Damage"
+            Command="{Binding ReportDamageCommand}"
+            BackgroundColor="{DynamicResource RedBg}"
+            TextColor="{DynamicResource Red}"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
+
+                        <Button IsVisible="{Binding ShowRequestBorrow}"
+            Text="Request to Borrow"
+            Command="{Binding RequestBorrowCommand}"
+            BackgroundColor="{DynamicResource BgElevated}"
+            TextColor="{DynamicResource Blue}"
+            FontSize="14"
+            FontAttributes="Bold"
+            CornerRadius="12"
+            HeightRequest="50"/>
+
+
+                        <!-- PENDING / STATUS MESSAGES -->
+
+                        <Frame IsVisible="{Binding ShowPendingCheckIn}"
+           BackgroundColor="{DynamicResource BgElevated}"
+           BorderColor="{DynamicResource Amber}"
+           CornerRadius="12"
+           Padding="16"
+           HasShadow="False"
+           Margin="0,6,0,0">
+
+                            <VerticalStackLayout Spacing="5">
+
+                                <Label Text="End-day check-in pending"
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource Amber}"/>
+
+                                <Label Text="{Binding CheckInLocation,
+                                 StringFormat='Stored at: {0}'}"
+                   FontSize="12"
+                   TextColor="{DynamicResource Text2}"/>
+
+                                <Label Text="Waiting for Project Engineer verification."
+                   FontSize="12"
+                   TextColor="{DynamicResource Text3}"/>
+
+                            </VerticalStackLayout>
+
+                        </Frame>
+
 
                         <Frame IsVisible="{Binding ShowPendingReturn}"
-                               BackgroundColor="{DynamicResource BgElevated}"
-                               BorderColor="{DynamicResource Amber}"
-                               CornerRadius="12"
-                               Padding="16"
-                               HasShadow="False">
+           BackgroundColor="{DynamicResource BgElevated}"
+           BorderColor="{DynamicResource Amber}"
+           CornerRadius="12"
+           Padding="16"
+           HasShadow="False"
+           Margin="0,6,0,0">
 
                             <VerticalStackLayout Spacing="6">
 
                                 <Label Text="Return pending verification"
-                                       FontSize="13"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Amber}"/>
+                   FontSize="13"
+                   FontAttributes="Bold"
+                   TextColor="{DynamicResource Amber}"/>
 
                                 <Label Text="Please bring the tool to the Project Engineer. You remain responsible for it until the return is physically verified."
-                                       FontSize="12"
-                                       TextColor="{DynamicResource Text2}"/>
+                   FontSize="12"
+                   TextColor="{DynamicResource Text2}"/>
 
                             </VerticalStackLayout>
+
                         </Frame>
-                        <!--<Button IsVisible="{Binding ShowTransfer}"
-                                Text="🔄  Transfer Tool"
-                                Command="{Binding TransferCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text1}"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>-->
-
-                        <Button IsVisible="{Binding ShowReportDamage}"
-                                Text="⚠️  Report Damage"
-                                Command="{Binding ReportDamageCommand}"
-                                BackgroundColor="{DynamicResource RedBg}"
-                                TextColor="{DynamicResource Red}"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
-
-                        <Button IsVisible="{Binding ShowRequestBorrow}"
-                                Text="📩  Request to Borrow"
-                                Command="{Binding RequestBorrowCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Blue}"
-                                FontSize="14" FontAttributes="Bold"
-                                CornerRadius="12" HeightRequest="50"/>
 
                     </VerticalStackLayout>
-
+                    
+                    
                     <!--<Button Text="📋  View Transaction History"
                             Command="{Binding ViewHistoryCommand}"
                             BackgroundColor="{DynamicResource BgCard}"

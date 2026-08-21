@@ -262,10 +262,10 @@
                         </Frame>
                     </Grid>
 
-                    <!-- Transactions — with badge --><!--
+                     <!--Transactions — with badge--> 
                     <Grid>
                         <Button x:Name="BtnTransactions"
-                                Text="📋  Transactions"
+                                Text="Transactions"
                                 Clicked="OnTransactionsClicked"
                                 Style="{StaticResource FlyoutItemStyle}"/>
                         <Frame IsVisible="{Binding PendingTransactions,
@@ -284,7 +284,7 @@
                                    HorizontalOptions="Center"
                                    VerticalOptions="Center"/>
                         </Frame>
-                    </Grid>-->
+                    </Grid>
 
                     <!--<Button x:Name="BtnAnalytics"
                             Text="📊  Analytics"

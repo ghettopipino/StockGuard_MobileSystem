@@ -11,6 +11,8 @@ namespace StockGuard.ViewModels
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
 
+
+
         // ─────────────────────────────────────────────────────────
         // THEME
         // ─────────────────────────────────────────────────────────
@@ -577,5 +579,7 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
+
+
     }
 }

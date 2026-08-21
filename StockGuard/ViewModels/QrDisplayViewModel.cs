@@ -15,8 +15,6 @@ namespace StockGuard.ViewModels
         private readonly ThemeService _theme;
         private readonly FirebaseService _firebase;
 
-        // ── Query Properties ──────────────────────────────────────
-
         private string _toolId = string.Empty;
         public string ToolId
         {
@@ -58,8 +56,6 @@ namespace StockGuard.ViewModels
             set => SetProperty(ref _catalogName, value);
         }
 
-        // ── Actual Tool Data ──────────────────────────────────────
-
         private Tool? _tool;
         public Tool? Tool
         {
@@ -69,38 +65,64 @@ namespace StockGuard.ViewModels
                 SetProperty(ref _tool, value);
 
                 OnPropertyChanged(nameof(Status));
-
                 OnPropertyChanged(nameof(CurrentBorrowerName));
                 OnPropertyChanged(nameof(CurrentProjectName));
+                OnPropertyChanged(nameof(AssignedByName));
 
-                OnPropertyChanged(nameof(HoldProjectName));
-                OnPropertyChanged(nameof(HoldLocation));
-                OnPropertyChanged(nameof(LastBorrowerName));
+                OnPropertyChanged(nameof(CheckInLocation));
+                OnPropertyChanged(nameof(CheckInDateDisplay));
+                OnPropertyChanged(nameof(CheckInVerifiedBy));
+                OnPropertyChanged(nameof(HasCheckInInfo));
 
                 OnPropertyChanged(nameof(IsBorrowed));
-                OnPropertyChanged(nameof(IsOnHold));
                 OnPropertyChanged(nameof(IsAvailable));
+                OnPropertyChanged(nameof(IsPendingReturn));
+                OnPropertyChanged(nameof(IsDamaged));
             }
         }
 
-        // ── Display Properties ────────────────────────────────────
+        // ── Current assignment ──────────────────────────────
 
         public string CurrentBorrowerName =>
-            Tool?.AssignedWorkerName ?? string.Empty;
+            string.IsNullOrWhiteSpace(Tool?.AssignedWorkerName)
+                ? "—"
+                : Tool.AssignedWorkerName;
 
         public string CurrentProjectName =>
-            Tool?.BorrowedProjectName ?? string.Empty;
+            string.IsNullOrWhiteSpace(Tool?.BorrowedProjectName)
+                ? "—"
+                : Tool.BorrowedProjectName;
 
-        public string HoldProjectName =>
-            Tool?.HoldProjectName ?? string.Empty;
+        public string AssignedByName =>
+            string.IsNullOrWhiteSpace(Tool?.AssignedByName)
+                ? "—"
+                : Tool.AssignedByName;
 
-        public string HoldLocation =>
-            Tool?.HoldLocation ?? string.Empty;
+        // ── End Day Check-In ────────────────────────────────
 
-        public string LastBorrowerName =>
-            Tool?.LastBorrowerName ?? string.Empty;
+        public string CheckInLocation =>
+            string.IsNullOrWhiteSpace(Tool?.LastCheckInLocation)
+                ? "—"
+                : Tool.LastCheckInLocation;
 
-        // ── Visibility Helpers ────────────────────────────────────
+        public string CheckInDateDisplay =>
+            Tool?.LastCheckInDate.HasValue == true
+                ? Tool.LastCheckInDate.Value
+                    .ToString("MMM d, yyyy h:mm tt")
+                : "—";
+
+        public string CheckInVerifiedBy =>
+            string.IsNullOrWhiteSpace(Tool?.LastCheckInVerifiedByName)
+                ? Tool?.IsCheckInPending == true
+                    ? "Pending verification"
+                    : "—"
+                : Tool.LastCheckInVerifiedByName;
+
+        public bool HasCheckInInfo =>
+            Tool?.LastCheckInDate.HasValue == true ||
+            Tool?.IsCheckInPending == true;
+
+        // ── Status helpers ─────────────────────────────────
 
         public bool IsAvailable =>
             Tool?.IsAvailable == true;
@@ -108,15 +130,16 @@ namespace StockGuard.ViewModels
         public bool IsBorrowed =>
             Tool?.IsBorrowed == true;
 
-        public bool IsOnHold =>
-            Tool?.IsOnHold == true;
+        public bool IsPendingReturn =>
+            Tool?.IsPendingReturn == true;
 
-        // ── Commands ──────────────────────────────────────────────
+        public bool IsDamaged =>
+            Tool?.IsDamaged == true;
+
+        // ── Commands ───────────────────────────────────────
 
         public ICommand GoBackCommand { get; }
         public ICommand ShareCommand { get; }
-
-        // ── Constructor ───────────────────────────────────────────
 
         public QrDisplayViewModel(
             FirebaseService firebase,
@@ -125,14 +148,16 @@ namespace StockGuard.ViewModels
             _firebase = firebase;
             _theme = theme;
 
-            GoBackCommand = new Command(async () =>
-                await Shell.Current.GoToAsync(".."));
+            GoBackCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current.GoToAsync(".."));
 
-            ShareCommand = new Command(
-                async () => await ShareQrAsync());
+            ShareCommand =
+                new Command(
+                    async () =>
+                        await ShareQrAsync());
         }
-
-        // ── Load Latest Tool Data ─────────────────────────────────
 
         private async Task LoadToolAsync()
         {
@@ -141,19 +166,16 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var tool = await _firebase
-                    .GetToolByIdAsync(ToolId);
+                var tool =
+                    await _firebase.GetToolByIdAsync(
+                        ToolId);
 
                 if (tool == null)
                     return;
 
                 Tool = tool;
-
-                // Use latest Firebase values
                 ToolName = tool.ToolName;
 
-                // Status now comes from Tool,
-                // but notify the UI after loading.
                 OnPropertyChanged(nameof(Status));
             }
             catch (Exception ex)
@@ -163,36 +185,25 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ── Share QR ──────────────────────────────────────────────
-
         private async Task ShareQrAsync()
         {
-            var details = string.Empty;
+            var details =
+                $"\nStatus: {Status}\n";
 
-            // Borrowed
-            if (IsBorrowed)
+            if (Tool?.HasAssignmentInfo == true)
             {
-                details =
-                    $"\nStatus: Borrowed\n" +
-                    $"Borrower: {CurrentBorrowerName}\n" +
-                    $"Project: {CurrentProjectName}\n";
+                details +=
+                    $"Worker: {CurrentBorrowerName}\n" +
+                    $"Project: {CurrentProjectName}\n" +
+                    $"Assigned By: {AssignedByName}\n";
             }
 
-            // On Hold
-            else if (IsOnHold)
+            if (HasCheckInInfo)
             {
-                details =
-                    $"\nStatus: On Hold\n" +
-                    $"Project: {HoldProjectName}\n" +
-                    $"Location: {HoldLocation}\n" +
-                    $"Last Borrower: {LastBorrowerName}\n";
-            }
-
-            // Other status
-            else
-            {
-                details =
-                    $"\nStatus: {Status}\n";
+                details +=
+                    $"Last Check-In: {CheckInDateDisplay}\n" +
+                    $"Stored At: {CheckInLocation}\n" +
+                    $"Verified By: {CheckInVerifiedBy}\n";
             }
 
             await Share.Default.RequestAsync(

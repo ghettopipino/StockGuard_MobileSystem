@@ -74,6 +74,10 @@ namespace StockGuard.ViewModels
             OnPropertyChanged(nameof(ShowTransfer));
             OnPropertyChanged(nameof(ShowReportDamage));
             OnPropertyChanged(nameof(ShowRequestBorrow));
+            OnPropertyChanged(nameof(ShowEndDayCheckIn));
+            OnPropertyChanged(nameof(ShowPendingCheckIn));
+            OnPropertyChanged(nameof(CheckInLocation));
+            OnPropertyChanged(nameof(CheckInDateDisplay));
 
             OnPropertyChanged(nameof(ShowConfirmReceipt));
             OnPropertyChanged(nameof(ShowDeclineReceipt));
@@ -164,6 +168,28 @@ namespace StockGuard.ViewModels
             IsAssignedToMe &&
             Tool.Status == "PendingReturn";
 
+        public bool ShowEndDayCheckIn =>
+            Tool != null &&
+            IsAssignedToMe &&
+            Tool.Status == "Borrowed" &&
+            !Tool.IsCheckInPending;
+
+        public bool ShowPendingCheckIn =>
+            Tool != null &&
+            IsAssignedToMe &&
+            Tool.Status == "Borrowed" &&
+            Tool.IsCheckInPending;
+
+        public string CheckInLocation =>
+            string.IsNullOrWhiteSpace(Tool?.LastCheckInLocation)
+                ? "—"
+                : Tool.LastCheckInLocation;
+
+        public string CheckInDateDisplay =>
+            Tool?.LastCheckInDate.HasValue == true
+                ? Tool.LastCheckInDate.Value.ToString("MMM d, yyyy h:mm tt")
+                : "—";
+
         public bool ShowTransfer =>
             Tool != null &&
             IsAssignedToMe &&
@@ -238,6 +264,7 @@ namespace StockGuard.ViewModels
         public ICommand ToggleThemeCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ViewHistoryCommand { get; }
+        public ICommand EndDayCheckInCommand { get; }
 
         // ─────────────────────────────────────────────────────────
         // CONSTRUCTOR
@@ -286,6 +313,11 @@ namespace StockGuard.ViewModels
                 new Command(
                     async () =>
                         await RequestBorrowAsync(),
+                    () => !IsBusy);
+
+            EndDayCheckInCommand =
+                new Command(
+                    async () => await EndDayCheckInAsync(),
                     () => !IsBusy);
 
             ConfirmReceiptCommand =
@@ -1218,6 +1250,154 @@ namespace StockGuard.ViewModels
                     "Error",
                     $"Could not confirm receipt.\n" +
                     $"{ex.Message}",
+                    "OK");
+            }
+            finally
+            {
+                IsBusy = false;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // ENDDAY CHECKIN
+        // ─────────────────────────────────────────────────────────
+
+        private async Task EndDayCheckInAsync()
+        {
+            if (Tool == null || IsBusy)
+                return;
+
+            if (!IsAssignedToMe ||
+                Tool.Status != "Borrowed")
+            {
+                return;
+            }
+
+            if (Tool.IsCheckInPending)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Check-In Pending",
+                    "This equipment already has an end-day check-in waiting for verification.",
+                    "OK");
+
+                return;
+            }
+
+            string[] locations =
+            {
+        "Site Storage",
+        "Tool Room",
+        "Warehouse",
+        "Worker Area",
+        "Other"
+    };
+
+            var selectedLocation =
+                await Shell.Current.DisplayActionSheet(
+                    "End Day Check-In",
+                    "Cancel",
+                    null,
+                    locations);
+
+            if (string.IsNullOrWhiteSpace(selectedLocation) ||
+                selectedLocation == "Cancel")
+            {
+                return;
+            }
+
+            if (selectedLocation == "Other")
+            {
+                selectedLocation =
+                    await Shell.Current.DisplayPromptAsync(
+                        "Storage Location",
+                        "Enter where the equipment will be stored:",
+                        "Continue",
+                        "Cancel",
+                        placeholder:
+                            "e.g. Building A - Tool Storage");
+
+                if (string.IsNullOrWhiteSpace(selectedLocation))
+                    return;
+
+                selectedLocation =
+                    selectedLocation.Trim();
+            }
+
+            bool confirm =
+                await Shell.Current.DisplayAlert(
+                    "Confirm End Day",
+                    $"{Tool.ToolName} ({Tool.ToolId})\n\n" +
+                    $"Store at: {selectedLocation}\n\n" +
+                    "The equipment will remain assigned to you. " +
+                    "The Project Engineer must verify the check-in.",
+                    "Check In",
+                    "Cancel");
+
+            if (!confirm)
+                return;
+
+            IsBusy = true;
+
+            try
+            {
+                var user =
+                    _auth.CurrentUser;
+
+                if (user == null)
+                    return;
+
+                Tool.LastCheckInLocation =
+                    selectedLocation;
+
+                Tool.LastCheckInDate =
+                    DateTime.Now;
+
+                Tool.IsCheckInPending =
+                    true;
+
+                Tool.LastCheckInVerifiedById =
+                    string.Empty;
+
+                Tool.LastCheckInVerifiedByName =
+                    string.Empty;
+
+                // IMPORTANT:
+                // Status remains Borrowed.
+                // Worker/project assignment stays unchanged.
+
+                var updated =
+                    await _firebase.UpdateToolAsync(Tool);
+
+                if (!updated)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Could not save the end-day check-in.",
+                        "OK");
+
+                    return;
+                }
+
+                await LogAsync(
+                    "End Day Check-In",
+                    $"Equipment checked in at {selectedLocation} " +
+                    $"and is awaiting PE verification.",
+                    Tool.Condition);
+
+                RefreshToolProperties();
+
+                await Shell.Current.DisplayAlert(
+                    "Check-In Submitted",
+                    $"{Tool.ToolName} ({Tool.ToolId}) has been checked in for the day.\n\n" +
+                    $"Location: {selectedLocation}\n" +
+                    "Status remains Borrowed until the equipment is formally returned.",
+                    "OK");
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    $"Could not complete end-day check-in.\n{ex.Message}",
                     "OK");
             }
             finally

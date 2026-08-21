@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using System.Windows.Input;
 using StockGuard.Models;
 using StockGuard.Services;
@@ -14,45 +11,16 @@ namespace StockGuard.ViewModels
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
 
+        // ─────────────────────────────────────────────────────────
+        // THEME
+        // ─────────────────────────────────────────────────────────
+
         public string ThemeIcon =>
             _theme.IsDark ? "🌙" : "☀️";
 
-        // ═══════════════════════════════════════════════════════════
-        // MODE / TAB
-        // ═══════════════════════════════════════════════════════════
-
-        private bool _isPauseMode = true;
-
-        public bool IsPauseMode
-        {
-            get => _isPauseMode;
-            private set
-            {
-                if (SetProperty(ref _isPauseMode, value))
-                {
-                    OnPropertyChanged(nameof(IsReturnMode));
-                    UpdateStats();
-                }
-            }
-        }
-
-        public bool IsReturnMode => !IsPauseMode;
-
-        // ═══════════════════════════════════════════════════════════
-        // PAUSE COLLECTIONS
-        // ═══════════════════════════════════════════════════════════
-
-        public ObservableCollection<PauseRequestItem>
-            PendingRequests
-        { get; } = new();
-
-        public ObservableCollection<PauseRequestItem>
-            ProcessedRequests
-        { get; } = new();
-
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // RETURN COLLECTIONS
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         public ObservableCollection<ReturnRequestResult>
             PendingReturnRequests
@@ -62,9 +30,17 @@ namespace StockGuard.ViewModels
             ProcessedReturnRequests
         { get; } = new();
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
+        // END-DAY CHECK-IN COLLECTION
+        // ─────────────────────────────────────────────────────────
+
+        public ObservableCollection<Tool>
+            PendingCheckIns
+        { get; } = new();
+
+        // ─────────────────────────────────────────────────────────
         // STATS
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         private int _pendingCount;
 
@@ -72,7 +48,9 @@ namespace StockGuard.ViewModels
         {
             get => _pendingCount;
             private set =>
-                SetProperty(ref _pendingCount, value);
+                SetProperty(
+                    ref _pendingCount,
+                    value);
         }
 
         private int _approvedCount;
@@ -81,61 +59,52 @@ namespace StockGuard.ViewModels
         {
             get => _approvedCount;
             private set =>
-                SetProperty(ref _approvedCount, value);
+                SetProperty(
+                    ref _approvedCount,
+                    value);
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // EMPTY STATES
-        // ═══════════════════════════════════════════════════════════
-
-        public bool NoPendingPause =>
-            PendingRequests.Count == 0;
+        // ─────────────────────────────────────────────────────────
 
         public bool NoPendingReturn =>
             PendingReturnRequests.Count == 0;
 
-        // Keeps compatibility with your old XAML for now.
-        public bool NoPending =>
-            IsPauseMode
-                ? NoPendingPause
-                : NoPendingReturn;
+        public bool NoPendingCheckIns =>
+            PendingCheckIns.Count == 0;
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // REFRESH
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         private bool _isRefreshing;
 
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set => SetProperty(
-                ref _isRefreshing,
-                value);
+            set =>
+                SetProperty(
+                    ref _isRefreshing,
+                    value);
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // COMMANDS
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         public ICommand OpenFlyoutCommand { get; }
         public ICommand RefreshCommand { get; }
         public ICommand ToggleThemeCommand { get; }
 
-        public ICommand ShowPauseCommand { get; }
-        public ICommand ShowReturnCommand { get; }
-
-        // Pause
-        public ICommand ApproveCommand { get; }
-        public ICommand RejectCommand { get; }
-
-        // Return
         public ICommand ApproveReturnCommand { get; }
         public ICommand RejectReturnCommand { get; }
 
-        // ═══════════════════════════════════════════════════════════
+        public ICommand VerifyCheckInCommand { get; }
+
+        // ─────────────────────────────────────────────────────────
         // CONSTRUCTOR
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         public PauseRequestsViewModel(
             FirebaseService firebase,
@@ -146,16 +115,21 @@ namespace StockGuard.ViewModels
             _auth = auth;
             _theme = theme;
 
+            Title = "Return & Check-In";
+
             _theme.ThemeChanged += _ =>
-                MainThread.BeginInvokeOnMainThread(() =>
-                    OnPropertyChanged(nameof(ThemeIcon)));
+                MainThread.BeginInvokeOnMainThread(
+                    () =>
+                        OnPropertyChanged(
+                            nameof(ThemeIcon)));
 
             OpenFlyoutCommand =
                 new Command(() =>
                 {
                     if (Shell.Current != null)
                     {
-                        Shell.Current.FlyoutIsPresented = true;
+                        Shell.Current.FlyoutIsPresented =
+                            true;
                     }
                 });
 
@@ -165,59 +139,35 @@ namespace StockGuard.ViewModels
                         await RefreshAsync());
 
             ToggleThemeCommand =
-                new Command(() =>
-                    _theme.Toggle());
-
-            // ── Tabs ──────────────────────────────────────────
-
-            ShowPauseCommand =
-                new Command(() =>
-                {
-                    IsPauseMode = true;
-
-                    OnPropertyChanged(nameof(NoPending));
-                    OnPropertyChanged(nameof(NoPendingPause));
-                    OnPropertyChanged(nameof(NoPendingReturn));
-                });
-
-            ShowReturnCommand =
-                new Command(() =>
-                {
-                    IsPauseMode = false;
-
-                    OnPropertyChanged(nameof(NoPending));
-                    OnPropertyChanged(nameof(NoPendingPause));
-                    OnPropertyChanged(nameof(NoPendingReturn));
-                });
-
-            // ── Pause Commands ────────────────────────────────
-
-            ApproveCommand =
-                new Command<PauseRequestItem>(
-                    async item =>
-                        await ApprovePauseAsync(item));
-
-            RejectCommand =
-                new Command<PauseRequestItem>(
-                    async item =>
-                        await RejectPauseAsync(item));
-
-            // ── Return Commands ───────────────────────────────
+                new Command(
+                    () => _theme.Toggle());
 
             ApproveReturnCommand =
                 new Command<ReturnRequestResult>(
                     async item =>
-                        await ApproveReturnAsync(item));
+                        await ApproveReturnAsync(
+                            item));
 
             RejectReturnCommand =
                 new Command<ReturnRequestResult>(
                     async item =>
-                        await RejectReturnAsync(item));
+                        await RejectReturnAsync(
+                            item));
+
+            VerifyCheckInCommand =
+                new Command<Tool>(
+                    async tool =>
+                        await VerifyCheckInAsync(
+                            tool));
+
+            MainThread.BeginInvokeOnMainThread(
+                async () =>
+                    await LoadAsync());
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // LOAD EVERYTHING
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
+        // LOAD
+        // ─────────────────────────────────────────────────────────
 
         public async Task LoadAsync()
         {
@@ -228,100 +178,156 @@ namespace StockGuard.ViewModels
 
             try
             {
-                // Load both request types.
-                var pauseRequests =
-                    await _firebase
-                        .GetAllPauseRequestsRawAsync();
+                var user =
+                    _auth.CurrentUser;
 
-                var returnRequests =
-                    await _firebase
+                if (user == null)
+                {
+                    PendingReturnRequests.Clear();
+                    ProcessedReturnRequests.Clear();
+                    PendingCheckIns.Clear();
+
+                    PendingCount = 0;
+                    ApprovedCount = 0;
+
+                    OnPropertyChanged(
+                        nameof(NoPendingReturn));
+
+                    OnPropertyChanged(
+                        nameof(NoPendingCheckIns));
+
+                    return;
+                }
+
+                // Load data
+                var returnRequestsTask =
+                    _firebase
                         .GetAllReturnRequestsRawAsync();
 
+                var allToolsTask =
+                    _firebase
+                        .GetAllToolsAsync(
+                            forceRefresh: true);
+
+                var projectsTask =
+                    _firebase
+                        .GetAllProjectsAsync();
+
+                await Task.WhenAll(
+                    returnRequestsTask,
+                    allToolsTask,
+                    projectsTask);
+
+                var returnRequests =
+                    returnRequestsTask.Result
+                    ?? new List<ReturnRequestResult>();
+
                 var allTools =
-                await _firebase.GetAllToolsAsync(
-                    forceRefresh: true);
+                    allToolsTask.Result
+                    ?? new List<Tool>();
 
-                // ── Clear ─────────────────────────────────────
+                var projects =
+                    projectsTask.Result
+                    ?? new List<Project>();
 
-                PendingRequests.Clear();
-                ProcessedRequests.Clear();
+                // ───────────────────────────────────────────
+                // PE OWNED PROJECTS
+                // ───────────────────────────────────────────
+
+                var myProjectIds =
+                    projects
+                        .Where(p =>
+                            !p.IsDeleted &&
+                            p.CreatedBy ==
+                                user.UniqueKey)
+                        .Select(p =>
+                            p.ProjectId)
+                        .ToHashSet();
+
+                // ───────────────────────────────────────────
+                // CLEAR COLLECTIONS
+                // ───────────────────────────────────────────
 
                 PendingReturnRequests.Clear();
                 ProcessedReturnRequests.Clear();
+                PendingCheckIns.Clear();
 
-                // ═══════════════════════════════════════════════
-                // PAUSE REQUESTS
-                // ═══════════════════════════════════════════════
+                // ───────────────────────────────────────────
+                // PENDING END-DAY CHECK-INS
+                // ───────────────────────────────────────────
 
-                var pendingPause =
-                    pauseRequests
-                        .Where(r =>
-                            r.Request.Status == "Pending")
-                        .OrderByDescending(r =>
-                            r.Request.RequestDate)
+                var pendingCheckIns =
+                    allTools
+                        .Where(t =>
+                            t.Status ==
+                                "Borrowed" &&
+                            t.IsCheckInPending &&
+                            myProjectIds.Contains(
+                                t.BorrowedProjectId))
+                        .OrderByDescending(t =>
+                            t.LastCheckInDate)
                         .ToList();
 
-                var processedPause =
-                    pauseRequests
-                        .Where(r =>
-                            r.Request.Status != "Pending")
-                        .OrderByDescending(r =>
-                            r.Request.RequestDate)
-                        .Take(10)
-                        .ToList();
-
-                foreach (var item in pendingPause)
+                foreach (var tool in pendingCheckIns)
                 {
-                    PendingRequests.Add(
-                        new PauseRequestItem(
-                            item.Request,
-                            item.Key));
+                    PendingCheckIns.Add(tool);
                 }
 
-                foreach (var item in processedPause)
-                {
-                    ProcessedRequests.Add(
-                        new PauseRequestItem(
-                            item.Request,
-                            item.Key));
-                }
-
-                // ═══════════════════════════════════════════════
-                // RETURN REQUESTS
-                // ═══════════════════════════════════════════════
+                // ───────────────────────────────────────────
+                // PENDING RETURNS
+                // ───────────────────────────────────────────
 
                 var pendingReturn =
-                 returnRequests
-                     .Where(r =>
-                     {
-                         if (r.Request.Status != "Pending")
-                             return false;
-
-                         var tool = allTools.FirstOrDefault(t =>
-                             t.ToolId == r.Request.ToolId);
-
-                         // A return is only really pending when
-                         // the physical tool is PendingReturn.
-                         return tool != null &&
-                                tool.Status == "PendingReturn";
-                     })
-                     .OrderByDescending(r =>
-                         r.Request.RequestDate)
-                     .ToList();
-
-                var processedReturn =
                     returnRequests
                         .Where(r =>
-                            r.Request.Status != "Pending")
+                        {
+                            if (r.Request.Status !=
+                                "Pending")
+                            {
+                                return false;
+                            }
+
+                            // Only show returns from
+                            // projects owned by this PE.
+                            if (!myProjectIds.Contains(
+                                    r.Request.ProjectId))
+                            {
+                                return false;
+                            }
+
+                            var tool =
+                                allTools.FirstOrDefault(t =>
+                                    t.ToolId ==
+                                    r.Request.ToolId);
+
+                            return tool != null &&
+                                   tool.Status ==
+                                   "PendingReturn";
+                        })
                         .OrderByDescending(r =>
                             r.Request.RequestDate)
-                        .Take(10)
                         .ToList();
 
                 foreach (var item in pendingReturn)
                 {
                     PendingReturnRequests.Add(item);
                 }
+
+                // ───────────────────────────────────────────
+                // PROCESSED RETURNS
+                // ───────────────────────────────────────────
+
+                var processedReturn =
+                    returnRequests
+                        .Where(r =>
+                            r.Request.Status !=
+                                "Pending" &&
+                            myProjectIds.Contains(
+                                r.Request.ProjectId))
+                        .OrderByDescending(r =>
+                            r.Request.RequestDate)
+                        .Take(10)
+                        .ToList();
 
                 foreach (var item in processedReturn)
                 {
@@ -330,14 +336,17 @@ namespace StockGuard.ViewModels
 
                 UpdateStats();
 
-                OnPropertyChanged(nameof(NoPending));
-                OnPropertyChanged(nameof(NoPendingPause));
-                OnPropertyChanged(nameof(NoPendingReturn));
+                OnPropertyChanged(
+                    nameof(NoPendingReturn));
+
+                OnPropertyChanged(
+                    nameof(NoPendingCheckIns));
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"Load Pause/Return Requests error: {ex.Message}");
+                    $"Load Return/Check-In Requests error: " +
+                    $"{ex.Message}");
             }
             finally
             {
@@ -345,35 +354,24 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // UPDATE DYNAMIC STATS
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
+        // STATS
+        // ─────────────────────────────────────────────────────────
 
         private void UpdateStats()
         {
-            if (IsPauseMode)
-            {
-                PendingCount =
-                    PendingRequests.Count;
+            PendingCount =
+                PendingReturnRequests.Count;
 
-                ApprovedCount =
-                    ProcessedRequests.Count(r =>
-                        r.Status == "Approved");
-            }
-            else
-            {
-                PendingCount =
-                    PendingReturnRequests.Count;
-
-                ApprovedCount =
-                    ProcessedReturnRequests.Count(r =>
-                        r.Request.Status == "Approved");
-            }
+            ApprovedCount =
+                ProcessedReturnRequests.Count(r =>
+                    r.Request.Status ==
+                    "Approved");
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // REFRESH
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         private async Task RefreshAsync()
         {
@@ -389,187 +387,87 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // APPROVE PAUSE
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
+        // VERIFY END-DAY CHECK-IN
+        // ─────────────────────────────────────────────────────────
 
-        private async Task ApprovePauseAsync(
-            PauseRequestItem item)
+        private async Task VerifyCheckInAsync(
+            Tool tool)
         {
-            if (item is null || IsBusy)
+            if (tool == null || IsBusy)
                 return;
+
+            if (!tool.IsCheckInPending ||
+                tool.Status != "Borrowed")
+            {
+                await Shell.Current.DisplayAlert(
+                    "Invalid Check-In",
+                    "This equipment no longer has " +
+                    "a pending end-day check-in.",
+                    "OK");
+
+                await LoadAsync();
+                return;
+            }
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
-                    "Approve Pause",
-                    $"Confirm that you have physically verified " +
-                    $"{item.ToolName} ({item.ToolId}) " +
-                    $"at the project site storage.\n\n" +
-                    $"Worker: {item.WorkerName}",
-                    "Continue",
+                    "Verify End-Day Check-In",
+                    $"Confirm that you physically verified " +
+                    $"{tool.ToolName} ({tool.ToolId}).\n\n" +
+                    $"Worker: {tool.AssignedWorkerName}\n" +
+                    $"Project: {tool.BorrowedProjectName}\n" +
+                    $"Location: {tool.LastCheckInLocation}",
+                    "Verify",
                     "Cancel");
 
             if (!confirm)
                 return;
 
-            string[] locations =
-            {
-                "Site Storage",
-                "Warehouse",
-                "Tool Room",
-                "Worker Area",
-                "Other"
-            };
-
-            string selectedLocation =
-                await Shell.Current.DisplayActionSheet(
-                    "Equipment Location",
-                    "Cancel",
-                    null,
-                    locations);
-
-            if (string.IsNullOrWhiteSpace(selectedLocation) ||
-                selectedLocation == "Cancel")
-            {
-                return;
-            }
-
-            if (selectedLocation == "Other")
-            {
-                selectedLocation =
-                    await Shell.Current.DisplayPromptAsync(
-                        "Custom Location",
-                        "Enter the exact equipment location:",
-                        "Save",
-                        "Cancel",
-                        placeholder:
-                        "e.g. Warehouse B - Storage Room 2");
-
-                if (string.IsNullOrWhiteSpace(
-                        selectedLocation))
-                {
-                    return;
-                }
-
-                selectedLocation =
-                    selectedLocation.Trim();
-            }
-
             IsBusy = true;
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current user could not be identified.",
+                        "Current Project Engineer " +
+                        "could not be identified.",
                         "OK");
 
                     return;
                 }
 
-                // ── Update Pause Request ──────────────────────
+                tool.IsCheckInPending =
+                    false;
 
-                item.Request.HoldLocation =
-                    selectedLocation;
+                tool.LastCheckInVerifiedById =
+                    user.UniqueKey;
 
-                item.Request.Status =
-                    "Approved";
-
-                item.Request.ApprovedDate =
-                    DateTime.Now;
-
-                item.Request.ApprovedBy =
+                tool.LastCheckInVerifiedByName =
                     user.FullName;
 
-                var requestUpdated =
-                    await _firebase
-                        .UpdatePauseRequestAsync(
-                            item.RequestKey,
-                            item.Request);
+                // IMPORTANT:
+                // Tool remains Borrowed.
+                // Worker/project assignment stays unchanged.
 
-                if (!requestUpdated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not update the pause request.",
-                        "OK");
-
-                    return;
-                }
-
-                // ── Load Tool ─────────────────────────────────
-
-                var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            item.ToolId);
-
-                if (tool == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "The tool could not be found.",
-                        "OK");
-
-                    return;
-                }
-
-                // ── Change to OnHold ──────────────────────────
-
-                tool.Status = "OnHold";
-
-                tool.HoldProjectId =
-                    item.Request.ProjectId;
-
-                tool.HoldProjectName =
-                    item.Request.ProjectName;
-
-                tool.HoldLocation =
-                    selectedLocation;
-
-                tool.HoldDate =
-                    DateTime.Now;
-
-                tool.LastBorrowerId =
-                    item.Request.WorkerId;
-
-                tool.LastBorrowerName =
-                    item.Request.WorkerName;
-
-                // Pause keeps accountability.
-                tool.AssignedWorkerId =
-                    item.Request.WorkerId;
-
-                tool.AssignedWorkerName =
-                    item.Request.WorkerName;
-
-                tool.BorrowedProjectId =
-                    item.Request.ProjectId;
-
-                tool.BorrowedProjectName =
-                    item.Request.ProjectName;
-
-                // BorrowDate remains unchanged.
-
-                var toolUpdated =
+                var updated =
                     await _firebase
                         .UpdateToolAsync(tool);
 
-                if (!toolUpdated)
+                if (!updated)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Pause request was approved, but the tool status could not be updated.",
+                        "Could not verify the end-day check-in.",
                         "OK");
 
                     return;
                 }
-
-                // ── Transaction ───────────────────────────────
 
                 await _firebase
                     .LogTransactionAsync(
@@ -582,25 +480,24 @@ namespace StockGuard.ViewModels
                                 tool.ToolName,
 
                             WorkerId =
-                                item.Request.WorkerId,
+                                tool.AssignedWorkerId,
 
                             WorkerName =
-                                item.Request.WorkerName,
+                                tool.AssignedWorkerName,
 
                             ProjectId =
-                                item.Request.ProjectId,
+                                tool.BorrowedProjectId,
 
                             ProjectName =
-                                item.Request.ProjectName,
+                                tool.BorrowedProjectName,
 
                             Action =
-                                "OnHold",
+                                "End Day Check-In Verified",
 
                             Description =
-                                $"Pause approved by " +
-                                $"{user.FullName}. " +
-                                $"Tool physically verified and stored at " +
-                                $"{selectedLocation}.",
+                                $"End-day check-in verified " +
+                                $"by {user.FullName} at " +
+                                $"{tool.LastCheckInLocation}.",
 
                             Condition =
                                 tool.Condition,
@@ -610,10 +507,14 @@ namespace StockGuard.ViewModels
                         });
 
                 await Shell.Current.DisplayAlert(
-                    "Pause Approved",
-                    $"{item.ToolName} is now On Hold.\n\n" +
-                    $"Location: {selectedLocation}\n" +
-                    $"Responsible Worker: {item.WorkerName}",
+                    "Check-In Verified",
+                    $"{tool.ToolName} ({tool.ToolId}) " +
+                    $"was verified.\n\n" +
+                    $"Location: {tool.LastCheckInLocation}\n" +
+                    $"Responsible Worker: " +
+                    $"{tool.AssignedWorkerName}\n\n" +
+                    "The equipment remains Borrowed " +
+                    "under the same worker.",
                     "OK");
 
                 await LoadAsync();
@@ -622,7 +523,8 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not approve pause request.\n{ex.Message}",
+                    $"Could not verify check-in.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -631,124 +533,18 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
-        // REJECT PAUSE
-        // ═══════════════════════════════════════════════════════════
-
-        private async Task RejectPauseAsync(
-            PauseRequestItem item)
-        {
-            if (item is null || IsBusy)
-                return;
-
-            bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Reject Pause",
-                    $"Reject the pause request for " +
-                    $"{item.ToolName} ({item.ToolId})?\n\n" +
-                    $"The tool will remain Borrowed under " +
-                    $"{item.WorkerName}.",
-                    "Reject",
-                    "Cancel");
-
-            if (!confirm)
-                return;
-
-            IsBusy = true;
-
-            try
-            {
-                item.Request.Status =
-                    "Rejected";
-
-                var requestUpdated =
-                    await _firebase
-                        .UpdatePauseRequestAsync(
-                            item.RequestKey,
-                            item.Request);
-
-                if (!requestUpdated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not reject the pause request.",
-                        "OK");
-
-                    return;
-                }
-
-                var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            item.ToolId);
-
-                if (tool != null)
-                {
-                    tool.Status =
-                        "Borrowed";
-
-                    tool.AssignedWorkerId =
-                        item.Request.WorkerId;
-
-                    tool.AssignedWorkerName =
-                        item.Request.WorkerName;
-
-                    tool.BorrowedProjectId =
-                        item.Request.ProjectId;
-
-                    tool.BorrowedProjectName =
-                        item.Request.ProjectName;
-
-                    tool.HoldProjectId =
-                        string.Empty;
-
-                    tool.HoldProjectName =
-                        string.Empty;
-
-                    tool.HoldLocation =
-                        string.Empty;
-
-                    tool.HoldDate =
-                        null;
-
-                    await _firebase
-                        .UpdateToolAsync(tool);
-                }
-
-                await Shell.Current.DisplayAlert(
-                    "Pause Rejected",
-                    $"{item.ToolName} remains borrowed by " +
-                    $"{item.WorkerName}.",
-                    "OK");
-
-                await LoadAsync();
-            }
-            catch (Exception ex)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Error",
-                    $"Could not reject pause request.\n{ex.Message}",
-                    "OK");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // APPROVE RETURN
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         private async Task ApproveReturnAsync(
-     ReturnRequestResult item)
+            ReturnRequestResult item)
         {
             if (item is null || IsBusy)
                 return;
 
-            var request = item.Request;
-
-            // ── PE PHYSICAL INSPECTION ─────────────────────────────
+            var request =
+                item.Request;
 
             var condition =
                 await Shell.Current.DisplayActionSheet(
@@ -764,46 +560,54 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            string severity = string.Empty;
-            string damageDescription = string.Empty;
+            string severity =
+                string.Empty;
 
-            // ── IF DAMAGED ─────────────────────────────────────────
+            string damageDescription =
+                string.Empty;
 
             if (condition == "Damaged")
             {
                 var selectedSeverity =
-                    await Shell.Current.DisplayActionSheet(
-                        "Damage Severity",
-                        "Cancel",
-                        null,
-                        "Minor Damage",
-                        "Major Damage");
+                    await Shell.Current
+                        .DisplayActionSheet(
+                            "Damage Severity",
+                            "Cancel",
+                            null,
+                            "Minor Damage",
+                            "Major Damage");
 
-                if (string.IsNullOrWhiteSpace(selectedSeverity) ||
-                    selectedSeverity == "Cancel")
+                if (string.IsNullOrWhiteSpace(
+                        selectedSeverity) ||
+                    selectedSeverity ==
+                        "Cancel")
                 {
                     return;
                 }
 
-                severity = selectedSeverity;
+                severity =
+                    selectedSeverity;
 
                 var description =
-                    await Shell.Current.DisplayPromptAsync(
-                        "Damage Description",
-                        "Describe the damage found during inspection:",
-                        "Continue",
-                        "Cancel",
-                        placeholder:
-                            "e.g. Power cable damaged");
+                    await Shell.Current
+                        .DisplayPromptAsync(
+                            "Damage Description",
+                            "Describe the damage found " +
+                            "during inspection:",
+                            "Continue",
+                            "Cancel",
+                            placeholder:
+                                "e.g. Power cable damaged");
 
-                if (string.IsNullOrWhiteSpace(description))
+                if (string.IsNullOrWhiteSpace(
+                        description))
+                {
                     return;
+                }
 
                 damageDescription =
                     description.Trim();
             }
-
-            // ── CONFIRM ─────────────────────────────────────────────
 
             string conditionDetails =
                 condition == "Damaged"
@@ -829,21 +633,24 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current Project Engineer could not be identified.",
+                        "Current Project Engineer " +
+                        "could not be identified.",
                         "OK");
 
                     return;
                 }
 
                 var tool =
-                    await _firebase.GetToolByIdAsync(
-                        request.ToolId);
+                    await _firebase
+                        .GetToolByIdAsync(
+                            request.ToolId);
 
                 if (tool == null)
                 {
@@ -859,14 +666,13 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Invalid Return",
-                        "This equipment is no longer pending return.",
+                        "This equipment is no longer " +
+                        "pending return.",
                         "OK");
 
                     await LoadAsync();
                     return;
                 }
-
-                // ── SAVE ACCOUNTABILITY BEFORE CLEARING TOOL ───────
 
                 string workerId =
                     request.WorkerId;
@@ -879,8 +685,6 @@ namespace StockGuard.ViewModels
 
                 string projectName =
                     request.ProjectName;
-
-                // ── UPDATE RETURN REQUEST ───────────────────────────
 
                 request.Status =
                     "Approved";
@@ -898,9 +702,10 @@ namespace StockGuard.ViewModels
                     user.FullName;
 
                 var requestUpdated =
-                    await _firebase.UpdateReturnRequestAsync(
-                        item.Key,
-                        request);
+                    await _firebase
+                        .UpdateReturnRequestAsync(
+                            item.Key,
+                            request);
 
                 if (!requestUpdated)
                 {
@@ -912,9 +717,9 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ───────────────────────────────────────────────────
+                // ───────────────────────────────────────────
                 // GOOD RETURN
-                // ───────────────────────────────────────────────────
+                // ───────────────────────────────────────────
 
                 if (condition == "Good")
                 {
@@ -924,8 +729,6 @@ namespace StockGuard.ViewModels
                     tool.Condition =
                         "Good";
 
-                    // Physical return accepted.
-                    // Worker/project custody ends here.
                     tool.AssignedWorkerId =
                         string.Empty;
 
@@ -941,71 +744,75 @@ namespace StockGuard.ViewModels
                     tool.BorrowDate =
                         null;
 
+                    ClearCheckInData(tool);
+
                     var toolUpdated =
-                        await _firebase.UpdateToolAsync(tool);
+                        await _firebase
+                            .UpdateToolAsync(tool);
 
                     if (!toolUpdated)
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "Return was approved, but the equipment could not be updated.",
+                            "Return was approved, but " +
+                            "the equipment could not be updated.",
                             "OK");
 
                         return;
                     }
 
-                    await _firebase.LogTransactionAsync(
-                        new TransactionLog
-                        {
-                            ToolId =
-                                tool.ToolId,
+                    await _firebase
+                        .LogTransactionAsync(
+                            new TransactionLog
+                            {
+                                ToolId =
+                                    tool.ToolId,
 
-                            ToolName =
-                                tool.ToolName,
+                                ToolName =
+                                    tool.ToolName,
 
-                            WorkerId =
-                                workerId,
+                                WorkerId =
+                                    workerId,
 
-                            WorkerName =
-                                workerName,
+                                WorkerName =
+                                    workerName,
 
-                            ProjectId =
-                                projectId,
+                                ProjectId =
+                                    projectId,
 
-                            ProjectName =
-                                projectName,
+                                ProjectName =
+                                    projectName,
 
-                            Action =
-                                "Returned",
+                                Action =
+                                    "Returned",
 
-                            Description =
-                                $"Return inspected and approved by " +
-                                $"{user.FullName}. Equipment returned " +
-                                $"in good condition.",
+                                Description =
+                                    $"Return inspected and approved " +
+                                    $"by {user.FullName}. " +
+                                    "Equipment returned in good condition.",
 
-                            Condition =
-                                "Good",
+                                Condition =
+                                    "Good",
 
-                            Date =
-                                DateTime.Now
-                        });
+                                Date =
+                                    DateTime.Now
+                            });
 
                     await Shell.Current.DisplayAlert(
                         "Return Approved",
-                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
+                        $"{tool.ToolName} ({tool.ToolId}) " +
+                        $"has been returned.\n\n" +
                         "Condition: Good\n" +
                         "The equipment is now Available.",
                         "OK");
                 }
 
-                // ───────────────────────────────────────────────────
+                // ───────────────────────────────────────────
                 // DAMAGED RETURN
-                // ───────────────────────────────────────────────────
+                // ───────────────────────────────────────────
 
                 else
                 {
-                    // Create damage report BEFORE clearing
-                    // accountability from the physical Tool.
                     var damageReport =
                         new DamageReport
                         {
@@ -1047,31 +854,28 @@ namespace StockGuard.ViewModels
                         };
 
                     var damageReportKey =
-                        await _firebase.SubmitDamageReportAsync(
-                            damageReport);
+                        await _firebase
+                            .SubmitDamageReportAsync(
+                                damageReport);
 
-                    if (string.IsNullOrEmpty(damageReportKey))
+                    if (string.IsNullOrEmpty(
+                            damageReportKey))
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "The return was approved, but the damage report could not be created.",
+                            "The return was approved, but " +
+                            "the damage report could not be created.",
                             "OK");
 
                         return;
                     }
 
-                    // Returned physically, but NOT available
-                    // for use because PE found damage.
                     tool.Status =
                         "Damaged";
 
                     tool.Condition =
                         severity;
 
-                    // The DamageReport now preserves who had it
-                    // and which project it came from.
-                    //
-                    // Physical custody has returned to company/PE.
                     tool.AssignedWorkerId =
                         string.Empty;
 
@@ -1087,58 +891,65 @@ namespace StockGuard.ViewModels
                     tool.BorrowDate =
                         null;
 
+                    ClearCheckInData(tool);
+
                     var toolUpdated =
-                        await _firebase.UpdateToolAsync(tool);
+                        await _firebase
+                            .UpdateToolAsync(tool);
 
                     if (!toolUpdated)
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "The damage report was created, but the equipment status could not be updated.",
+                            "The damage report was created, " +
+                            "but the equipment status could not be updated.",
                             "OK");
 
                         return;
                     }
 
-                    await _firebase.LogTransactionAsync(
-                        new TransactionLog
-                        {
-                            ToolId =
-                                tool.ToolId,
+                    await _firebase
+                        .LogTransactionAsync(
+                            new TransactionLog
+                            {
+                                ToolId =
+                                    tool.ToolId,
 
-                            ToolName =
-                                tool.ToolName,
+                                ToolName =
+                                    tool.ToolName,
 
-                            WorkerId =
-                                workerId,
+                                WorkerId =
+                                    workerId,
 
-                            WorkerName =
-                                workerName,
+                                WorkerName =
+                                    workerName,
 
-                            ProjectId =
-                                projectId,
+                                ProjectId =
+                                    projectId,
 
-                            ProjectName =
-                                projectName,
+                                ProjectName =
+                                    projectName,
 
-                            Action =
-                                "Returned Damaged",
+                                Action =
+                                    "Returned Damaged",
 
-                            Description =
-                                $"Return inspected by {user.FullName}. " +
-                                $"Damage found: {severity} — " +
-                                $"{damageDescription}",
+                                Description =
+                                    $"Return inspected by " +
+                                    $"{user.FullName}. " +
+                                    $"Damage found: {severity} — " +
+                                    $"{damageDescription}",
 
-                            Condition =
-                                severity,
+                                Condition =
+                                    severity,
 
-                            Date =
-                                DateTime.Now
-                        });
+                                Date =
+                                    DateTime.Now
+                            });
 
                     await Shell.Current.DisplayAlert(
                         "Damaged Return Accepted",
-                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
+                        $"{tool.ToolName} ({tool.ToolId}) " +
+                        $"has been returned.\n\n" +
                         $"Damage: {severity}\n" +
                         "A damage report was created automatically.",
                         "OK");
@@ -1150,7 +961,8 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not approve return.\n{ex.Message}",
+                    $"Could not approve return.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -1159,25 +971,26 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
         // REJECT RETURN
-        // ═══════════════════════════════════════════════════════════
+        // ─────────────────────────────────────────────────────────
 
         private async Task RejectReturnAsync(
-    ReturnRequestResult item)
+            ReturnRequestResult item)
         {
             if (item is null || IsBusy)
                 return;
 
-            var request = item.Request;
+            var request =
+                item.Request;
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
                     "Reject Return",
                     $"Reject the return request for " +
                     $"{request.ToolName} ({request.ToolId})?\n\n" +
-                    "Use Reject only when the physical return was " +
-                    "not accepted or could not be completed.\n\n" +
+                    "Use Reject only when the physical return " +
+                    "was not accepted or could not be completed.\n\n" +
                     $"The equipment will remain assigned to " +
                     $"{request.WorkerName}.",
                     "Reject",
@@ -1190,21 +1003,24 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current Project Engineer could not be identified.",
+                        "Current Project Engineer " +
+                        "could not be identified.",
                         "OK");
 
                     return;
                 }
 
                 var tool =
-                    await _firebase.GetToolByIdAsync(
-                        request.ToolId);
+                    await _firebase
+                        .GetToolByIdAsync(
+                            request.ToolId);
 
                 if (tool == null)
                 {
@@ -1216,20 +1032,17 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Reject is only valid while the return
-                // is actually pending.
                 if (tool.Status != "PendingReturn")
                 {
                     await Shell.Current.DisplayAlert(
                         "Invalid Return",
-                        "This equipment is no longer pending return.",
+                        "This equipment is no longer " +
+                        "pending return.",
                         "OK");
 
                     await LoadAsync();
                     return;
                 }
-
-                // ── UPDATE REQUEST ──────────────────────────────────
 
                 request.Status =
                     "Rejected";
@@ -1244,9 +1057,10 @@ namespace StockGuard.ViewModels
                     user.FullName;
 
                 var requestUpdated =
-                    await _firebase.UpdateReturnRequestAsync(
-                        item.Key,
-                        request);
+                    await _firebase
+                        .UpdateReturnRequestAsync(
+                            item.Key,
+                            request);
 
                 if (!requestUpdated)
                 {
@@ -1257,8 +1071,6 @@ namespace StockGuard.ViewModels
 
                     return;
                 }
-
-                // ── RESTORE WORKER CUSTODY ─────────────────────────
 
                 tool.Status =
                     "Borrowed";
@@ -1276,53 +1088,57 @@ namespace StockGuard.ViewModels
                     request.ProjectName;
 
                 var toolUpdated =
-                    await _firebase.UpdateToolAsync(tool);
+                    await _firebase
+                        .UpdateToolAsync(tool);
 
                 if (!toolUpdated)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "The request was rejected, but the equipment status could not be restored.",
+                        "The request was rejected, but " +
+                        "the equipment status could not be restored.",
                         "OK");
 
                     return;
                 }
 
-                await _firebase.LogTransactionAsync(
-                    new TransactionLog
-                    {
-                        ToolId =
-                            tool.ToolId,
+                await _firebase
+                    .LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
 
-                        ToolName =
-                            tool.ToolName,
+                            ToolName =
+                                tool.ToolName,
 
-                        WorkerId =
-                            request.WorkerId,
+                            WorkerId =
+                                request.WorkerId,
 
-                        WorkerName =
-                            request.WorkerName,
+                            WorkerName =
+                                request.WorkerName,
 
-                        ProjectId =
-                            request.ProjectId,
+                            ProjectId =
+                                request.ProjectId,
 
-                        ProjectName =
-                            request.ProjectName,
+                            ProjectName =
+                                request.ProjectName,
 
-                        Action =
-                            "Return Rejected",
+                            Action =
+                                "Return Rejected",
 
-                        Description =
-                            $"Return rejected by {user.FullName}. " +
-                            $"Equipment remains assigned to " +
-                            $"{request.WorkerName}.",
+                            Description =
+                                $"Return rejected by " +
+                                $"{user.FullName}. " +
+                                $"Equipment remains assigned to " +
+                                $"{request.WorkerName}.",
 
-                        Condition =
-                            tool.Condition,
+                            Condition =
+                                tool.Condition,
 
-                        Date =
-                            DateTime.Now
-                    });
+                            Date =
+                                DateTime.Now
+                        });
 
                 await Shell.Current.DisplayAlert(
                     "Return Rejected",
@@ -1336,7 +1152,8 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not reject return.\n{ex.Message}",
+                    $"Could not reject return.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -1345,5 +1162,27 @@ namespace StockGuard.ViewModels
             }
         }
 
-     }
+        // ─────────────────────────────────────────────────────────
+        // HELPER
+        // ─────────────────────────────────────────────────────────
+
+        private static void ClearCheckInData(
+            Tool tool)
+        {
+            tool.LastCheckInLocation =
+                string.Empty;
+
+            tool.LastCheckInDate =
+                null;
+
+            tool.IsCheckInPending =
+                false;
+
+            tool.LastCheckInVerifiedById =
+                string.Empty;
+
+            tool.LastCheckInVerifiedByName =
+                string.Empty;
+        }
+    }
 }

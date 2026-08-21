@@ -14,15 +14,27 @@ namespace StockGuard.ViewModels
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
 
-        // ── Pagination ────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // PAGINATION
+        // ─────────────────────────────────────────────────────────
+
         private const int PageSize = 10;
+
         private int _currentPage = 1;
 
-        private List<TransactionLog> _filteredTransactions = new();
-        private List<TransactionLog> _allTransactions = new();
+        private List<TransactionLog>
+            _allTransactions = new();
 
-        // ── Query Properties ──────────────────────────────────────────────────
+        private List<TransactionLog>
+            _filteredTransactions = new();
+
+
+        // ─────────────────────────────────────────────────────────
+        // QUERY: TOOL
+        // ─────────────────────────────────────────────────────────
+
         private string _toolId = string.Empty;
+
         public string ToolId
         {
             get => _toolId;
@@ -30,13 +42,26 @@ namespace StockGuard.ViewModels
             {
                 if (SetProperty(ref _toolId, value))
                 {
-                    OnPropertyChanged(nameof(PageSubtitle));
-                    TryLoad(); // ← attempt load after this property arrives
+                    OnPropertyChanged(
+                        nameof(PageSubtitle));
+
+                    RequestLoad();
                 }
             }
         }
 
+
+        // ─────────────────────────────────────────────────────────
+        // QUERY: VIEW MODE
+        // ─────────────────────────────────────────────────────────
+        //
+        // worker = worker activity
+        // tool   = PE viewing one tool
+        // all    = PE viewing their project transactions
+        //
+
         private string _viewMode = string.Empty;
+
         public string ViewMode
         {
             get => _viewMode;
@@ -44,154 +69,307 @@ namespace StockGuard.ViewModels
             {
                 if (SetProperty(ref _viewMode, value))
                 {
-                    OnPropertyChanged(nameof(PageTitle));
-                    OnPropertyChanged(nameof(PageSubtitle));
-                    OnPropertyChanged(nameof(IsWorkerMode));
-                    OnPropertyChanged(nameof(IsAdminMode));
-                    TryLoad(); // ← attempt load after this property arrives
+                    OnPropertyChanged(
+                        nameof(PageTitle));
+
+                    OnPropertyChanged(
+                        nameof(PageSubtitle));
+
+                    OnPropertyChanged(
+                        nameof(IsWorkerMode));
+
+                    OnPropertyChanged(
+                        nameof(IsAdminMode));
+
+                    RequestLoad();
                 }
             }
         }
-        private bool _loadRequested = false;
-        private void TryLoad()
+
+
+        private bool _loadRequested;
+
+        private void RequestLoad()
         {
-            // ViewMode is always set (defaults to "worker" or "all" in constructor)
-            // so we only truly need ToolId to be set for worker+tool mode.
-            // But to be safe, wait until ViewMode is explicitly set by Shell too.
-            if (string.IsNullOrEmpty(ViewMode)) return;
+            if (string.IsNullOrWhiteSpace(ViewMode))
+                return;
 
-            // For worker mode viewing a specific tool, wait for ToolId too
-            if (ViewMode == "worker" && string.IsNullOrEmpty(ToolId)) return;
+            if (ViewMode == "tool" &&
+                string.IsNullOrWhiteSpace(ToolId))
+            {
+                return;
+            }
 
-            if (_loadRequested) return; // prevent double load
+            if (_loadRequested)
+                return;
+
             _loadRequested = true;
 
-            MainThread.BeginInvokeOnMainThread(async () => await LoadAsync());
+            MainThread.BeginInvokeOnMainThread(
+                async () =>
+                    await LoadAsync());
         }
+
         public void ResetLoadState()
         {
             _loadRequested = false;
         }
 
-        public bool IsWorkerMode => ViewMode == "worker";
-        public bool IsAdminMode => ViewMode != "worker";
 
-        // ── Display ───────────────────────────────────────────────────────────
-        public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
+        // ─────────────────────────────────────────────────────────
+        // MODE HELPERS
+        // ─────────────────────────────────────────────────────────
 
-        public string PageTitle => ViewMode switch
-        {
-            "tool" => "Tool History",
-            "all" => "All Transactions",
-            _ => "My Activity"
-        };
+        public bool IsWorkerMode =>
+            ViewMode == "worker";
 
-        public string PageSubtitle => ViewMode switch
-        {
-            "tool" => $"All activity for {ToolId}",
-            "all" => "Complete system transaction log",
-            _ => "Your borrow and return history"
-        };
+        public bool IsAdminMode =>
+            ViewMode != "worker";
 
-        // ── Stats (always from full unfiltered list) ──────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // PAGE DISPLAY
+        // ─────────────────────────────────────────────────────────
+
+        public string ThemeIcon =>
+            _theme.IsDark
+                ? "🌙"
+                : "☀️";
+
+        public string PageTitle =>
+            ViewMode switch
+            {
+                "tool" =>
+                    "Tool History",
+
+                "all" =>
+                    "Transaction History",
+
+                _ =>
+                    "My Activity"
+            };
+
+        public string PageSubtitle =>
+            ViewMode switch
+            {
+                "tool" =>
+                    string.IsNullOrWhiteSpace(ToolId)
+                        ? "Equipment activity"
+                        : $"Activity for {ToolId}",
+
+                "all" =>
+                    "Activity from your managed projects",
+
+                _ =>
+                    string.IsNullOrWhiteSpace(ToolId)
+                        ? "Your equipment activity"
+                        : $"Your activity for {ToolId}"
+            };
+
+
+        // ─────────────────────────────────────────────────────────
+        // STATS
+        // ─────────────────────────────────────────────────────────
+
         private int _totalCount;
+
         public int TotalCount
         {
             get => _totalCount;
-            private set => SetProperty(ref _totalCount, value);
+            private set =>
+                SetProperty(
+                    ref _totalCount,
+                    value);
         }
 
+
         private int _borrowCount;
+
         public int BorrowCount
         {
             get => _borrowCount;
-            private set => SetProperty(ref _borrowCount, value);
+            private set =>
+                SetProperty(
+                    ref _borrowCount,
+                    value);
         }
 
+
         private int _returnCount;
+
         public int ReturnCount
         {
             get => _returnCount;
-            private set => SetProperty(ref _returnCount, value);
+            private set =>
+                SetProperty(
+                    ref _returnCount,
+                    value);
         }
 
+
+        private int _checkInCount;
+
+        public int CheckInCount
+        {
+            get => _checkInCount;
+            private set =>
+                SetProperty(
+                    ref _checkInCount,
+                    value);
+        }
+
+
         private int _damageCount;
+
         public int DamageCount
         {
             get => _damageCount;
-            private set => SetProperty(ref _damageCount, value);
+            private set =>
+                SetProperty(
+                    ref _damageCount,
+                    value);
         }
 
-        // ── NEW: Transfer count ───────────────────────────────────────────────
-        private int _transferCount;
-        public int TransferCount
-        {
-            get => _transferCount;
-            private set => SetProperty(ref _transferCount, value);
-        }
 
-        // ── Visible transaction list ──────────────────────────────────────────
-        public ObservableCollection<TransactionLog> Transactions { get; } = new();
+        // ─────────────────────────────────────────────────────────
+        // TRANSACTIONS
+        // ─────────────────────────────────────────────────────────
 
-        // ── Pagination state ──────────────────────────────────────────────────
+        public ObservableCollection<TransactionLog>
+            Transactions
+        { get; } = new();
+
+
+        // ─────────────────────────────────────────────────────────
+        // PAGINATION STATE
+        // ─────────────────────────────────────────────────────────
+
         private bool _hasMoreItems;
+
         public bool HasMoreItems
         {
             get => _hasMoreItems;
-            private set => SetProperty(ref _hasMoreItems, value);
+            private set
+            {
+                SetProperty(
+                    ref _hasMoreItems,
+                    value);
+
+                (LoadMoreCommand as Command)?
+                    .ChangeCanExecute();
+            }
         }
 
-        private string _paginationLabel = string.Empty;
+
+        private string _paginationLabel =
+            string.Empty;
+
         public string PaginationLabel
         {
             get => _paginationLabel;
-            private set => SetProperty(ref _paginationLabel, value);
+            private set =>
+                SetProperty(
+                    ref _paginationLabel,
+                    value);
         }
 
+
         private bool _isLoadingMore;
+
         public bool IsLoadingMore
         {
             get => _isLoadingMore;
-            private set => SetProperty(ref _isLoadingMore, value);
+            private set
+            {
+                SetProperty(
+                    ref _isLoadingMore,
+                    value);
+
+                (LoadMoreCommand as Command)?
+                    .ChangeCanExecute();
+            }
         }
 
-        // ── Empty / populated state ───────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // EMPTY STATE
+        // ─────────────────────────────────────────────────────────
+
         private bool _hasTransactions;
+
         public bool HasTransactions
         {
             get => _hasTransactions;
             private set
             {
-                SetProperty(ref _hasTransactions, value);
-                OnPropertyChanged(nameof(NoTransactions));
+                SetProperty(
+                    ref _hasTransactions,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(NoTransactions));
             }
         }
-        public bool NoTransactions => !HasTransactions && !IsBusy;
 
-        // ── Filter ────────────────────────────────────────────────────────────
-        private string _selectedFilter = "All";
+        public bool NoTransactions =>
+            !HasTransactions &&
+            !IsBusy;
+
+
+        // ─────────────────────────────────────────────────────────
+        // FILTER
+        // ─────────────────────────────────────────────────────────
+
+        private string _selectedFilter =
+            "All";
+
         public string SelectedFilter
         {
             get => _selectedFilter;
-            private set => SetProperty(ref _selectedFilter, value);
+            private set =>
+                SetProperty(
+                    ref _selectedFilter,
+                    value);
         }
 
-        // ── Pull-to-refresh ───────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
+
         private bool _isRefreshing;
+
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
+            set =>
+                SetProperty(
+                    ref _isRefreshing,
+                    value);
         }
 
-        // ── Commands ──────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // COMMANDS
+        // ─────────────────────────────────────────────────────────
+
+        public ICommand OpenFlyoutCommand { get; }
+
         public ICommand RefreshCommand { get; }
+
         public ICommand ToggleThemeCommand { get; }
+
         public ICommand SetFilterCommand { get; }
+
         public ICommand LoadMoreCommand { get; }
+
         public new ICommand GoBackCommand { get; }
 
-        // ── Constructor ───────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // CONSTRUCTOR
+        // ─────────────────────────────────────────────────────────
+
         public TransactionHistoryViewModel(
             FirebaseService firebase,
             AuthService auth,
@@ -201,166 +379,468 @@ namespace StockGuard.ViewModels
             _auth = auth;
             _theme = theme;
 
-            ViewMode = auth.CurrentUser?.IsProjectEngineer == true
-                ? "all"
-                : "worker";
+            // Set directly to avoid triggering
+            // loading before constructor finishes.
+            _viewMode =
+                auth.CurrentUser?.IsProjectEngineer == true
+                    ? "all"
+                    : "worker";
 
             _theme.ThemeChanged += _ =>
-                MainThread.BeginInvokeOnMainThread(() =>
-                    OnPropertyChanged(nameof(ThemeIcon)));
+                MainThread.BeginInvokeOnMainThread(
+                    () =>
+                        OnPropertyChanged(
+                            nameof(ThemeIcon)));
 
-            GoBackCommand = new Command(async () =>
-            {
-                if (IsWorkerMode && !string.IsNullOrEmpty(ToolId))
-                    await Shell.Current.GoToAsync(
-                        $"//WorkerDashboardView/" +
-                        $"{nameof(WorkerToolDetailsView)}" +
-                        $"?toolId={Uri.EscapeDataString(ToolId)}");
-                else
-                    await Shell.Current.GoToAsync("..");
-            });
+            OpenFlyoutCommand =
+                new Command(() =>
+                {
+                    if (Shell.Current != null)
+                    {
+                        Shell.Current.FlyoutIsPresented =
+                            true;
+                    }
+                });
 
-            RefreshCommand = new Command(async () => await RefreshAsync());
-            ToggleThemeCommand = new Command(() => _theme.Toggle());
+            GoBackCommand =
+                new Command(
+                    async () =>
+                    {
+                        if (IsWorkerMode &&
+                            !string.IsNullOrWhiteSpace(
+                                ToolId))
+                        {
+                            await Shell.Current.GoToAsync(
+                                $"//WorkerDashboardView/" +
+                                $"{nameof(WorkerToolDetailsView)}" +
+                                $"?toolId=" +
+                                $"{Uri.EscapeDataString(ToolId)}");
+                        }
+                        else
+                        {
+                            await Shell.Current
+                                .GoToAsync("..");
+                        }
+                    });
 
-            SetFilterCommand = new Command<string>(filter =>
-            {
-                var f = filter ?? "All";
-                if (SelectedFilter == f) return;
-                SelectedFilter = f;
-                ApplyFilters();
-            });
+            RefreshCommand =
+                new Command(
+                    async () =>
+                        await RefreshAsync());
 
-            LoadMoreCommand = new Command(
-                execute: LoadNextPage,
-                canExecute: () => HasMoreItems && !IsLoadingMore);
+            ToggleThemeCommand =
+                new Command(
+                    () => _theme.Toggle());
+
+            SetFilterCommand =
+                new Command<string>(
+                    filter =>
+                    {
+                        string selected =
+                            string.IsNullOrWhiteSpace(filter)
+                                ? "All"
+                                : filter;
+
+                        if (SelectedFilter == selected)
+                            return;
+
+                        SelectedFilter =
+                            selected;
+
+                        ApplyFilters();
+                    });
+
+            LoadMoreCommand =
+                new Command(
+                    execute:
+                        LoadNextPage,
+
+                    canExecute:
+                        () =>
+                            HasMoreItems &&
+                            !IsLoadingMore);
+
+            MainThread.BeginInvokeOnMainThread(
+                async () =>
+                    await LoadAsync());
         }
 
-        // ── Load ──────────────────────────────────────────────────────────────
-        public async Task LoadAsync(bool forceRefresh = false)
+
+        // ─────────────────────────────────────────────────────────
+        // LOAD
+        // ─────────────────────────────────────────────────────────
+
+        public async Task LoadAsync(
+            bool forceRefresh = false)
         {
-            if (IsBusy) return;
+            if (IsBusy)
+                return;
 
             IsBusy = true;
+
             try
             {
-                var currentUser = _auth.CurrentUser;
-                if (currentUser is null) return;
+                var currentUser =
+                    _auth.CurrentUser;
 
-                if (ViewMode == "tool" &&
-                    !string.IsNullOrEmpty(ToolId) &&
-                    currentUser.IsProjectEngineer)
+                if (currentUser == null)
                 {
-                    _allTransactions = await _firebase
-                        .GetToolTransactionsAsync(ToolId, forceRefresh);
+                    _allTransactions.Clear();
+
+                    Transactions.Clear();
+
+                    UpdateStats(
+                        _allTransactions);
+
+                    HasTransactions =
+                        false;
+
+                    return;
                 }
-                else if (ViewMode == "all" && currentUser.IsProjectEngineer)
+
+
+                // ───────────────────────────────────────────
+                // PROJECT ENGINEER
+                // ───────────────────────────────────────────
+
+                if (currentUser.IsProjectEngineer)
                 {
-                    _allTransactions = await _firebase
-                        .GetAllTransactionsAsync(forceRefresh);
+                    var projects =
+                        await _firebase
+                            .GetAllProjectsAsync();
+
+                    var myProjectIds =
+                        projects
+                            .Where(p =>
+                                !p.IsDeleted &&
+                                p.CreatedBy ==
+                                    currentUser.UniqueKey)
+                            .Select(p =>
+                                p.ProjectId)
+                            .ToHashSet();
+
+
+                    // ONE TOOL
+                    if (ViewMode == "tool" &&
+                        !string.IsNullOrWhiteSpace(
+                            ToolId))
+                    {
+                        var toolTransactions =
+                            await _firebase
+                                .GetToolTransactionsAsync(
+                                    ToolId,
+                                    forceRefresh);
+
+                        _allTransactions =
+                            toolTransactions
+                                .Where(t =>
+                                    string.IsNullOrWhiteSpace(
+                                        t.ProjectId) ||
+                                    myProjectIds.Contains(
+                                        t.ProjectId))
+                                .ToList();
+                    }
+
+                    // ALL PE PROJECT TRANSACTIONS
+                    else
+                    {
+                        var allTransactions =
+                            await _firebase
+                                .GetAllTransactionsAsync(
+                                    forceRefresh);
+
+                        _allTransactions =
+                            allTransactions
+                                .Where(t =>
+                                    myProjectIds.Contains(
+                                        t.ProjectId))
+                                .ToList();
+                    }
                 }
+
+                // ───────────────────────────────────────────
+                // WORKER
+                // ───────────────────────────────────────────
+
                 else
                 {
-                    _allTransactions = await _firebase
-                        .GetWorkerTransactionsAsync(
-                            currentUser.UniqueKey, forceRefresh);
+                    _allTransactions =
+                        await _firebase
+                            .GetWorkerTransactionsAsync(
+                                currentUser.UniqueKey,
+                                forceRefresh);
 
-                    if (!string.IsNullOrEmpty(ToolId))
-                        _allTransactions = _allTransactions
-                            .Where(t => t.ToolId == ToolId)
-                            .ToList();
+                    if (!string.IsNullOrWhiteSpace(
+                            ToolId))
+                    {
+                        _allTransactions =
+                            _allTransactions
+                                .Where(t =>
+                                    t.ToolId ==
+                                    ToolId)
+                                .ToList();
+                    }
                 }
 
-                UpdateStats(_allTransactions);
+
+                UpdateStats(
+                    _allTransactions);
+
                 ApplyFilters();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"[TransactionHistoryVM] Load error: {ex.Message}");
+                    $"[TransactionHistoryVM] Load error: " +
+                    $"{ex.Message}");
             }
             finally
             {
                 IsBusy = false;
-                OnPropertyChanged(nameof(NoTransactions));
+
+                OnPropertyChanged(
+                    nameof(NoTransactions));
             }
         }
+
+
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
 
         private async Task RefreshAsync()
         {
             IsRefreshing = true;
-            await LoadAsync(forceRefresh: true);
-            IsRefreshing = false;
+
+            try
+            {
+                await LoadAsync(
+                    forceRefresh: true);
+            }
+            finally
+            {
+                IsRefreshing = false;
+            }
         }
 
-        // ── Filter + pagination reset ─────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // FILTER
+        // ─────────────────────────────────────────────────────────
+
         private void ApplyFilters()
         {
-            var filtered = _allTransactions.AsEnumerable();
+            IEnumerable<TransactionLog>
+                filtered =
+                    _allTransactions;
 
-            if (SelectedFilter != "All")
-                filtered = filtered.Where(t => t.Action == SelectedFilter);
+            switch (SelectedFilter)
+            {
+                case "Borrowed":
 
-            _filteredTransactions = filtered
-                .OrderByDescending(t => t.Date)
-                .ToList();
+                    filtered =
+                        filtered.Where(t =>
+                            t.Action ==
+                            "Borrowed");
 
-            _currentPage = 1;
+                    break;
+
+
+                case "Returned":
+
+                    filtered =
+                        filtered.Where(t =>
+                            t.Action ==
+                                "Returned" ||
+                            t.Action ==
+                                "Returned Damaged");
+
+                    break;
+
+
+                case "Check-In":
+
+                    filtered =
+                        filtered.Where(t =>
+                            t.Action ==
+                                "End Day Check-In" ||
+                            t.Action ==
+                                "End Day Check-In Verified");
+
+                    break;
+
+
+                case "Damage":
+
+                    filtered =
+                        filtered.Where(t =>
+                            IsDamageAction(
+                                t.Action));
+
+                    break;
+            }
+
+
+            _filteredTransactions =
+                filtered
+                    .OrderByDescending(t =>
+                        t.Date)
+                    .ToList();
+
+
+            _currentPage =
+                1;
+
             Transactions.Clear();
 
-            foreach (var tx in _filteredTransactions.Take(PageSize))
-                Transactions.Add(tx);
 
-            HasTransactions = Transactions.Count > 0;
+            foreach (var transaction in
+                _filteredTransactions
+                    .Take(PageSize))
+            {
+                Transactions.Add(
+                    transaction);
+            }
+
+
+            HasTransactions =
+                Transactions.Count > 0;
+
             UpdatePaginationState();
-            OnPropertyChanged(nameof(NoTransactions));
+
+            OnPropertyChanged(
+                nameof(NoTransactions));
         }
 
-        // ── Load next page ────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // LOAD NEXT PAGE
+        // ─────────────────────────────────────────────────────────
+
         private void LoadNextPage()
         {
-            if (!HasMoreItems || IsLoadingMore) return;
+            if (!HasMoreItems ||
+                IsLoadingMore)
+            {
+                return;
+            }
 
-            IsLoadingMore = true;
+            IsLoadingMore =
+                true;
+
             try
             {
                 _currentPage++;
 
-                var nextItems = _filteredTransactions
-                    .Skip((_currentPage - 1) * PageSize)
-                    .Take(PageSize);
+                var nextItems =
+                    _filteredTransactions
+                        .Skip(
+                            (_currentPage - 1) *
+                            PageSize)
+                        .Take(PageSize)
+                        .ToList();
 
-                foreach (var tx in nextItems)
-                    Transactions.Add(tx);
+                foreach (var transaction in nextItems)
+                {
+                    Transactions.Add(
+                        transaction);
+                }
 
                 UpdatePaginationState();
             }
             finally
             {
-                IsLoadingMore = false;
-                (LoadMoreCommand as Command)?.ChangeCanExecute();
+                IsLoadingMore =
+                    false;
             }
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // PAGINATION
+        // ─────────────────────────────────────────────────────────
+
         private void UpdatePaginationState()
         {
-            int visible = Transactions.Count;
-            int total = _filteredTransactions.Count;
+            int visible =
+                Transactions.Count;
 
-            HasMoreItems = visible < total;
-            PaginationLabel = total == 0
-                ? string.Empty
-                : $"Showing {visible} of {total}";
+            int total =
+                _filteredTransactions.Count;
+
+            HasMoreItems =
+                visible < total;
+
+            PaginationLabel =
+                total == 0
+                    ? string.Empty
+                    : $"Showing {visible} of {total}";
         }
 
-        private void UpdateStats(List<TransactionLog> all)
+
+        // ─────────────────────────────────────────────────────────
+        // STATS
+        // ─────────────────────────────────────────────────────────
+
+        private void UpdateStats(
+            List<TransactionLog> all)
         {
-            TotalCount = all.Count;
-            BorrowCount = all.Count(t => t.Action == "Borrowed");
-            ReturnCount = all.Count(t => t.Action == "Returned");
-            DamageCount = all.Count(t => t.Action == "Damaged");
-            TransferCount = all.Count(t => t.Action == "Transferred");
+            TotalCount =
+                all.Count;
+
+            BorrowCount =
+                all.Count(t =>
+                    t.Action ==
+                    "Borrowed");
+
+            ReturnCount =
+                all.Count(t =>
+                    t.Action ==
+                        "Returned" ||
+                    t.Action ==
+                        "Returned Damaged");
+
+            CheckInCount =
+                all.Count(t =>
+                    t.Action ==
+                        "End Day Check-In" ||
+                    t.Action ==
+                        "End Day Check-In Verified");
+
+            DamageCount =
+                all.Count(t =>
+                    IsDamageAction(
+                        t.Action));
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // DAMAGE GROUP
+        // ─────────────────────────────────────────────────────────
+
+        private static bool IsDamageAction(
+            string action)
+        {
+            return action ==
+                       "Damage Reported" ||
+
+                   action ==
+                       "Damaged" ||
+
+                   action ==
+                       "Returned Damaged" ||
+
+                   action ==
+                       "UnderRepair" ||
+
+                   action ==
+                       "Resolved" ||
+
+                   action ==
+                       "Repaired" ||
+
+                   action ==
+                       "Lost";
         }
     }
 }

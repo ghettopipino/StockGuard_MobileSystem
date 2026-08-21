@@ -40,5 +40,17 @@ namespace StockGuard.Models
         public string ReviewedByName { get; set; } = string.Empty;
 
         public string ResolutionNotes { get; set; } = string.Empty;
+
+        // ── UI HELPERS ─────────────────────────────────────
+
+        [Newtonsoft.Json.JsonIgnore]
+        public bool CanBeHandled =>
+            Status == "Pending" ||
+            Status == "UnderRepair";
+
+        [Newtonsoft.Json.JsonIgnore]
+        public bool IsFinal =>
+    Status == "Resolved" ||
+    Status == "Lost";
     }
 }
