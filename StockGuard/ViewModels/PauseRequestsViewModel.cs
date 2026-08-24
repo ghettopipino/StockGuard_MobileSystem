@@ -11,16 +11,8 @@ namespace StockGuard.ViewModels
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
 
-        // ─────────────────────────────────────────────────────────
-        // THEME
-        // ─────────────────────────────────────────────────────────
-
         public string ThemeIcon =>
             _theme.IsDark ? "🌙" : "☀️";
-
-        // ─────────────────────────────────────────────────────────
-        // RETURN COLLECTIONS
-        // ─────────────────────────────────────────────────────────
 
         public ObservableCollection<ReturnRequestResult>
             PendingReturnRequests
@@ -30,43 +22,23 @@ namespace StockGuard.ViewModels
             ProcessedReturnRequests
         { get; } = new();
 
-        // ─────────────────────────────────────────────────────────
-        // END-DAY CHECK-IN COLLECTION
-        // ─────────────────────────────────────────────────────────
-
         public ObservableCollection<Tool>
             PendingCheckIns
         { get; } = new();
 
-        // ─────────────────────────────────────────────────────────
-        // STATS
-        // ─────────────────────────────────────────────────────────
-
         private int _pendingCount;
-
         public int PendingCount
         {
             get => _pendingCount;
-            private set =>
-                SetProperty(
-                    ref _pendingCount,
-                    value);
+            private set => SetProperty(ref _pendingCount, value);
         }
 
         private int _approvedCount;
-
         public int ApprovedCount
         {
             get => _approvedCount;
-            private set =>
-                SetProperty(
-                    ref _approvedCount,
-                    value);
+            private set => SetProperty(ref _approvedCount, value);
         }
-
-        // ─────────────────────────────────────────────────────────
-        // EMPTY STATES
-        // ─────────────────────────────────────────────────────────
 
         public bool NoPendingReturn =>
             PendingReturnRequests.Count == 0;
@@ -74,24 +46,12 @@ namespace StockGuard.ViewModels
         public bool NoPendingCheckIns =>
             PendingCheckIns.Count == 0;
 
-        // ─────────────────────────────────────────────────────────
-        // REFRESH
-        // ─────────────────────────────────────────────────────────
-
         private bool _isRefreshing;
-
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set =>
-                SetProperty(
-                    ref _isRefreshing,
-                    value);
+            set => SetProperty(ref _isRefreshing, value);
         }
-
-        // ─────────────────────────────────────────────────────────
-        // COMMANDS
-        // ─────────────────────────────────────────────────────────
 
         public ICommand OpenFlyoutCommand { get; }
         public ICommand RefreshCommand { get; }
@@ -99,12 +59,7 @@ namespace StockGuard.ViewModels
 
         public ICommand ApproveReturnCommand { get; }
         public ICommand RejectReturnCommand { get; }
-
         public ICommand VerifyCheckInCommand { get; }
-
-        // ─────────────────────────────────────────────────────────
-        // CONSTRUCTOR
-        // ─────────────────────────────────────────────────────────
 
         public PauseRequestsViewModel(
             FirebaseService firebase,
@@ -119,55 +74,44 @@ namespace StockGuard.ViewModels
 
             _theme.ThemeChanged += _ =>
                 MainThread.BeginInvokeOnMainThread(
-                    () =>
-                        OnPropertyChanged(
-                            nameof(ThemeIcon)));
+                    () => OnPropertyChanged(nameof(ThemeIcon)));
 
             OpenFlyoutCommand =
                 new Command(() =>
                 {
                     if (Shell.Current != null)
-                    {
-                        Shell.Current.FlyoutIsPresented =
-                            true;
-                    }
+                        Shell.Current.FlyoutIsPresented = true;
                 });
 
             RefreshCommand =
                 new Command(
-                    async () =>
-                        await RefreshAsync());
+                    async () => await RefreshAsync());
 
             ToggleThemeCommand =
-                new Command(
-                    () => _theme.Toggle());
+                new Command(() => _theme.Toggle());
 
             ApproveReturnCommand =
                 new Command<ReturnRequestResult>(
                     async item =>
-                        await ApproveReturnAsync(
-                            item));
+                        await ApproveReturnAsync(item));
 
             RejectReturnCommand =
                 new Command<ReturnRequestResult>(
                     async item =>
-                        await RejectReturnAsync(
-                            item));
+                        await RejectReturnAsync(item));
 
             VerifyCheckInCommand =
                 new Command<Tool>(
                     async tool =>
-                        await VerifyCheckInAsync(
-                            tool));
+                        await VerifyCheckInAsync(tool));
 
             MainThread.BeginInvokeOnMainThread(
-                async () =>
-                    await LoadAsync());
+                async () => await LoadAsync());
         }
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // LOAD
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         public async Task LoadAsync()
         {
@@ -178,8 +122,7 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user =
-                    _auth.CurrentUser;
+                var user = _auth.CurrentUser;
 
                 if (user == null)
                 {
@@ -190,28 +133,21 @@ namespace StockGuard.ViewModels
                     PendingCount = 0;
                     ApprovedCount = 0;
 
-                    OnPropertyChanged(
-                        nameof(NoPendingReturn));
-
-                    OnPropertyChanged(
-                        nameof(NoPendingCheckIns));
+                    OnPropertyChanged(nameof(NoPendingReturn));
+                    OnPropertyChanged(nameof(NoPendingCheckIns));
 
                     return;
                 }
 
-                // Load data
                 var returnRequestsTask =
-                    _firebase
-                        .GetAllReturnRequestsRawAsync();
+                    _firebase.GetAllReturnRequestsRawAsync();
 
                 var allToolsTask =
-                    _firebase
-                        .GetAllToolsAsync(
-                            forceRefresh: true);
+                    _firebase.GetAllToolsAsync(
+                        forceRefresh: true);
 
                 var projectsTask =
-                    _firebase
-                        .GetAllProjectsAsync();
+                    _firebase.GetAllProjectsAsync();
 
                 await Task.WhenAll(
                     returnRequestsTask,
@@ -219,48 +155,35 @@ namespace StockGuard.ViewModels
                     projectsTask);
 
                 var returnRequests =
-                    returnRequestsTask.Result
-                    ?? new List<ReturnRequestResult>();
+                    returnRequestsTask.Result ??
+                    new List<ReturnRequestResult>();
 
                 var allTools =
-                    allToolsTask.Result
-                    ?? new List<Tool>();
+                    allToolsTask.Result ??
+                    new List<Tool>();
 
                 var projects =
-                    projectsTask.Result
-                    ?? new List<Project>();
-
-                // ───────────────────────────────────────────
-                // PE OWNED PROJECTS
-                // ───────────────────────────────────────────
+                    projectsTask.Result ??
+                    new List<Project>();
 
                 var myProjectIds =
                     projects
                         .Where(p =>
                             !p.IsDeleted &&
-                            p.CreatedBy ==
-                                user.UniqueKey)
-                        .Select(p =>
-                            p.ProjectId)
+                            p.CreatedBy == user.UniqueKey)
+                        .Select(p => p.ProjectId)
                         .ToHashSet();
-
-                // ───────────────────────────────────────────
-                // CLEAR COLLECTIONS
-                // ───────────────────────────────────────────
 
                 PendingReturnRequests.Clear();
                 ProcessedReturnRequests.Clear();
                 PendingCheckIns.Clear();
 
-                // ───────────────────────────────────────────
-                // PENDING END-DAY CHECK-INS
-                // ───────────────────────────────────────────
+                // ── CHECK-INS ─────────────────────────────
 
                 var pendingCheckIns =
                     allTools
                         .Where(t =>
-                            t.Status ==
-                                "Borrowed" &&
+                            t.Status == "Borrowed" &&
                             t.IsCheckInPending &&
                             myProjectIds.Contains(
                                 t.BorrowedProjectId))
@@ -269,31 +192,20 @@ namespace StockGuard.ViewModels
                         .ToList();
 
                 foreach (var tool in pendingCheckIns)
-                {
                     PendingCheckIns.Add(tool);
-                }
 
-                // ───────────────────────────────────────────
-                // PENDING RETURNS
-                // ───────────────────────────────────────────
+                // ── PENDING RETURNS ───────────────────────
 
                 var pendingReturn =
                     returnRequests
                         .Where(r =>
                         {
-                            if (r.Request.Status !=
-                                "Pending")
-                            {
+                            if (r.Request.Status != "Pending")
                                 return false;
-                            }
 
-                            // Only show returns from
-                            // projects owned by this PE.
                             if (!myProjectIds.Contains(
                                     r.Request.ProjectId))
-                            {
                                 return false;
-                            }
 
                             var tool =
                                 allTools.FirstOrDefault(t =>
@@ -309,19 +221,14 @@ namespace StockGuard.ViewModels
                         .ToList();
 
                 foreach (var item in pendingReturn)
-                {
                     PendingReturnRequests.Add(item);
-                }
 
-                // ───────────────────────────────────────────
-                // PROCESSED RETURNS
-                // ───────────────────────────────────────────
+                // ── PROCESSED RETURNS ─────────────────────
 
                 var processedReturn =
                     returnRequests
                         .Where(r =>
-                            r.Request.Status !=
-                                "Pending" &&
+                            r.Request.Status != "Pending" &&
                             myProjectIds.Contains(
                                 r.Request.ProjectId))
                         .OrderByDescending(r =>
@@ -330,33 +237,23 @@ namespace StockGuard.ViewModels
                         .ToList();
 
                 foreach (var item in processedReturn)
-                {
                     ProcessedReturnRequests.Add(item);
-                }
 
                 UpdateStats();
 
-                OnPropertyChanged(
-                    nameof(NoPendingReturn));
-
-                OnPropertyChanged(
-                    nameof(NoPendingCheckIns));
+                OnPropertyChanged(nameof(NoPendingReturn));
+                OnPropertyChanged(nameof(NoPendingCheckIns));
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"Load Return/Check-In Requests error: " +
-                    $"{ex.Message}");
+                    $"Load Return/Check-In Requests error: {ex.Message}");
             }
             finally
             {
                 IsBusy = false;
             }
         }
-
-        // ─────────────────────────────────────────────────────────
-        // STATS
-        // ─────────────────────────────────────────────────────────
 
         private void UpdateStats()
         {
@@ -365,13 +262,8 @@ namespace StockGuard.ViewModels
 
             ApprovedCount =
                 ProcessedReturnRequests.Count(r =>
-                    r.Request.Status ==
-                    "Approved");
+                    r.Request.Status == "Approved");
         }
-
-        // ─────────────────────────────────────────────────────────
-        // REFRESH
-        // ─────────────────────────────────────────────────────────
 
         private async Task RefreshAsync()
         {
@@ -387,9 +279,9 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // VERIFY END-DAY CHECK-IN
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private async Task VerifyCheckInAsync(
             Tool tool)
@@ -402,22 +294,83 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Invalid Check-In",
-                    "This equipment no longer has " +
-                    "a pending end-day check-in.",
+                    "This equipment no longer has a pending end-day check-in.",
                     "OK");
 
                 await LoadAsync();
                 return;
             }
 
+            var condition =
+                await Shell.Current.DisplayActionSheet(
+                    "Equipment Condition",
+                    "Cancel",
+                    null,
+                    "Good",
+                    "Damaged");
+
+            if (string.IsNullOrWhiteSpace(condition) ||
+                condition == "Cancel")
+            {
+                return;
+            }
+
+            string severity = string.Empty;
+            string damageDescription = string.Empty;
+
+            if (condition == "Damaged")
+            {
+                var selectedSeverity =
+                    await Shell.Current.DisplayActionSheet(
+                        "Damage Severity",
+                        "Cancel",
+                        null,
+                        "Minor Damage",
+                        "Major Damage");
+
+                if (string.IsNullOrWhiteSpace(
+                        selectedSeverity) ||
+                    selectedSeverity == "Cancel")
+                {
+                    return;
+                }
+
+                severity =
+                    selectedSeverity;
+
+                var description =
+                    await Shell.Current.DisplayPromptAsync(
+                        "Damage Description",
+                        "Describe the damage found during end-day inspection:",
+                        "Continue",
+                        "Cancel",
+                        placeholder:
+                            "e.g. Handle cracked during use");
+
+                if (string.IsNullOrWhiteSpace(
+                        description))
+                {
+                    return;
+                }
+
+                damageDescription =
+                    description.Trim();
+            }
+
+            string conditionText =
+                condition == "Good"
+                    ? "Condition: Good"
+                    : $"Condition: Damaged\nSeverity: {severity}";
+
             bool confirm =
                 await Shell.Current.DisplayAlert(
                     "Verify End-Day Check-In",
-                    $"Confirm that you physically verified " +
+                    $"Confirm that you physically inspected " +
                     $"{tool.ToolName} ({tool.ToolId}).\n\n" +
                     $"Worker: {tool.AssignedWorkerName}\n" +
                     $"Project: {tool.BorrowedProjectName}\n" +
-                    $"Location: {tool.LastCheckInLocation}",
+                    $"Location: {tool.LastCheckInLocation}\n" +
+                    $"{conditionText}",
                     "Verify",
                     "Cancel");
 
@@ -435,42 +388,57 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current Project Engineer " +
-                        "could not be identified.",
+                        "Current Project Engineer could not be identified.",
                         "OK");
 
                     return;
                 }
 
-                tool.IsCheckInPending =
-                    false;
+                string workerId =
+                    tool.AssignedWorkerId;
 
-                tool.LastCheckInVerifiedById =
-                    user.UniqueKey;
+                string workerName =
+                    tool.AssignedWorkerName;
 
-                tool.LastCheckInVerifiedByName =
-                    user.FullName;
+                string projectId =
+                    tool.BorrowedProjectId;
 
-                // IMPORTANT:
-                // Tool remains Borrowed.
-                // Worker/project assignment stays unchanged.
+                string projectName =
+                    tool.BorrowedProjectName;
 
-                var updated =
-                    await _firebase
-                        .UpdateToolAsync(tool);
+                string location =
+                    tool.LastCheckInLocation;
 
-                if (!updated)
+                // ── GOOD CHECK-IN ─────────────────────────
+
+                if (condition == "Good")
                 {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not verify the end-day check-in.",
-                        "OK");
+                    tool.IsCheckInPending =
+                        false;
 
-                    return;
-                }
+                    tool.LastCheckInVerifiedById =
+                        user.UniqueKey;
 
-                await _firebase
-                    .LogTransactionAsync(
+                    tool.LastCheckInVerifiedByName =
+                        user.FullName;
+
+                    tool.Condition =
+                        "Good";
+
+                    var updated =
+                        await _firebase.UpdateToolAsync(tool);
+
+                    if (!updated)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "Could not verify the end-day check-in.",
+                            "OK");
+
+                        return;
+                    }
+
+                    await _firebase.LogTransactionAsync(
                         new TransactionLog
                         {
                             ToolId =
@@ -480,42 +448,183 @@ namespace StockGuard.ViewModels
                                 tool.ToolName,
 
                             WorkerId =
-                                tool.AssignedWorkerId,
+                                workerId,
 
                             WorkerName =
-                                tool.AssignedWorkerName,
+                                workerName,
 
                             ProjectId =
-                                tool.BorrowedProjectId,
+                                projectId,
 
                             ProjectName =
-                                tool.BorrowedProjectName,
+                                projectName,
+
+                            PerformedById =
+                                user.UniqueKey,
+
+                            PerformedByName =
+                                user.FullName,
 
                             Action =
                                 "End Day Check-In Verified",
 
                             Description =
-                                $"End-day check-in verified " +
-                                $"by {user.FullName} at " +
-                                $"{tool.LastCheckInLocation}.",
+                                $"Equipment physically verified " +
+                                $"in good condition at {location}.",
 
                             Condition =
-                                tool.Condition,
+                                "Good",
 
                             Date =
                                 DateTime.Now
                         });
 
-                await Shell.Current.DisplayAlert(
-                    "Check-In Verified",
-                    $"{tool.ToolName} ({tool.ToolId}) " +
-                    $"was verified.\n\n" +
-                    $"Location: {tool.LastCheckInLocation}\n" +
-                    $"Responsible Worker: " +
-                    $"{tool.AssignedWorkerName}\n\n" +
-                    "The equipment remains Borrowed " +
-                    "under the same worker.",
-                    "OK");
+                    await Shell.Current.DisplayAlert(
+                        "Check-In Verified",
+                        $"{tool.ToolName} ({tool.ToolId}) was verified.\n\n" +
+                        $"Condition: Good\n" +
+                        $"Location: {location}\n\n" +
+                        $"The equipment remains assigned to {workerName}.",
+                        "OK");
+                }
+
+                // ── DAMAGED CHECK-IN ──────────────────────
+
+                else
+                {
+                    var damageReport =
+                        new DamageReport
+                        {
+                            ToolId =
+                                tool.ToolId,
+
+                            ToolName =
+                                tool.ToolName,
+
+                            WorkerId =
+                                workerId,
+
+                            WorkerName =
+                                workerName,
+
+                            ProjectId =
+                                projectId,
+
+                            ProjectName =
+                                projectName,
+
+                            ProjectEngineerId =
+                                user.UniqueKey,
+
+                            ProjectEngineerName =
+                                user.FullName,
+
+                            Description =
+                                damageDescription,
+
+                            Severity =
+                                severity,
+
+                            Status =
+                                "Pending",
+
+                            ReportDate =
+                                DateTime.Now
+                        };
+
+                    var reportKey =
+                        await _firebase.SubmitDamageReportAsync(
+                            damageReport);
+
+                    if (string.IsNullOrWhiteSpace(
+                            reportKey))
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "Could not create the damage report.",
+                            "OK");
+
+                        return;
+                    }
+
+                    tool.IsCheckInPending =
+                        false;
+
+                    tool.LastCheckInVerifiedById =
+                        user.UniqueKey;
+
+                    tool.LastCheckInVerifiedByName =
+                        user.FullName;
+
+                    tool.Status =
+                        "Damaged";
+
+                    tool.Condition =
+                        severity;
+
+                    var updated =
+                        await _firebase.UpdateToolAsync(tool);
+
+                    if (!updated)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            "Damage report was created, but the equipment status could not be updated.",
+                            "OK");
+
+                        return;
+                    }
+
+                    await _firebase.LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
+
+                            ToolName =
+                                tool.ToolName,
+
+                            WorkerId =
+                                workerId,
+
+                            WorkerName =
+                                workerName,
+
+                            ProjectId =
+                                projectId,
+
+                            ProjectName =
+                                projectName,
+
+                            PerformedById =
+                                user.UniqueKey,
+
+                            PerformedByName =
+                                user.FullName,
+
+                            Action =
+                                "Damage Reported",
+
+                            Description =
+                                $"Damage discovered during end-day " +
+                                $"inspection at {location}. " +
+                                $"{severity} — {damageDescription}",
+
+                            Condition =
+                                severity,
+
+                            Date =
+                                DateTime.Now
+                        });
+
+                    await Shell.Current.DisplayAlert(
+                        "Damage Found",
+                        $"{tool.ToolName} ({tool.ToolId}) was found damaged.\n\n" +
+                        $"Severity: {severity}\n" +
+                        $"Location: {location}\n\n" +
+                        "A damage report has been created.",
+                        "OK");
+                }
 
                 await LoadAsync();
             }
@@ -523,8 +632,7 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not verify check-in.\n" +
-                    $"{ex.Message}",
+                    $"Could not verify check-in.\n{ex.Message}",
                     "OK");
             }
             finally
@@ -533,9 +641,9 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // APPROVE RETURN
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private async Task ApproveReturnAsync(
             ReturnRequestResult item)
@@ -569,18 +677,16 @@ namespace StockGuard.ViewModels
             if (condition == "Damaged")
             {
                 var selectedSeverity =
-                    await Shell.Current
-                        .DisplayActionSheet(
-                            "Damage Severity",
-                            "Cancel",
-                            null,
-                            "Minor Damage",
-                            "Major Damage");
+                    await Shell.Current.DisplayActionSheet(
+                        "Damage Severity",
+                        "Cancel",
+                        null,
+                        "Minor Damage",
+                        "Major Damage");
 
                 if (string.IsNullOrWhiteSpace(
                         selectedSeverity) ||
-                    selectedSeverity ==
-                        "Cancel")
+                    selectedSeverity == "Cancel")
                 {
                     return;
                 }
@@ -589,21 +695,16 @@ namespace StockGuard.ViewModels
                     selectedSeverity;
 
                 var description =
-                    await Shell.Current
-                        .DisplayPromptAsync(
-                            "Damage Description",
-                            "Describe the damage found " +
-                            "during inspection:",
-                            "Continue",
-                            "Cancel",
-                            placeholder:
-                                "e.g. Power cable damaged");
+                    await Shell.Current.DisplayPromptAsync(
+                        "Damage Description",
+                        "Describe the damage found during inspection:",
+                        "Continue",
+                        "Cancel",
+                        placeholder:
+                            "e.g. Power cable damaged");
 
-                if (string.IsNullOrWhiteSpace(
-                        description))
-                {
+                if (string.IsNullOrWhiteSpace(description))
                     return;
-                }
 
                 damageDescription =
                     description.Trim();
@@ -611,8 +712,7 @@ namespace StockGuard.ViewModels
 
             string conditionDetails =
                 condition == "Damaged"
-                    ? $"Condition: Damaged\n" +
-                      $"Severity: {severity}"
+                    ? $"Condition: Damaged\nSeverity: {severity}"
                     : "Condition: Good";
 
             bool confirm =
@@ -640,17 +740,15 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current Project Engineer " +
-                        "could not be identified.",
+                        "Current Project Engineer could not be identified.",
                         "OK");
 
                     return;
                 }
 
                 var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            request.ToolId);
+                    await _firebase.GetToolByIdAsync(
+                        request.ToolId);
 
                 if (tool == null)
                 {
@@ -666,8 +764,7 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Invalid Return",
-                        "This equipment is no longer " +
-                        "pending return.",
+                        "This equipment is no longer pending return.",
                         "OK");
 
                     await LoadAsync();
@@ -702,10 +799,9 @@ namespace StockGuard.ViewModels
                     user.FullName;
 
                 var requestUpdated =
-                    await _firebase
-                        .UpdateReturnRequestAsync(
-                            item.Key,
-                            request);
+                    await _firebase.UpdateReturnRequestAsync(
+                        item.Key,
+                        request);
 
                 if (!requestUpdated)
                 {
@@ -717,9 +813,7 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ───────────────────────────────────────────
-                // GOOD RETURN
-                // ───────────────────────────────────────────
+                // ── GOOD RETURN ───────────────────────────
 
                 if (condition == "Good")
                 {
@@ -747,69 +841,69 @@ namespace StockGuard.ViewModels
                     ClearCheckInData(tool);
 
                     var toolUpdated =
-                        await _firebase
-                            .UpdateToolAsync(tool);
+                        await _firebase.UpdateToolAsync(tool);
 
                     if (!toolUpdated)
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "Return was approved, but " +
-                            "the equipment could not be updated.",
+                            "Return was approved, but the equipment could not be updated.",
                             "OK");
 
                         return;
                     }
 
-                    await _firebase
-                        .LogTransactionAsync(
-                            new TransactionLog
-                            {
-                                ToolId =
-                                    tool.ToolId,
+                    await _firebase.LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
 
-                                ToolName =
-                                    tool.ToolName,
+                            ToolName =
+                                tool.ToolName,
 
-                                WorkerId =
-                                    workerId,
+                            WorkerId =
+                                workerId,
 
-                                WorkerName =
-                                    workerName,
+                            WorkerName =
+                                workerName,
 
-                                ProjectId =
-                                    projectId,
+                            ProjectId =
+                                projectId,
 
-                                ProjectName =
-                                    projectName,
+                            ProjectName =
+                                projectName,
 
-                                Action =
-                                    "Returned",
+                            PerformedById =
+                                user.UniqueKey,
 
-                                Description =
-                                    $"Return inspected and approved " +
-                                    $"by {user.FullName}. " +
-                                    "Equipment returned in good condition.",
+                            PerformedByName =
+                                user.FullName,
 
-                                Condition =
-                                    "Good",
+                            Action =
+                                "Returned",
 
-                                Date =
-                                    DateTime.Now
-                            });
+                            Description =
+                                $"Return inspected and approved " +
+                                $"by {user.FullName}. " +
+                                "Equipment returned in good condition.",
+
+                            Condition =
+                                "Good",
+
+                            Date =
+                                DateTime.Now
+                        });
 
                     await Shell.Current.DisplayAlert(
                         "Return Approved",
-                        $"{tool.ToolName} ({tool.ToolId}) " +
-                        $"has been returned.\n\n" +
+                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
                         "Condition: Good\n" +
                         "The equipment is now Available.",
                         "OK");
                 }
 
-                // ───────────────────────────────────────────
-                // DAMAGED RETURN
-                // ───────────────────────────────────────────
+                // ── DAMAGED RETURN ────────────────────────
 
                 else
                 {
@@ -854,17 +948,15 @@ namespace StockGuard.ViewModels
                         };
 
                     var damageReportKey =
-                        await _firebase
-                            .SubmitDamageReportAsync(
-                                damageReport);
+                        await _firebase.SubmitDamageReportAsync(
+                            damageReport);
 
                     if (string.IsNullOrEmpty(
                             damageReportKey))
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "The return was approved, but " +
-                            "the damage report could not be created.",
+                            "The return was approved, but the damage report could not be created.",
                             "OK");
 
                         return;
@@ -894,62 +986,63 @@ namespace StockGuard.ViewModels
                     ClearCheckInData(tool);
 
                     var toolUpdated =
-                        await _firebase
-                            .UpdateToolAsync(tool);
+                        await _firebase.UpdateToolAsync(tool);
 
                     if (!toolUpdated)
                     {
                         await Shell.Current.DisplayAlert(
                             "Error",
-                            "The damage report was created, " +
-                            "but the equipment status could not be updated.",
+                            "The damage report was created, but the equipment status could not be updated.",
                             "OK");
 
                         return;
                     }
 
-                    await _firebase
-                        .LogTransactionAsync(
-                            new TransactionLog
-                            {
-                                ToolId =
-                                    tool.ToolId,
+                    await _firebase.LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
 
-                                ToolName =
-                                    tool.ToolName,
+                            ToolName =
+                                tool.ToolName,
 
-                                WorkerId =
-                                    workerId,
+                            WorkerId =
+                                workerId,
 
-                                WorkerName =
-                                    workerName,
+                            WorkerName =
+                                workerName,
 
-                                ProjectId =
-                                    projectId,
+                            ProjectId =
+                                projectId,
 
-                                ProjectName =
-                                    projectName,
+                            ProjectName =
+                                projectName,
 
-                                Action =
-                                    "Returned Damaged",
+                            PerformedById =
+                                user.UniqueKey,
 
-                                Description =
-                                    $"Return inspected by " +
-                                    $"{user.FullName}. " +
-                                    $"Damage found: {severity} — " +
-                                    $"{damageDescription}",
+                            PerformedByName =
+                                user.FullName,
 
-                                Condition =
-                                    severity,
+                            Action =
+                                "Returned Damaged",
 
-                                Date =
-                                    DateTime.Now
-                            });
+                            Description =
+                                $"Return inspected by {user.FullName}. " +
+                                $"Damage found: {severity} — " +
+                                $"{damageDescription}",
+
+                            Condition =
+                                severity,
+
+                            Date =
+                                DateTime.Now
+                        });
 
                     await Shell.Current.DisplayAlert(
                         "Damaged Return Accepted",
-                        $"{tool.ToolName} ({tool.ToolId}) " +
-                        $"has been returned.\n\n" +
+                        $"{tool.ToolName} ({tool.ToolId}) has been returned.\n\n" +
                         $"Damage: {severity}\n" +
                         "A damage report was created automatically.",
                         "OK");
@@ -961,8 +1054,7 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not approve return.\n" +
-                    $"{ex.Message}",
+                    $"Could not approve return.\n{ex.Message}",
                     "OK");
             }
             finally
@@ -971,9 +1063,9 @@ namespace StockGuard.ViewModels
             }
         }
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // REJECT RETURN
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private async Task RejectReturnAsync(
             ReturnRequestResult item)
@@ -989,8 +1081,8 @@ namespace StockGuard.ViewModels
                     "Reject Return",
                     $"Reject the return request for " +
                     $"{request.ToolName} ({request.ToolId})?\n\n" +
-                    "Use Reject only when the physical return " +
-                    "was not accepted or could not be completed.\n\n" +
+                    "Use Reject only when the physical return was " +
+                    "not accepted or could not be completed.\n\n" +
                     $"The equipment will remain assigned to " +
                     $"{request.WorkerName}.",
                     "Reject",
@@ -1010,17 +1102,15 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Current Project Engineer " +
-                        "could not be identified.",
+                        "Current Project Engineer could not be identified.",
                         "OK");
 
                     return;
                 }
 
                 var tool =
-                    await _firebase
-                        .GetToolByIdAsync(
-                            request.ToolId);
+                    await _firebase.GetToolByIdAsync(
+                        request.ToolId);
 
                 if (tool == null)
                 {
@@ -1036,8 +1126,7 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Invalid Return",
-                        "This equipment is no longer " +
-                        "pending return.",
+                        "This equipment is no longer pending return.",
                         "OK");
 
                     await LoadAsync();
@@ -1057,10 +1146,9 @@ namespace StockGuard.ViewModels
                     user.FullName;
 
                 var requestUpdated =
-                    await _firebase
-                        .UpdateReturnRequestAsync(
-                            item.Key,
-                            request);
+                    await _firebase.UpdateReturnRequestAsync(
+                        item.Key,
+                        request);
 
                 if (!requestUpdated)
                 {
@@ -1088,57 +1176,59 @@ namespace StockGuard.ViewModels
                     request.ProjectName;
 
                 var toolUpdated =
-                    await _firebase
-                        .UpdateToolAsync(tool);
+                    await _firebase.UpdateToolAsync(tool);
 
                 if (!toolUpdated)
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "The request was rejected, but " +
-                        "the equipment status could not be restored.",
+                        "The request was rejected, but the equipment status could not be restored.",
                         "OK");
 
                     return;
                 }
 
-                await _firebase
-                    .LogTransactionAsync(
-                        new TransactionLog
-                        {
-                            ToolId =
-                                tool.ToolId,
+                await _firebase.LogTransactionAsync(
+                    new TransactionLog
+                    {
+                        ToolId =
+                            tool.ToolId,
 
-                            ToolName =
-                                tool.ToolName,
+                        ToolName =
+                            tool.ToolName,
 
-                            WorkerId =
-                                request.WorkerId,
+                        WorkerId =
+                            request.WorkerId,
 
-                            WorkerName =
-                                request.WorkerName,
+                        WorkerName =
+                            request.WorkerName,
 
-                            ProjectId =
-                                request.ProjectId,
+                        ProjectId =
+                            request.ProjectId,
 
-                            ProjectName =
-                                request.ProjectName,
+                        ProjectName =
+                            request.ProjectName,
 
-                            Action =
-                                "Return Rejected",
+                        PerformedById =
+                            user.UniqueKey,
 
-                            Description =
-                                $"Return rejected by " +
-                                $"{user.FullName}. " +
-                                $"Equipment remains assigned to " +
-                                $"{request.WorkerName}.",
+                        PerformedByName =
+                            user.FullName,
 
-                            Condition =
-                                tool.Condition,
+                        Action =
+                            "Return Rejected",
 
-                            Date =
-                                DateTime.Now
-                        });
+                        Description =
+                            $"Return rejected by {user.FullName}. " +
+                            $"Equipment remains assigned to " +
+                            $"{request.WorkerName}.",
+
+                        Condition =
+                            tool.Condition,
+
+                        Date =
+                            DateTime.Now
+                    });
 
                 await Shell.Current.DisplayAlert(
                     "Return Rejected",
@@ -1152,8 +1242,7 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not reject return.\n" +
-                    $"{ex.Message}",
+                    $"Could not reject return.\n{ex.Message}",
                     "OK");
             }
             finally
@@ -1161,10 +1250,6 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
-
-        // ─────────────────────────────────────────────────────────
-        // HELPER
-        // ─────────────────────────────────────────────────────────
 
         private static void ClearCheckInData(
             Tool tool)

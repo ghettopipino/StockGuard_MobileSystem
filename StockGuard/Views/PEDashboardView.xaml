@@ -105,7 +105,7 @@
                                        FontSize="15" FontAttributes="Bold"
                                        TextColor="{DynamicResource Text1}"
                                        LineBreakMode="TailTruncation"/>
-                                <Label Text="Project Engineer · Admin"
+                                <Label Text="Project Engineer"
                                        FontSize="11"
                                        TextColor="{DynamicResource Text3}"/>
                             </VerticalStackLayout>
@@ -174,7 +174,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="🔧" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -192,7 +192,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="✅" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -210,7 +210,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="📦" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -228,7 +228,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="⚠️" FontSize="20"
                                            HorizontalOptions="Center"/>
@@ -503,6 +503,8 @@
             Sits outside the RefreshView on the Grid so it always floats
             above the scroll content regardless of scroll position.
         -->
+ 
+        
         <Grid VerticalOptions="End"
               HorizontalOptions="Center"
               Margin="0,0,0,24"

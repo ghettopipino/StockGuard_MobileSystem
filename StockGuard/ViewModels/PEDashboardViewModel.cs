@@ -6,175 +6,297 @@ using StockGuard.Views;
 
 namespace StockGuard.ViewModels
 {
-    /// <summary>
-    /// Optimized PE Dashboard ViewModel.
-    ///
-    /// Key performance changes vs original:
-    ///   1. Firebase calls run in PARALLEL via Task.WhenAll — was sequential.
-    ///      NOTE: GetAllUsersAsync() has no forceRefresh overload, so it always
-    ///      hits Firebase. The other three calls respect their caches.
-    ///   2. RecentTools (borrowed tools) paginates in slices of 10.
-    ///   3. WorkerActivities paginates in slices of 10.
-    ///   4. XAML uses nested non-scrolling CollectionViews inside the Header
-    ///      of an outer CollectionView — only visible rows are inflated.
-    ///   5. IsBusy guard prevents parallel re-entrant load calls.
-    /// </summary>
     public class PEDashboardViewModel : BaseViewModel
     {
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
         private readonly FirebaseService _firebase;
 
-        // ── Pagination constants ──────────────────────────────────────────────
         private const int ToolPageSize = 10;
         private const int WorkerPageSize = 10;
 
-        // ── Raw full lists (built once per load, sliced for display) ─────────
         private List<Tool> _allBorrowedTools = new();
         private List<WorkerActivityItem> _allWorkerActivities = new();
 
-        // ── Pagination cursors ────────────────────────────────────────────────
-        private int _borrowedToolPage = 0;
-        private int _workerPage = 0;
+        private int _borrowedToolPage;
+        private int _workerPage;
 
-        // ── Identity ──────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // IDENTITY
+        // ─────────────────────────────────────────────────────────
+
         public string EngineerName =>
-            _auth.CurrentUser?.FullName ?? "Project Engineer";
+            _auth.CurrentUser?.FullName ??
+            "Project Engineer";
+
         public string EngineerInitials =>
-            GetInitials(_auth.CurrentUser?.FullName);
-        public string GreetingText => GetGreeting();
+            GetInitials(
+                _auth.CurrentUser?.FullName);
+
+        public string GreetingText =>
+            GetGreeting();
+
         public string TodayDate =>
-            DateTime.Now.ToString("dddd, MMMM d, yyyy");
+            DateTime.Now.ToString(
+                "dddd, MMMM d, yyyy");
 
-        // ── Theme ─────────────────────────────────────────────────────────────
-        public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
+        // ─────────────────────────────────────────────────────────
+        // THEME
+        // ─────────────────────────────────────────────────────────
 
-        // ── Stats ─────────────────────────────────────────────────────────────
+        public string ThemeIcon =>
+            _theme.IsDark
+                ? "🌙"
+                : "☀️";
+
+        // ─────────────────────────────────────────────────────────
+        // STATS
+        // ─────────────────────────────────────────────────────────
+
         private int _totalTools;
+
         public int TotalTools
         {
             get => _totalTools;
-            private set => SetProperty(ref _totalTools, value);
+            private set =>
+                SetProperty(
+                    ref _totalTools,
+                    value);
         }
 
         private int _availableTools;
+
         public int AvailableTools
         {
             get => _availableTools;
-            private set => SetProperty(ref _availableTools, value);
+            private set =>
+                SetProperty(
+                    ref _availableTools,
+                    value);
         }
 
         private int _borrowedTools;
+
         public int BorrowedTools
         {
             get => _borrowedTools;
-            private set => SetProperty(ref _borrowedTools, value);
+            private set =>
+                SetProperty(
+                    ref _borrowedTools,
+                    value);
         }
 
         private int _damagedTools;
+
         public int DamagedTools
         {
             get => _damagedTools;
             private set
             {
-                SetProperty(ref _damagedTools, value);
-                OnPropertyChanged(nameof(HasDamagedTools));
+                SetProperty(
+                    ref _damagedTools,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(HasDamagedTools));
             }
         }
 
         private int _totalWorkers;
+
         public int TotalWorkers
         {
             get => _totalWorkers;
-            private set => SetProperty(ref _totalWorkers, value);
+            private set =>
+                SetProperty(
+                    ref _totalWorkers,
+                    value);
         }
 
         private int _pendingReports;
+
         public int PendingReports
         {
             get => _pendingReports;
             private set
             {
-                SetProperty(ref _pendingReports, value);
-                OnPropertyChanged(nameof(HasPendingReports));
+                SetProperty(
+                    ref _pendingReports,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(HasPendingReports));
             }
         }
 
-        private int _pendingPauseCount;
-        public int PendingPauseCount
+        // Old property name retained temporarily
+        // to avoid breaking existing XAML.
+        //
+        // It now means:
+        // Pending Returns + Pending End-Day Check-Ins.
+        private int _pendingReturnCheckInCount;
+
+        public int PendingReturnCheckInCount
         {
-            get => _pendingPauseCount;
-            private set => SetProperty(ref _pendingPauseCount, value);
+            get => _pendingReturnCheckInCount;
+            private set
+            {
+                SetProperty(
+                    ref _pendingReturnCheckInCount,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(HasPendingReturnCheckIn));
+            }
         }
 
-        public bool HasDamagedTools => DamagedTools > 0;
-        public bool HasPendingReports => PendingReports > 0;
-        public bool HasPendingPause => PendingPauseCount > 0;
+        public bool HasPendingReturnCheckIn =>
+            PendingReturnCheckInCount > 0;
 
-        // ── Paged collections ─────────────────────────────────────────────────
-        public ObservableCollection<Tool> RecentTools { get; } = new();
+        public bool HasDamagedTools =>
+            DamagedTools > 0;
+
+        public bool HasPendingReports =>
+            PendingReports > 0;
+
+
+
+        // ─────────────────────────────────────────────────────────
+        // BORROWED TOOLS
+        // ─────────────────────────────────────────────────────────
+
+        public ObservableCollection<Tool>
+            RecentTools
+        { get; } = new();
 
         private bool _hasMoreBorrowedTools;
+
         public bool HasMoreBorrowedTools
         {
             get => _hasMoreBorrowedTools;
-            private set => SetProperty(ref _hasMoreBorrowedTools, value);
+            private set
+            {
+                SetProperty(
+                    ref _hasMoreBorrowedTools,
+                    value);
+
+                (LoadMoreBorrowedCommand as Command)?
+                    .ChangeCanExecute();
+            }
         }
 
-        private string _borrowedToolsLabel = string.Empty;
+        private string _borrowedToolsLabel =
+            string.Empty;
+
         public string BorrowedToolsLabel
         {
             get => _borrowedToolsLabel;
-            private set => SetProperty(ref _borrowedToolsLabel, value);
+            private set =>
+                SetProperty(
+                    ref _borrowedToolsLabel,
+                    value);
         }
 
-        public ObservableCollection<WorkerActivityItem> WorkerActivities { get; } = new();
+        // ─────────────────────────────────────────────────────────
+        // WORKER ACTIVITY
+        // ─────────────────────────────────────────────────────────
+
+        public ObservableCollection<WorkerActivityItem>
+            WorkerActivities
+        { get; } = new();
 
         private bool _hasMoreWorkers;
+
         public bool HasMoreWorkers
         {
             get => _hasMoreWorkers;
-            private set => SetProperty(ref _hasMoreWorkers, value);
+            private set
+            {
+                SetProperty(
+                    ref _hasMoreWorkers,
+                    value);
+
+                (LoadMoreWorkersCommand as Command)?
+                    .ChangeCanExecute();
+            }
         }
 
-        private string _workerActivityLabel = string.Empty;
+        private string _workerActivityLabel =
+            string.Empty;
+
         public string WorkerActivityLabel
         {
             get => _workerActivityLabel;
-            private set => SetProperty(ref _workerActivityLabel, value);
+            private set =>
+                SetProperty(
+                    ref _workerActivityLabel,
+                    value);
         }
 
-        // ── Damage reports mini-list (max 5, no pagination needed) ────────────
-        public ObservableCollection<DamageReport> PendingDamageReports { get; } = new();
+        // ─────────────────────────────────────────────────────────
+        // DAMAGE PREVIEW
+        // ─────────────────────────────────────────────────────────
 
-        // ── Empty-state helpers ───────────────────────────────────────────────
-        public bool NoBorrowedTools => RecentTools.Count == 0 && !IsBusy;
-        public bool NoWorkerActivity => WorkerActivities.Count == 0 && !IsBusy;
+        public ObservableCollection<DamageReport>
+            PendingDamageReports
+        { get; } = new();
 
-        // ── Pull-to-refresh ───────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // EMPTY STATES
+        // ─────────────────────────────────────────────────────────
+
+        public bool NoBorrowedTools =>
+            RecentTools.Count == 0 &&
+            !IsBusy;
+
+        public bool NoWorkerActivity =>
+            WorkerActivities.Count == 0 &&
+            !IsBusy;
+
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
+
         private bool _isRefreshing;
+
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
+            set =>
+                SetProperty(
+                    ref _isRefreshing,
+                    value);
         }
 
-        // ── Commands ──────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // COMMANDS
+        // ─────────────────────────────────────────────────────────
+
         public ICommand ToggleThemeCommand { get; }
         public ICommand LogoutCommand { get; }
         public ICommand RefreshCommand { get; }
+
         public ICommand ViewAllToolsCommand { get; }
         public ICommand ViewDamageReportsCommand { get; }
         public ICommand ViewWorkersCommand { get; }
-        public ICommand ApproveDamageCommand { get; }
         public ICommand ViewAllTransactionsCommand { get; }
         public ICommand ViewProjectsCommand { get; }
-        public ICommand ViewPauseRequestsCommand { get; }
+
+        // Old command name retained temporarily
+        // because the actual page is still named
+        // PauseRequestsView.
+        //
+        // That page is now Return & Check-In.
+        public ICommand ViewReturnCheckInCommand { get; }
         public ICommand LoadMoreBorrowedCommand { get; }
         public ICommand LoadMoreWorkersCommand { get; }
         public ICommand ScanQrCommand { get; }
+        public ICommand OpenFlyoutCommand { get; }
 
-        // ── Constructor ───────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // CONSTRUCTOR
+        // ─────────────────────────────────────────────────────────
+
         public PEDashboardViewModel(
             AuthService auth,
             ThemeService theme,
@@ -183,328 +305,666 @@ namespace StockGuard.ViewModels
             _auth = auth;
             _theme = theme;
             _firebase = firebase;
+
             Title = "PE Dashboard";
 
             _theme.ThemeChanged += _ =>
-                MainThread.BeginInvokeOnMainThread(() =>
-                    OnPropertyChanged(nameof(ThemeIcon)));
+                MainThread.BeginInvokeOnMainThread(
+                    () =>
+                        OnPropertyChanged(
+                            nameof(ThemeIcon)));
 
-            ToggleThemeCommand = new Command(() => _theme.Toggle());
-            LogoutCommand = new Command(async () => await LogoutAsync());
-            RefreshCommand = new Command(async () => await RefreshAsync());
-            ScanQrCommand = new Command(async () => await ScanQrAsync());
+            ToggleThemeCommand =
+                new Command(
+                    () => _theme.Toggle());
 
-            ViewAllToolsCommand = new Command(async () =>
-                await Shell.Current.GoToAsync("//EquipmentCatalogView"));
-            ViewDamageReportsCommand = new Command(async () =>
-                await Shell.Current.GoToAsync("//DamageReportsView"));
-            ViewWorkersCommand = new Command(async () =>
-                await Shell.Current.GoToAsync("//WorkerManagementView"));
-            ViewProjectsCommand = new Command(async () =>
-                await Shell.Current.GoToAsync("//ProjectManagementView"));
-            ViewPauseRequestsCommand = new Command(async () =>
-                await Shell.Current.GoToAsync("//PauseRequestsView"));
-            ViewAllTransactionsCommand = new Command(async () =>
-                await Shell.Current.GoToAsync(
-                    $"{nameof(TransactionHistoryView)}?viewMode=all"));
+            LogoutCommand =
+                new Command(
+                    async () =>
+                        await LogoutAsync());
 
-            ApproveDamageCommand = new Command<DamageReport>(
-                async report => await HandleDamageReportAsync(report));
+            RefreshCommand =
+                new Command(
+                    async () =>
+                        await RefreshAsync());
 
-            LoadMoreBorrowedCommand = new Command(
-                execute: LoadNextBorrowedPage,
-                canExecute: () => HasMoreBorrowedTools);
+            ScanQrCommand =
+                new Command(
+                    async () =>
+                        await ScanQrAsync());
 
-            LoadMoreWorkersCommand = new Command(
-                execute: LoadNextWorkerPage,
-                canExecute: () => HasMoreWorkers);
+            ViewAllToolsCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                "//EquipmentCatalogView"));
+
+            ViewDamageReportsCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                "//DamageReportsView"));
+
+            ViewWorkersCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                "//WorkerManagementView"));
+
+            ViewProjectsCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                "//ProjectManagementView"));
+
+            ViewReturnCheckInCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                "//PauseRequestsView"));
+
+            ViewAllTransactionsCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(
+                                $"{nameof(TransactionHistoryView)}" +
+                                $"?viewMode=all"));
+
+            LoadMoreBorrowedCommand =
+                new Command(
+                    execute:
+                        LoadNextBorrowedPage,
+
+                    canExecute:
+                        () =>
+                            HasMoreBorrowedTools);
+
+            LoadMoreWorkersCommand =
+                new Command(
+                    execute:
+                        LoadNextWorkerPage,
+
+                    canExecute:
+                        () =>
+                            HasMoreWorkers);
+
+            OpenFlyoutCommand =
+                 new Command(() =>
+                 {
+                     if (Shell.Current != null)
+                     {
+                         Shell.Current.FlyoutIsPresented = true;
+                     }
+                 });
         }
 
-        // ── Primary load ──────────────────────────────────────────────────────
-        public async Task LoadAsync(bool forceRefresh = false)
+        // ─────────────────────────────────────────────────────────
+        // LOAD
+        // ─────────────────────────────────────────────────────────
+
+        public async Task LoadAsync(
+            bool forceRefresh = false)
         {
-            if (IsBusy) return;
+            if (IsBusy)
+                return;
 
             IsBusy = true;
+
             try
             {
-                // GetAllUsersAsync() has no forceRefresh overload — always fetches live.
-                // The other three respect their FirebaseService in-memory caches.
-                var toolsTask = _firebase.GetAllToolsAsync(forceRefresh);
-                var usersTask = _firebase.GetAllUsersAsync();
-                var pauseTask = _firebase.GetAllPauseRequestsRawAsync();
-                var damageTask = _firebase.GetAllDamageReportsRawAsync();
+                var currentUser =
+                    _auth.CurrentUser;
 
-                await Task.WhenAll(toolsTask, usersTask, pauseTask, damageTask);
+                if (currentUser == null)
+                {
+                    ClearDashboard();
+                    return;
+                }
 
-                List<Tool> allTools = toolsTask.Result;   // List<Tool>
-                List<User> allUsers = usersTask.Result;   // List<User>
-                List<PauseRequestResult> pauseRequests = pauseTask.Result; // List<PauseRequestResult>
-                List<DamageReportResult> rawReports = damageTask.Result;// List<DamageReportResult>
+                var toolsTask =
+                    _firebase.GetAllToolsAsync(
+                        forceRefresh);
 
-                // ── Stats ─────────────────────────────────────────────────────
-                TotalTools = allTools.Count;
-                AvailableTools = allTools.Count(t => t.Status == "Available");
-                BorrowedTools = allTools.Count(t => t.Status == "Borrowed");
-                DamagedTools = allTools.Count(t =>
-                    t.Status == "Damaged" || t.Status == "UnderRepair");
+                var usersTask =
+                    _firebase.GetAllUsersAsync();
 
-                var approvedWorkers = allUsers
-                    .Where(u => u.Role == "Worker" && u.AccountStatus == "Approved")
-                    .ToList();
+                var returnsTask =
+                    _firebase
+                        .GetAllReturnRequestsRawAsync();
 
-                var pendingWorkerCount = allUsers
-                    .Count(u => u.Role == "Worker" && u.AccountStatus == "Pending");
+                var damageTask =
+                    _firebase
+                        .GetAllDamageReportsRawAsync();
 
-                TotalWorkers = approvedWorkers.Count;
+                var projectsTask =
+                    _firebase
+                        .GetAllProjectsAsync();
 
-                // PauseRequestResult.Request → PauseRequest
-                PendingPauseCount = pauseRequests
-                    .Count(r => r.Request.Status == "Pending");
+                await Task.WhenAll(
+                    toolsTask,
+                    usersTask,
+                    returnsTask,
+                    damageTask,
+                    projectsTask);
 
-                // DamageReportResult.Report → DamageReport
-                var pendingDamageCount = rawReports
-                    .Count(r => r.Report.Status == "Pending");
+                var allTools =
+                    toolsTask.Result ??
+                    new List<Tool>();
 
+                var allUsers =
+                    usersTask.Result ??
+                    new List<User>();
+
+                var returnRequests =
+                    returnsTask.Result ??
+                    new List<ReturnRequestResult>();
+
+                var rawReports =
+                    damageTask.Result ??
+                    new List<DamageReportResult>();
+
+                var projects =
+                    projectsTask.Result ??
+                    new List<Project>();
+
+                // ───────────────────────────────────────────
+                // PROJECTS OWNED BY CURRENT PE
+                // ───────────────────────────────────────────
+
+                var myProjects =
+                    projects
+                        .Where(p =>
+                            !p.IsDeleted &&
+                            p.CreatedBy ==
+                                currentUser.UniqueKey)
+                        .ToList();
+
+                var myProjectIds =
+                    myProjects
+                        .Select(p =>
+                            p.ProjectId)
+                        .ToHashSet();
+
+                // ───────────────────────────────────────────
+                // TOOLS FOR THIS PE'S PROJECTS
+                // ───────────────────────────────────────────
+                //
+                // Available equipment is company inventory,
+                // so Total / Available still use all tools.
+                //
+                // Borrowed / pending / damaged project
+                // activity is filtered to this PE's projects.
+
+                var myProjectTools =
+                    allTools
+                        .Where(t =>
+                            myProjectIds.Contains(
+                                t.BorrowedProjectId))
+                        .ToList();
+
+                // ───────────────────────────────────────────
+                // STATS
+                // ───────────────────────────────────────────
+
+                TotalTools =
+                    allTools.Count;
+
+                AvailableTools =
+                    allTools.Count(t =>
+                        t.Status ==
+                        "Available");
+
+                BorrowedTools =
+                    myProjectTools.Count(t =>
+                        t.Status ==
+                        "Borrowed");
+
+                DamagedTools =
+                    myProjectTools.Count(t =>
+                        t.Status ==
+                            "Damaged" ||
+                        t.Status ==
+                            "UnderRepair");
+
+                // ───────────────────────────────────────────
+                // WORKERS
+                // ───────────────────────────────────────────
+
+                var approvedWorkers =
+                    allUsers
+                        .Where(u =>
+                            u.Role ==
+                                "Worker" &&
+                            u.AccountStatus ==
+                                "Approved")
+                        .ToList();
+
+                var pendingWorkerCount =
+                    allUsers.Count(u =>
+                        u.Role ==
+                            "Worker" &&
+                        u.AccountStatus ==
+                            "Pending");
+
+                // Workers assigned to any of this PE's projects.
+                var myWorkerKeys =
+                    new HashSet<string>();
+
+                foreach (var project in myProjects)
+                {
+                    var keys =
+                        await _firebase
+                            .GetProjectWorkerKeysAsync(
+                                project.ProjectId);
+
+                    foreach (var key in keys)
+                    {
+                        myWorkerKeys.Add(key);
+                    }
+                }
+
+                var myApprovedWorkers =
+                    approvedWorkers
+                        .Where(w =>
+                            myWorkerKeys.Contains(
+                                w.UniqueKey))
+                        .ToList();
+
+                TotalWorkers =
+                    myApprovedWorkers.Count;
+
+                // ───────────────────────────────────────────
+                // RETURN + CHECK-IN PENDING
+                // ───────────────────────────────────────────
+
+                var pendingReturns =
+                    returnRequests.Count(r =>
+                        r.Request.Status ==
+                            "Pending" &&
+                        myProjectIds.Contains(
+                            r.Request.ProjectId));
+
+                var pendingCheckIns =
+                    allTools.Count(t =>
+                        t.Status ==
+                            "Borrowed" &&
+                        t.IsCheckInPending &&
+                        myProjectIds.Contains(
+                            t.BorrowedProjectId));
+
+                PendingReturnCheckInCount =
+                    pendingReturns +
+                    pendingCheckIns;
+
+                // ───────────────────────────────────────────
+                // DAMAGE
+                // ───────────────────────────────────────────
+
+                var myDamageReports =
+                    rawReports
+                        .Where(r =>
+                            myProjectIds.Contains(
+                                r.Report.ProjectId))
+                        .ToList();
+
+                var pendingDamageCount =
+                    myDamageReports.Count(r =>
+                        r.Report.Status ==
+                        "Pending");
+
+                // Pending workers remain global account
+                // approvals for now.
                 PendingReports =
-                    pendingDamageCount + pendingWorkerCount + PendingPauseCount;
+                     pendingDamageCount +
+                     pendingWorkerCount +
+                     PendingReturnCheckInCount;
 
-                // ── Damage reports mini-list (max 5) ──────────────────────────
+                // ───────────────────────────────────────────
+                // DAMAGE PREVIEW
+                // ───────────────────────────────────────────
+
                 PendingDamageReports.Clear();
-                foreach (var item in rawReports
-                    .Where(r => r.Report.Status == "Pending")
-                    .Take(5))
-                    PendingDamageReports.Add(item.Report);
 
-                // ── Borrowed tools — full sorted list → show page 1 ───────────
-                _allBorrowedTools = allTools
-                    .Where(t => t.Status == "Borrowed")
-                    .OrderByDescending(t => t.BorrowDate)
-                    .ToList();
+                foreach (var item in
+                    myDamageReports
+                        .Where(r =>
+                            r.Report.Status ==
+                            "Pending")
+                        .OrderByDescending(r =>
+                            r.Report.ReportDate)
+                        .Take(5))
+                {
+                    PendingDamageReports.Add(
+                        item.Report);
+                }
 
-                _borrowedToolPage = 0;
+                // ───────────────────────────────────────────
+                // BORROWED TOOLS PREVIEW
+                // ───────────────────────────────────────────
+
+                _allBorrowedTools =
+                    myProjectTools
+                        .Where(t =>
+                            t.Status ==
+                            "Borrowed")
+                        .OrderByDescending(t =>
+                            t.BorrowDate)
+                        .ToList();
+
+                _borrowedToolPage =
+                    0;
+
                 RecentTools.Clear();
+
                 AppendBorrowedPage();
 
-                // ── Worker activities — full list → show page 1 ───────────────
-                _allWorkerActivities = approvedWorkers
-                    .Select(worker => new WorkerActivityItem
-                    {
-                        WorkerName = worker.FullName,
-                        WorkerInitials = GetInitials(worker.FullName),
-                        AssignedTools = allTools
-                            .Count(t => t.AssignedWorkerId == worker.UniqueKey),
-                        Status = allTools
-                            .Any(t => t.AssignedWorkerId == worker.UniqueKey)
-                            ? "Active"
-                            : "Idle"
-                    })
-                    .OrderByDescending(w => w.AssignedTools)
-                    .ToList();
+                // ───────────────────────────────────────────
+                // WORKER ACTIVITY
+                // ───────────────────────────────────────────
 
-                _workerPage = 0;
+                _allWorkerActivities =
+                    myApprovedWorkers
+                        .Select(worker =>
+                            new WorkerActivityItem
+                            {
+                                WorkerName =
+                                    worker.FullName,
+
+                                WorkerInitials =
+                                    GetInitials(
+                                        worker.FullName),
+
+                                AssignedTools =
+                                    myProjectTools.Count(t =>
+                                        t.AssignedWorkerId ==
+                                        worker.UniqueKey),
+
+                                Status =
+                                    myProjectTools.Any(t =>
+                                        t.AssignedWorkerId ==
+                                        worker.UniqueKey)
+                                        ? "Active"
+                                        : "Idle"
+                            })
+                        .OrderByDescending(w =>
+                            w.AssignedTools)
+                        .ToList();
+
+                _workerPage =
+                    0;
+
                 WorkerActivities.Clear();
+
                 AppendWorkerPage();
             }
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"[PEDashboardVM] Load error: {ex.Message}");
+                    $"[PEDashboardVM] Load error: " +
+                    $"{ex.Message}");
             }
             finally
             {
                 IsBusy = false;
+
                 NotifyEmptyStates();
             }
         }
 
-        // ── Pagination: borrowed tools ────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // BORROWED PAGINATION
+        // ─────────────────────────────────────────────────────────
+
         private void AppendBorrowedPage()
         {
-            var slice = _allBorrowedTools
-                .Skip(_borrowedToolPage * ToolPageSize)
-                .Take(ToolPageSize);
+            var slice =
+                _allBorrowedTools
+                    .Skip(
+                        _borrowedToolPage *
+                        ToolPageSize)
+                    .Take(
+                        ToolPageSize);
 
             foreach (var tool in slice)
+            {
                 RecentTools.Add(tool);
+            }
 
             UpdateBorrowedPaginationState();
         }
 
         private void LoadNextBorrowedPage()
         {
-            if (!HasMoreBorrowedTools) return;
+            if (!HasMoreBorrowedTools)
+                return;
+
             _borrowedToolPage++;
+
             AppendBorrowedPage();
         }
 
         private void UpdateBorrowedPaginationState()
         {
-            int visible = RecentTools.Count;
-            int total = _allBorrowedTools.Count;
-            HasMoreBorrowedTools = visible < total;
-            BorrowedToolsLabel = total == 0
-                ? string.Empty
-                : $"Showing {visible} of {total} borrowed tools";
-            ((Command)LoadMoreBorrowedCommand).ChangeCanExecute();
+            int visible =
+                RecentTools.Count;
+
+            int total =
+                _allBorrowedTools.Count;
+
+            HasMoreBorrowedTools =
+                visible < total;
+
+            BorrowedToolsLabel =
+                total == 0
+                    ? string.Empty
+                    : $"Showing {visible} of " +
+                      $"{total} borrowed tools";
         }
 
-        // ── Pagination: worker activity ───────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // WORKER PAGINATION
+        // ─────────────────────────────────────────────────────────
+
         private void AppendWorkerPage()
         {
-            var slice = _allWorkerActivities
-                .Skip(_workerPage * WorkerPageSize)
-                .Take(WorkerPageSize);
+            var slice =
+                _allWorkerActivities
+                    .Skip(
+                        _workerPage *
+                        WorkerPageSize)
+                    .Take(
+                        WorkerPageSize);
 
             foreach (var item in slice)
+            {
                 WorkerActivities.Add(item);
+            }
 
             UpdateWorkerPaginationState();
         }
 
         private void LoadNextWorkerPage()
         {
-            if (!HasMoreWorkers) return;
+            if (!HasMoreWorkers)
+                return;
+
             _workerPage++;
+
             AppendWorkerPage();
         }
 
         private void UpdateWorkerPaginationState()
         {
-            int visible = WorkerActivities.Count;
-            int total = _allWorkerActivities.Count;
-            HasMoreWorkers = visible < total;
-            WorkerActivityLabel = total == 0
-                ? string.Empty
-                : $"Showing {visible} of {total} workers";
-            ((Command)LoadMoreWorkersCommand).ChangeCanExecute();
+            int visible =
+                WorkerActivities.Count;
+
+            int total =
+                _allWorkerActivities.Count;
+
+            HasMoreWorkers =
+                visible < total;
+
+            WorkerActivityLabel =
+                total == 0
+                    ? string.Empty
+                    : $"Showing {visible} of " +
+                      $"{total} workers";
         }
 
-        // ── Refresh ───────────────────────────────────────────────────────────
-        public async Task RefreshOnAppearingAsync() =>
-            await LoadAsync(forceRefresh: false);
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
+
+        public async Task RefreshOnAppearingAsync()
+        {
+            await LoadAsync(
+                forceRefresh: false);
+        }
 
         private async Task RefreshAsync()
         {
             IsRefreshing = true;
-            await LoadAsync(forceRefresh: true);
-            IsRefreshing = false;
-        }
-
-        // ── Handle Damage Report ──────────────────────────────────────────────
-        private async Task HandleDamageReportAsync(DamageReport report)
-        {
-            if (report is null) return;
-
-            var action = await Shell.Current.DisplayActionSheet(
-                $"Handle Report — {report.ToolName}",
-                "Cancel", null,
-                "✅ Mark as Resolved",
-                "🔨 Send to Repair",
-                "❌ Mark Tool as Lost");
-
-            if (action == "Cancel" || string.IsNullOrEmpty(action)) return;
 
             try
             {
-                var allReports = await _firebase.GetAllDamageReportsRawAsync();
-                var match = allReports.FirstOrDefault(r =>
-                    r.Report.ToolId == report.ToolId &&
-                    r.Report.WorkerId == report.WorkerId);
-
-                if (match == null) return;
-
-                match.Report.Status = action switch
-                {
-                    "✅ Mark as Resolved" => "Resolved",
-                    "🔨 Send to Repair" => "UnderRepair",
-                    "❌ Mark Tool as Lost" => "Lost",
-                    _ => match.Report.Status
-                };
-
-                await _firebase.UpdateDamageReportAsync(match.Key, match.Report);
-
-                var tool = await _firebase.GetToolByIdAsync(report.ToolId);
-                if (tool != null)
-                {
-                    tool.Status = action switch
-                    {
-                        "✅ Mark as Resolved" => "Available",
-                        "🔨 Send to Repair" => "UnderRepair",
-                        "❌ Mark Tool as Lost" => "Lost",
-                        _ => tool.Status
-                    };
-
-                    if (tool.Status == "Available" || tool.Status == "Lost")
-                    {
-                        tool.AssignedWorkerId = string.Empty;
-                        tool.AssignedWorkerName = string.Empty;
-                        tool.BorrowDate = null;
-                    }
-
-                    await _firebase.UpdateToolAsync(tool);
-                }
-
-                await Shell.Current.DisplayAlert(
-                    "✅ Updated",
-                    $"Damage report for {report.ToolName} has been updated.",
-                    "OK");
-
-                await LoadAsync(forceRefresh: true);
+                await LoadAsync(
+                    forceRefresh: true);
             }
-            catch (Exception ex)
+            finally
             {
-                await Shell.Current.DisplayAlert(
-                    "Error", $"Could not update report.\n{ex.Message}", "OK");
+                IsRefreshing = false;
             }
         }
 
-        // ── Navigation ────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // QR SCAN
+        // ─────────────────────────────────────────────────────────
+
         private async Task ScanQrAsync()
         {
             try
             {
-                await Shell.Current.GoToAsync(nameof(QrScannerView));
+                await Shell.Current
+                    .GoToAsync(
+                        nameof(QrScannerView));
             }
             catch (Exception ex)
             {
-                await Shell.Current.DisplayAlert("Error", ex.Message, "OK");
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    ex.Message,
+                    "OK");
             }
         }
 
+        // ─────────────────────────────────────────────────────────
+        // LOGOUT
+        // ─────────────────────────────────────────────────────────
+
         private async Task LogoutAsync()
         {
-            bool confirm = await Shell.Current.DisplayAlert(
-                "Logout", "Are you sure you want to logout?",
-                "Logout", "Cancel");
-            if (!confirm) return;
+            bool confirm =
+                await Shell.Current.DisplayAlert(
+                    "Logout",
+                    "Are you sure you want to logout?",
+                    "Logout",
+                    "Cancel");
+
+            if (!confirm)
+                return;
+
             _auth.Logout();
-            await Shell.Current.GoToAsync("//LoginView");
+
+            await Shell.Current
+                .GoToAsync(
+                    "//LoginView");
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // CLEAR
+        // ─────────────────────────────────────────────────────────
+
+        private void ClearDashboard()
+        {
+            TotalTools = 0;
+            AvailableTools = 0;
+            BorrowedTools = 0;
+            DamagedTools = 0;
+            TotalWorkers = 0;
+            PendingReports = 0;
+            PendingReturnCheckInCount = 0;
+
+            RecentTools.Clear();
+            WorkerActivities.Clear();
+            PendingDamageReports.Clear();
+
+            _allBorrowedTools.Clear();
+            _allWorkerActivities.Clear();
+
+            BorrowedToolsLabel =
+                string.Empty;
+
+            WorkerActivityLabel =
+                string.Empty;
+
+            HasMoreBorrowedTools =
+                false;
+
+            HasMoreWorkers =
+                false;
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // HELPERS
+        // ─────────────────────────────────────────────────────────
+
         private void NotifyEmptyStates()
         {
-            OnPropertyChanged(nameof(NoBorrowedTools));
-            OnPropertyChanged(nameof(NoWorkerActivity));
+            OnPropertyChanged(
+                nameof(NoBorrowedTools));
+
+            OnPropertyChanged(
+                nameof(NoWorkerActivity));
         }
 
-        private static string GetInitials(string? name)
+        private static string GetInitials(
+            string? name)
         {
-            if (string.IsNullOrWhiteSpace(name)) return "PE";
-            var parts = name.Trim().Split(' ',
-                StringSplitOptions.RemoveEmptyEntries);
+            if (string.IsNullOrWhiteSpace(name))
+                return "PE";
+
+            var parts =
+                name
+                    .Trim()
+                    .Split(
+                        ' ',
+                        StringSplitOptions
+                            .RemoveEmptyEntries);
+
             return parts.Length >= 2
-                ? $"{parts[0][0]}{parts[^1][0]}".ToUpper()
-                : name[0].ToString().ToUpper();
+                ? $"{parts[0][0]}{parts[^1][0]}"
+                    .ToUpper()
+                : name[0]
+                    .ToString()
+                    .ToUpper();
         }
 
         private static string GetGreeting()
         {
-            var h = DateTime.Now.Hour;
-            return h < 12 ? "Good morning"
-                 : h < 17 ? "Good afternoon"
-                 : "Good evening";
+            var hour =
+                DateTime.Now.Hour;
+
+            return hour < 12
+                ? "Good morning"
+                : hour < 17
+                    ? "Good afternoon"
+                    : "Good evening";
         }
     }
 }

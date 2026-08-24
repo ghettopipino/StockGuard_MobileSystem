@@ -1,24 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8" ?>
-<!--
-    ARCHITECTURE:
-    ─────────────
-    All main pages are FlyoutItems with FlyoutItemIsVisible="False".
-    Shell still owns their routes (enabling GoToAsync("//Route")),
-    but the flyout UI is entirely replaced by Shell.FlyoutContent.
 
-    Shell.FlyoutContent = custom ScrollView with:
-      • App header (logo + app name)
-      • Section: Main
-      • Section: Operations
-      • Section: Reports & Admin
-      • Logout button pinned at bottom
-
-    Each menu item is a Button whose Clicked handler in AppShell.xaml.cs
-    calls GoToAsync("//Route") then sets FlyoutIsPresented = false.
-
-    Detail pages (ToolListView, ProjectDetailsView, etc.) remain in
-    Routing.RegisterRoute — they are NOT FlyoutItems.
--->
 <Shell
     x:Class="StockGuard.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
@@ -30,291 +11,525 @@
     Shell.NavBarIsVisible="False"
     FlyoutBackgroundColor="{DynamicResource BgSurface}">
 
-    <!-- ══════════════════════════════════════════════════════════════
-         RESOURCES — must be declared FIRST so FlyoutContent can
-         reference FlyoutItemStyle via StaticResource without a
-         XamlParseException ("StaticResource not found").
-    ══════════════════════════════════════════════════════════════════ -->
+    <!-- ============================================================
+         RESOURCES
+    ============================================================= -->
     <Shell.Resources>
-        <Style x:Key="FlyoutItemStyle" TargetType="Button">
-            <Setter Property="BackgroundColor" Value="Transparent"/>
-            <Setter Property="TextColor"       Value="{DynamicResource Text2}"/>
-            <Setter Property="FontSize"        Value="14"/>
-            <Setter Property="HorizontalOptions" Value="Fill"/>
-            <Setter Property="CornerRadius"    Value="10"/>
-            <Setter Property="HeightRequest"   Value="46"/>
-            <Setter Property="ContentLayout"   Value="Left,14"/>
-            <Setter Property="Padding"         Value="0"/>
+
+        <!--
+            Flyout navigation button style.
+
+            Button does NOT support:
+            HorizontalTextAlignment
+            VerticalTextAlignment
+
+            ContentLayout is used instead.
+        -->
+        <Style x:Key="FlyoutItemStyle"
+               TargetType="Button">
+
+            <Setter Property="BackgroundColor"
+                    Value="Transparent"/>
+
+            <Setter Property="TextColor"
+                    Value="{DynamicResource Text2}"/>
+
+            <Setter Property="FontSize"
+                    Value="14"/>
+
+            <Setter Property="HorizontalOptions"
+                    Value="Fill"/>
+
+            <Setter Property="CornerRadius"
+                    Value="10"/>
+
+            <Setter Property="HeightRequest"
+                    Value="46"/>
+
+            <!-- Position button content toward the left -->
+            <Setter Property="ContentLayout"
+                    Value="Left,0"/>
+
+            <!-- Left padding -->
+            <Setter Property="Padding"
+                    Value="14,0,0,0"/>
+
         </Style>
-        <converters:IntToBoolConverter x:Key="IntToBoolConverter"/>
+
+
+        <!-- Converts pending counts to visibility -->
+        <converters:IntToBoolConverter
+            x:Key="IntToBoolConverter"/>
+
     </Shell.Resources>
 
-    <!-- ══════════════════════════════════════════════════════════════
-         ALL SHELL PAGES
-         FlyoutItemIsVisible="False" on every item — the custom
-         Shell.FlyoutContent below replaces all default flyout entries.
-    ══════════════════════════════════════════════════════════════════ -->
 
-    <!--
-        HomeView — first page shown on app launch (landing/splash).
-        Navigate away with GoToAsync("//LoginView") on Get Started.
-    -->
-    <!--<ShellContent Route="HomeView"
-                  FlyoutItemIsVisible="False"
-                  ContentTemplate="{DataTemplate views:HomeView}"/>-->
+    <!-- ============================================================
+         SHELL PAGES
+    ============================================================= -->
 
-    <ShellContent Route="LoginView"
-                  FlyoutItemIsVisible="False"
-                  ContentTemplate="{DataTemplate views:LoginView}"/>
 
-    <!--
-        WorkerDashboardView — worker root page.
-        Plain ShellContent (not FlyoutItem) because workers have no
-        sidebar. Shell still knows the route so //WorkerDashboardView
-        works. FlyoutItemIsVisible="False" keeps it out of the flyout.
-    -->
-    <ShellContent Route="WorkerDashboardView"
-                  FlyoutItemIsVisible="False"
-                  ContentTemplate="{DataTemplate views:WorkerDashboardView}"/>
+    <!-- LOGIN -->
+    <ShellContent
+        Route="LoginView"
+        FlyoutItemIsVisible="False"
+        ContentTemplate="{DataTemplate views:LoginView}"/>
 
-    <FlyoutItem Route="PEDashboardView"       FlyoutItemIsVisible="False">
-        <ShellContent Route="PEDashboardView"
-                      ContentTemplate="{DataTemplate views:PEDashboardView}"/>
+
+    <!-- WORKER DASHBOARD -->
+    <ShellContent
+        Route="WorkerDashboardView"
+        FlyoutItemIsVisible="False"
+        ContentTemplate="{DataTemplate views:WorkerDashboardView}"/>
+
+
+    <!-- PROJECT ENGINEER DASHBOARD -->
+    <FlyoutItem
+        Route="PEDashboardView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="PEDashboardView"
+            ContentTemplate="{DataTemplate views:PEDashboardView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="ProjectManagementView" FlyoutItemIsVisible="False">
-        <ShellContent Route="ProjectManagementView"
-                      ContentTemplate="{DataTemplate views:ProjectManagementView}"/>
+
+    <!-- PROJECT MANAGEMENT -->
+    <FlyoutItem
+        Route="ProjectManagementView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="ProjectManagementView"
+            ContentTemplate="{DataTemplate views:ProjectManagementView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="EquipmentCatalogView"  FlyoutItemIsVisible="False">
-        <ShellContent Route="EquipmentCatalogView"
-                      ContentTemplate="{DataTemplate views:EquipmentCatalogView}"/>
+
+    <!-- EQUIPMENT CATALOG -->
+    <FlyoutItem
+        Route="EquipmentCatalogView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="EquipmentCatalogView"
+            ContentTemplate="{DataTemplate views:EquipmentCatalogView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="ToolDetailsView"       FlyoutItemIsVisible="False">
-        <ShellContent Route="ToolDetailsView"
-                      ContentTemplate="{DataTemplate views:ToolDetailsView}"/>
+
+    <!-- TOOL DETAILS -->
+    <FlyoutItem
+        Route="ToolDetailsView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="ToolDetailsView"
+            ContentTemplate="{DataTemplate views:ToolDetailsView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="WorkerManagementView"  FlyoutItemIsVisible="False">
-        <ShellContent Route="WorkerManagementView"
-                      ContentTemplate="{DataTemplate views:WorkerManagementView}"/>
+
+    <!-- WORKER MANAGEMENT -->
+    <FlyoutItem
+        Route="WorkerManagementView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="WorkerManagementView"
+            ContentTemplate="{DataTemplate views:WorkerManagementView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="PauseRequestsView"     FlyoutItemIsVisible="False">
-        <ShellContent Route="PauseRequestsView"
-                      ContentTemplate="{DataTemplate views:PauseRequestsView}"/>
+
+    <!-- RETURN AND CHECK-IN -->
+    <FlyoutItem
+        Route="PauseRequestsView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="PauseRequestsView"
+            ContentTemplate="{DataTemplate views:PauseRequestsView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="DamageReportsView"     FlyoutItemIsVisible="False">
-        <ShellContent Route="DamageReportsView"
-                      ContentTemplate="{DataTemplate views:DamageReportsView}"/>
+
+    <!-- DAMAGE REPORT -->
+    <FlyoutItem
+        Route="DamageReportsView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="DamageReportsView"
+            ContentTemplate="{DataTemplate views:DamageReportsView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="TransactionHistoryView" FlyoutItemIsVisible="False">
-        <ShellContent Route="TransactionHistoryView"
-                      ContentTemplate="{DataTemplate views:TransactionHistoryView}"/>
+
+    <!-- TRANSACTION HISTORY -->
+    <FlyoutItem
+        Route="TransactionHistoryView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="TransactionHistoryView"
+            ContentTemplate="{DataTemplate views:TransactionHistoryView}"/>
+
     </FlyoutItem>
 
-    <FlyoutItem Route="ProjectAnalyticsView"  FlyoutItemIsVisible="False">
-        <ShellContent Route="ProjectAnalyticsView"
-                      ContentTemplate="{DataTemplate views:ProjectAnalyticsView}"/>
+
+    <!-- PROJECT ANALYTICS -->
+    <FlyoutItem
+        Route="ProjectAnalyticsView"
+        FlyoutItemIsVisible="False">
+
+        <ShellContent
+            Route="ProjectAnalyticsView"
+            ContentTemplate="{DataTemplate views:ProjectAnalyticsView}"/>
+
     </FlyoutItem>
 
-    <!-- ══════════════════════════════════════════════════════════════
-         CUSTOM FLYOUT CONTENT
-         Replaces the default list of FlyoutItems entirely.
-         Layout: header | scrollable nav sections | logout pinned bottom
-    ══════════════════════════════════════════════════════════════════ -->
+
+
+    <!-- ============================================================
+         CUSTOM FLYOUT
+    ============================================================= -->
+
     <Shell.FlyoutContent>
-        <Grid RowDefinitions="Auto,*,Auto"
-              BackgroundColor="{DynamicResource BgSurface}">
 
-            <!-- ── HEADER ──────────────────────────────────────────── -->
-            <VerticalStackLayout Grid.Row="0"
-                                 Padding="24,52,24,20"
-                                 Spacing="4"
-                                 BackgroundColor="{DynamicResource BgElevated}">
-                <Label Text="StockGuard"
-                       FontSize="22" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text1}"/>
-                <Label Text="Admin Panel"
-                       FontSize="12"
-                       TextColor="{DynamicResource Text3}"/>
+        <Grid
+            RowDefinitions="Auto,*,Auto"
+            BackgroundColor="{DynamicResource BgSurface}">
+
+
+            <!-- ====================================================
+                 HEADER
+            ===================================================== -->
+
+            <VerticalStackLayout
+                Grid.Row="0"
+                Padding="24,52,24,20"
+                Spacing="4"
+                BackgroundColor="{DynamicResource BgElevated}">
+
+                <Label
+                    Text="StockGuard"
+                    FontSize="22"
+                    FontAttributes="Bold"
+                    TextColor="{DynamicResource Text1}"/>
+
+                <Label
+                    Text="Admin Panel"
+                    FontSize="12"
+                    TextColor="{DynamicResource Text3}"/>
+
             </VerticalStackLayout>
 
-            <!-- ── SCROLLABLE NAV ───────────────────────────────────── -->
+
+
+            <!-- ====================================================
+                 NAVIGATION
+            ===================================================== -->
+
             <ScrollView Grid.Row="1">
-                <VerticalStackLayout Padding="12,16,12,8" Spacing="2">
 
-                    <!-- ▌SECTION: Main ──────────────────────────── -->
-                    <!--<Label Text="MAIN"
-                           FontSize="10" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text3}"
-                           CharacterSpacing="2"
-                           Margin="12,0,0,6"/>-->
+                <VerticalStackLayout
+                    Padding="12,16,12,8"
+                    Spacing="2">
 
-                    <!--<Button x:Name="BtnDashboard"
-                            Text="🏠  Dashboard"
-                            Clicked="OnDashboardClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>-->
 
-                    <!-- ▌SECTION: Operations ────────────────────── -->
-                    <Label Text="OPERATIONS"
-                           FontSize="10" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text3}"
-                           CharacterSpacing="2"
-                           Margin="12,16,0,6"/>
+                    <!-- ============================================
+                         MAIN
+                    ============================================= -->
 
-                    <Button x:Name="BtnProjects"
-                            Text="Projects"
-                            Clicked="OnProjectsClicked"
+                    <Label
+                        Text="MAIN"
+                        FontSize="10"
+                        FontAttributes="Bold"
+                        TextColor="{DynamicResource Text3}"
+                        CharacterSpacing="2"
+                        Margin="12,0,0,6"/>
+
+
+                    <!-- DASHBOARD -->
+                    <Button
+                        x:Name="BtnDashboard"
+                        Text="Dashboard"
+                        Clicked="OnDashboardClicked"
+                        Style="{StaticResource FlyoutItemStyle}"/>
+
+
+
+                    <!-- ============================================
+                         OPERATIONS
+                    ============================================= -->
+
+                    <Label
+                        Text="OPERATIONS"
+                        FontSize="10"
+                        FontAttributes="Bold"
+                        TextColor="{DynamicResource Text3}"
+                        CharacterSpacing="2"
+                        Margin="12,16,0,6"/>
+
+
+                    <!-- PROJECTS -->
+                    <Button
+                        x:Name="BtnProjects"
+                        Text="Projects"
+                        Clicked="OnProjectsClicked"
+                        Style="{StaticResource FlyoutItemStyle}"/>
+
+
+                    <!-- EQUIPMENT CATALOG -->
+                    <Button
+                        x:Name="BtnCatalog"
+                        Text="Equipment Catalog"
+                        Clicked="OnCatalogClicked"
+                        Style="{StaticResource FlyoutItemStyle}"/>
+
+
+                    <!-- TOOLS -->
+                    <Button
+                        x:Name="BtnTools"
+                        Text="Tools"
+                        Clicked="OnToolsClicked"
+                        Style="{StaticResource FlyoutItemStyle}"/>
+
+
+
+                    <!-- ============================================
+                         WORKERS + PENDING BADGE
+                    ============================================= -->
+
+                    <Grid>
+
+                        <Button
+                            x:Name="BtnWorkers"
+                            Text="Workers"
+                            Clicked="OnWorkersClicked"
                             Style="{StaticResource FlyoutItemStyle}"/>
 
-                    <Button x:Name="BtnCatalog"
-                            Text="Equipment Catalog"
-                            Clicked="OnCatalogClicked"
+
+                        <Frame
+                            IsVisible="{Binding PendingWorkers,
+                                Converter={StaticResource IntToBoolConverter}}"
+                            BackgroundColor="#ef4444"
+                            BorderColor="Transparent"
+                            CornerRadius="10"
+                            WidthRequest="22"
+                            HeightRequest="22"
+                            Padding="0"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,10,0">
+
+                            <Label
+                                Text="{Binding PendingWorkers}"
+                                FontSize="10"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"/>
+
+                        </Frame>
+
+                    </Grid>
+
+
+
+                    <!-- ============================================
+                         REPORTS & ADMIN
+                    ============================================= -->
+
+                    <Label
+                        Text="REPORTS &amp; ADMIN"
+                        FontSize="10"
+                        FontAttributes="Bold"
+                        TextColor="{DynamicResource Text3}"
+                        CharacterSpacing="2"
+                        Margin="12,16,0,6"/>
+
+
+
+                    <!-- ============================================
+                         RETURN AND CHECK-IN + BADGE
+                    ============================================= -->
+
+                    <Grid>
+
+                        <Button
+                            x:Name="BtnPause"
+                            Text="Return and Check-In"
+                            Clicked="OnPauseClicked"
                             Style="{StaticResource FlyoutItemStyle}"/>
 
-                    <Button x:Name="BtnTools"
-                            Text="Tools"
-                            Clicked="OnToolsClicked"
+
+                        <Frame
+                            IsVisible="{Binding PendingPause,
+                                Converter={StaticResource IntToBoolConverter}}"
+                            BackgroundColor="#ef4444"
+                            BorderColor="Transparent"
+                            CornerRadius="10"
+                            WidthRequest="22"
+                            HeightRequest="22"
+                            Padding="0"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,10,0">
+
+                            <Label
+                                Text="{Binding PendingPause}"
+                                FontSize="10"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"/>
+
+                        </Frame>
+
+                    </Grid>
+
+
+
+                    <!-- ============================================
+                         DAMAGE REPORT + BADGE
+                    ============================================= -->
+
+                    <Grid>
+
+                        <Button
+                            x:Name="BtnDamage"
+                            Text="Damage Report"
+                            Clicked="OnDamageClicked"
                             Style="{StaticResource FlyoutItemStyle}"/>
 
-                    <!-- Workers — with badge -->
-                    <Grid>
-                        <Button x:Name="BtnWorkers"
-                                Text="  Workers"
-                                Clicked="OnWorkersClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>
-                        <Frame IsVisible="{Binding PendingWorkers,
-                               Converter={StaticResource IntToBoolConverter}}"
-                               BackgroundColor="#ef4444"
-                               BorderColor="Transparent"
-                               CornerRadius="10"
-                               WidthRequest="22" HeightRequest="22"
-                               Padding="0"
-                               HorizontalOptions="End"
-                               VerticalOptions="Center"
-                               Margin="0,0,10,0">
-                            <Label Text="{Binding PendingWorkers}"
-                                   FontSize="10" FontAttributes="Bold"
-                                   TextColor="White"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"/>
+
+                        <Frame
+                            IsVisible="{Binding PendingDamage,
+                                Converter={StaticResource IntToBoolConverter}}"
+                            BackgroundColor="#ef4444"
+                            BorderColor="Transparent"
+                            CornerRadius="10"
+                            WidthRequest="22"
+                            HeightRequest="22"
+                            Padding="0"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,10,0">
+
+                            <Label
+                                Text="{Binding PendingDamage}"
+                                FontSize="10"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"/>
+
                         </Frame>
+
                     </Grid>
 
-                    <!-- ▌SECTION: Reports & Admin ────────────────── -->
-                    <Label Text="REPORTS &amp; ADMIN"
-                           FontSize="10" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text3}"
-                           CharacterSpacing="2"
-                           Margin="12,16,0,6"/>
 
-                    <!-- Pause Requests — with badge -->
+
+                    <!-- ============================================
+                         TRANSACTIONS + BADGE
+                    ============================================= -->
+
                     <Grid>
-                        <Button x:Name="BtnPause"
-                                Text=" Pause and Return"
-                                Clicked="OnPauseClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>
-                        
-                        <Frame IsVisible="{Binding PendingPause,
-                               Converter={StaticResource IntToBoolConverter}}"
-                               BackgroundColor="#ef4444"
-                               BorderColor="Transparent"
-                               CornerRadius="10"
-                               WidthRequest="22" HeightRequest="22"
-                               Padding="0"
-                               HorizontalOptions="End"
-                               VerticalOptions="Center"
-                               Margin="0,0,10,0">
-                            <Label Text="{Binding PendingPause}"
-                                   FontSize="10" FontAttributes="Bold"
-                                   TextColor="White"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"/>
+
+                        <Button
+                            x:Name="BtnTransactions"
+                            Text="Transactions"
+                            Clicked="OnTransactionsClicked"
+                            Style="{StaticResource FlyoutItemStyle}"/>
+
+
+                        <Frame
+                            IsVisible="{Binding PendingTransactions,
+                                Converter={StaticResource IntToBoolConverter}}"
+                            BackgroundColor="#ef4444"
+                            BorderColor="Transparent"
+                            CornerRadius="10"
+                            WidthRequest="22"
+                            HeightRequest="22"
+                            Padding="0"
+                            HorizontalOptions="End"
+                            VerticalOptions="Center"
+                            Margin="0,0,10,0">
+
+                            <Label
+                                Text="{Binding PendingTransactions}"
+                                FontSize="10"
+                                FontAttributes="Bold"
+                                TextColor="White"
+                                HorizontalOptions="Center"
+                                VerticalOptions="Center"/>
+
                         </Frame>
+
                     </Grid>
 
-                    <!-- Damage Report — with badge -->
-                    <Grid>
-                        <Button x:Name="BtnDamage"
-                                Text="  Damage Report"
-                                Clicked="OnDamageClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>
-                        <Frame IsVisible="{Binding PendingDamage,
-                               Converter={StaticResource IntToBoolConverter}}"
-                               BackgroundColor="#ef4444"
-                               BorderColor="Transparent"
-                               CornerRadius="10"
-                               WidthRequest="22" HeightRequest="22"
-                               Padding="0"
-                               HorizontalOptions="End"
-                               VerticalOptions="Center"
-                               Margin="0,0,10,0">
-                            <Label Text="{Binding PendingDamage}"
-                                   FontSize="10" FontAttributes="Bold"
-                                   TextColor="White"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"/>
-                        </Frame>
-                    </Grid>
 
-                     <!--Transactions — with badge--> 
-                    <Grid>
-                        <Button x:Name="BtnTransactions"
-                                Text="Transactions"
-                                Clicked="OnTransactionsClicked"
-                                Style="{StaticResource FlyoutItemStyle}"/>
-                        <Frame IsVisible="{Binding PendingTransactions,
-                               Converter={StaticResource IntToBoolConverter}}"
-                               BackgroundColor="#ef4444"
-                               BorderColor="Transparent"
-                               CornerRadius="10"
-                               WidthRequest="22" HeightRequest="22"
-                               Padding="0"
-                               HorizontalOptions="End"
-                               VerticalOptions="Center"
-                               Margin="0,0,10,0">
-                            <Label Text="{Binding PendingTransactions}"
-                                   FontSize="10" FontAttributes="Bold"
-                                   TextColor="White"
-                                   HorizontalOptions="Center"
-                                   VerticalOptions="Center"/>
-                        </Frame>
-                    </Grid>
 
-                    <!--<Button x:Name="BtnAnalytics"
-                            Text="📊  Analytics"
-                            Clicked="OnAnalyticsClicked"
-                            Style="{StaticResource FlyoutItemStyle}"/>-->
+                    <!-- ============================================
+                         ANALYTICS
+                         Currently disabled
+                    =============================================
+
+                    <Button
+                        x:Name="BtnAnalytics"
+                        Text="Analytics"
+                        Clicked="OnAnalyticsClicked"
+                        Style="{StaticResource FlyoutItemStyle}"/>
+
+                    -->
+
 
                 </VerticalStackLayout>
+
             </ScrollView>
 
-            <!-- ── LOGOUT (pinned bottom) ───────────────────────────── -->
-            <VerticalStackLayout Grid.Row="2"
-                                 Padding="12,12,12,36"
-                                 Spacing="0">
 
-                <BoxView HeightRequest="1"
-                         Color="{DynamicResource BorderSoft}"
-                         Margin="0,0,0,12"/>
 
-                <Button Text="  Logout"
-                        Clicked="OnLogoutClicked"
-                        BackgroundColor="{DynamicResource RedBg}"
-                        TextColor="{DynamicResource Red}"
-                        FontSize="14" FontAttributes="Bold"
-                        HorizontalOptions="Fill"
-                        CornerRadius="12"
-                        HeightRequest="48"
-                        ContentLayout="Left,12"/>
+            <!-- ====================================================
+                 LOGOUT
+            ===================================================== -->
+
+            <VerticalStackLayout
+                Grid.Row="2"
+                Padding="12,12,12,36"
+                Spacing="0">
+
+
+                <!-- DIVIDER -->
+                <BoxView
+                    HeightRequest="1"
+                    Color="{DynamicResource BorderSoft}"
+                    Margin="0,0,0,12"/>
+
+
+                <!-- LOGOUT BUTTON -->
+                <Button
+                    Text="Logout"
+                    Clicked="OnLogoutClicked"
+                    BackgroundColor="{DynamicResource RedBg}"
+                    TextColor="{DynamicResource Red}"
+                    FontSize="14"
+                    FontAttributes="Bold"
+                    HorizontalOptions="Fill"
+                    CornerRadius="12"
+                    HeightRequest="48"
+                    ContentLayout="Left,0"
+                    Padding="14,0,0,0"/>
+
+
             </VerticalStackLayout>
 
+
         </Grid>
+
     </Shell.FlyoutContent>
 
 </Shell>

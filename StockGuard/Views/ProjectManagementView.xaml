@@ -25,7 +25,7 @@
                            TextColor="{DynamicResource Text1}"
                            HorizontalOptions="Center"
                            VerticalOptions="Center"/>
-                    <Button Grid.Column="2" Text="🔄"
+                        <Button Grid.Column="2" Text="↻"
                             Command="{Binding RefreshCommand}"
                             BackgroundColor="Transparent"
                             TextColor="{DynamicResource Text2}"

@@ -403,6 +403,10 @@ namespace StockGuard.ViewModels
         // TRANSACTION LOG
         // ─────────────────────────────────────────────────────────
 
+        // ─────────────────────────────────────────────────────────
+        // TRANSACTION LOG
+        // ─────────────────────────────────────────────────────────
+
         private async Task LogAsync(
             string action,
             string description,
@@ -411,7 +415,8 @@ namespace StockGuard.ViewModels
             if (Tool == null)
                 return;
 
-            var user = _auth.CurrentUser;
+            var user =
+                _auth.CurrentUser;
 
             if (user == null)
                 return;
@@ -419,11 +424,15 @@ namespace StockGuard.ViewModels
             await _firebase.LogTransactionAsync(
                 new TransactionLog
                 {
+                    // ── EQUIPMENT ────────────────────────────────
+
                     ToolId =
                         Tool.ToolId,
 
                     ToolName =
                         Tool.ToolName,
+
+                    // ── RESPONSIBLE WORKER ───────────────────────
 
                     WorkerId =
                         user.UniqueKey,
@@ -431,11 +440,27 @@ namespace StockGuard.ViewModels
                     WorkerName =
                         user.FullName,
 
+                    // ── PROJECT ──────────────────────────────────
+
                     ProjectId =
-                        Tool.BorrowedProjectId,
+                        Tool.BorrowedProjectId ?? string.Empty,
 
                     ProjectName =
-                        Tool.BorrowedProjectName,
+                        Tool.BorrowedProjectName ?? string.Empty,
+
+                    // ── PERSON WHO PERFORMED ACTION ──────────────
+                    //
+                    // This ViewModel is worker-side, so the
+                    // currently logged-in worker performed the
+                    // action.
+
+                    PerformedById =
+                        user.UniqueKey,
+
+                    PerformedByName =
+                        user.FullName,
+
+                    // ── ACTIVITY ─────────────────────────────────
 
                     Action =
                         action,
@@ -444,7 +469,9 @@ namespace StockGuard.ViewModels
                         description,
 
                     Condition =
-                        condition,
+                        string.IsNullOrWhiteSpace(condition)
+                            ? "Good"
+                            : condition,
 
                     Date =
                         DateTime.Now

@@ -520,6 +520,8 @@ namespace StockGuard.ViewModels
 
                 // ── TRANSACTION ────────────────────────────
 
+                // ── TRANSACTION ────────────────────────────
+
                 await _firebase
                     .LogTransactionAsync(
                         new TransactionLog
@@ -541,6 +543,13 @@ namespace StockGuard.ViewModels
 
                             ProjectName =
                                 report.ProjectName,
+
+                            // THIS IS THE IMPORTANT FIX
+                            PerformedById =
+                                user.UniqueKey,
+
+                            PerformedByName =
+                                user.FullName,
 
                             Action =
                                 report.Status,

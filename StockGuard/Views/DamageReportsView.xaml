@@ -97,7 +97,7 @@
                             HasShadow="False">
 
                             <VerticalStackLayout
-                                Padding="10,14"
+                                Padding="0,14"
                                 Spacing="4"
                                 HorizontalOptions="Center">
 
@@ -129,7 +129,7 @@
                             HasShadow="False">
 
                             <VerticalStackLayout
-                                Padding="10,14"
+                                Padding="0,14"
                                 Spacing="4"
                                 HorizontalOptions="Center">
 
@@ -161,7 +161,7 @@
                             HasShadow="False">
 
                             <VerticalStackLayout
-                                Padding="10,14"
+                                Padding="0,14"
                                 Spacing="4"
                                 HorizontalOptions="Center">
 
@@ -405,7 +405,7 @@
                                                 <Label
                                                     Grid.Row="0"
                                                     Grid.Column="0"
-                                                    Text="Worker"
+                                                    Text="Worker: "
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Text3}"/>
 
@@ -422,7 +422,7 @@
                                                 <Label
                                                     Grid.Row="1"
                                                     Grid.Column="0"
-                                                    Text="Project"
+                                                    Text="Project: "
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Text3}"/>
 
@@ -438,7 +438,7 @@
                                                 <Label
                                                     Grid.Row="2"
                                                     Grid.Column="0"
-                                                    Text="Project Engineer"
+                                                    Text="Project Engineer: "
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Text3}"/>
 
