@@ -176,7 +176,12 @@
                                                                FontAttributes="Bold"
                                                                TextColor="{Binding RequestTypeColor}"/>
                                                     </Frame>
-                                                    <Label FontSize="12"
+                                                    <Label
+                                                    Text="{Binding RequestDescription}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text2}"
+                                                    LineBreakMode="WordWrap"/>
+                                                    <!--<Label FontSize="12"
                                                            TextColor="{DynamicResource Text2}">
                                                         <Label.FormattedText>
                                                             <FormattedString>
@@ -186,7 +191,7 @@
                                                                       TextColor="{DynamicResource Blue}"/>
                                                             </FormattedString>
                                                         </Label.FormattedText>
-                                                    </Label>
+                                                    </Label>-->
                                                     <Label Text="{Binding ToolId}"
                                                            FontSize="11"
                                                            TextColor="{DynamicResource Text3}"/>

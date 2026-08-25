@@ -367,7 +367,7 @@
 
 
                         <Frame
-                            IsVisible="{Binding PendingPause,
+                            IsVisible="{Binding PendingReturnCheckIn,
                                 Converter={StaticResource IntToBoolConverter}}"
                             BackgroundColor="#ef4444"
                             BorderColor="Transparent"
@@ -380,7 +380,7 @@
                             Margin="0,0,10,0">
 
                             <Label
-                                Text="{Binding PendingPause}"
+                                Text="{Binding PendingReturnCheckIn}"
                                 FontSize="10"
                                 FontAttributes="Bold"
                                 TextColor="White"
@@ -447,7 +447,7 @@
 
 
                         <Frame
-                            IsVisible="{Binding PendingTransactions,
+                            IsVisible="{Binding PendingReturnCheckIn,
                                 Converter={StaticResource IntToBoolConverter}}"
                             BackgroundColor="#ef4444"
                             BorderColor="Transparent"
@@ -460,12 +460,12 @@
                             Margin="0,0,10,0">
 
                             <Label
-                                Text="{Binding PendingTransactions}"
-                                FontSize="10"
-                                FontAttributes="Bold"
-                                TextColor="White"
-                                HorizontalOptions="Center"
-                                VerticalOptions="Center"/>
+                            Text="{Binding PendingReturnCheckIn}"
+                            FontSize="10"
+                            FontAttributes="Bold"
+                            TextColor="White"
+                            HorizontalOptions="Center"
+                            VerticalOptions="Center"/>
 
                         </Frame>
 

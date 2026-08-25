@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace StockGuard.Models
@@ -21,6 +17,10 @@ namespace StockGuard.Models
         public string ToolName { get; set; }
             = string.Empty;
 
+        // ─────────────────────────────────────────────
+        // CURRENT HOLDER
+        // ─────────────────────────────────────────────
+
         [JsonProperty("fromWorkerId")]
         public string FromWorkerId { get; set; }
             = string.Empty;
@@ -28,6 +28,10 @@ namespace StockGuard.Models
         [JsonProperty("fromWorkerName")]
         public string FromWorkerName { get; set; }
             = string.Empty;
+
+        // ─────────────────────────────────────────────
+        // TARGET WORKER
+        // ─────────────────────────────────────────────
 
         [JsonProperty("toWorkerId")]
         public string ToWorkerId { get; set; }
@@ -37,12 +41,52 @@ namespace StockGuard.Models
         public string ToWorkerName { get; set; }
             = string.Empty;
 
+        // ─────────────────────────────────────────────
+        // PROJECT
+        // ─────────────────────────────────────────────
+
+        [JsonProperty("projectId")]
+        public string ProjectId { get; set; }
+            = string.Empty;
+
+        [JsonProperty("projectName")]
+        public string ProjectName { get; set; }
+            = string.Empty;
+
+        // ─────────────────────────────────────────────
+        // CONDITION
+        // ─────────────────────────────────────────────
+
+        [JsonProperty("condition")]
+        public string Condition { get; set; }
+            = "Good";
+
+        // ─────────────────────────────────────────────
+        // STATUS
+        // ─────────────────────────────────────────────
+
         // Pending | Accepted | Declined
         [JsonProperty("status")]
-        public string Status { get; set; } = "Pending";
+        public string Status { get; set; }
+            = "Pending";
 
         [JsonProperty("requestDate")]
         public DateTime RequestDate { get; set; }
             = DateTime.Now;
+
+        // ─────────────────────────────────────────────
+        // REVIEW / RESPONSE
+        // ─────────────────────────────────────────────
+
+        [JsonProperty("reviewedDate")]
+        public DateTime? ReviewedDate { get; set; }
+
+        [JsonProperty("reviewedById")]
+        public string ReviewedById { get; set; }
+            = string.Empty;
+
+        [JsonProperty("reviewedByName")]
+        public string ReviewedByName { get; set; }
+            = string.Empty;
     }
 }

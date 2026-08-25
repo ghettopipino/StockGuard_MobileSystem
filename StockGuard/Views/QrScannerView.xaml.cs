@@ -1,7 +1,6 @@
 ﻿using ZXing.Net.Maui;
 using ZXing.Net.Maui.Controls;
 using StockGuard.Services;
-using StockGuard.Views;
 using StockGuard.Models;
 
 namespace StockGuard.Views;
@@ -14,463 +13,684 @@ public partial class QrScannerView : ContentPage
 {
     private readonly AuthService _auth;
     private readonly FirebaseService _firebase;
-    private bool _isProcessing = false;
 
-    // "" (default) = normal scan-to-view-details behavior, unchanged
-    // "AssignEquipment" = scan identifies a tool to deploy + pre-assign
-    public string Mode { get; set; } = string.Empty;
-    public string ProjectId { get; set; } = string.Empty;
-    public string CatalogId { get; set; } = string.Empty;
+    private bool _isProcessing;
 
-    public QrScannerView(AuthService auth, FirebaseService firebase)
+    // Keeps track of tools already distributed
+    // during this current QR bulk session.
+    private readonly HashSet<string> _distributedToolIds =
+        new(StringComparer.OrdinalIgnoreCase);
+
+    // Keeps track of how many successful
+    // distributions were made in this session.
+    private int _distributedCount;
+
+    // ─────────────────────────────────────────────────────────
+    // QUERY PROPERTIES
+    // ─────────────────────────────────────────────────────────
+
+    // "" = normal scan
+    // "AssignEquipment" = assign single equipment
+    // "Distribute" = continuous bulk QR distribution
+    public string Mode { get; set; } =
+        string.Empty;
+
+    public string ProjectId { get; set; } =
+        string.Empty;
+
+    public string CatalogId { get; set; } =
+        string.Empty;
+
+    // ─────────────────────────────────────────────────────────
+    // CONSTRUCTOR
+    // ─────────────────────────────────────────────────────────
+
+    public QrScannerView(
+        AuthService auth,
+        FirebaseService firebase)
     {
         _auth = auth;
         _firebase = firebase;
+
         InitializeComponent();
 
-        BarcodeReader.Options = new BarcodeReaderOptions
-        {
-            Formats = BarcodeFormats.All,
-            AutoRotate = true,
-            Multiple = false
-        };
+        BarcodeReader.Options =
+            new BarcodeReaderOptions
+            {
+                Formats =
+                    BarcodeFormats.All,
+
+                AutoRotate =
+                    true,
+
+                Multiple =
+                    false
+            };
     }
+
+    // ─────────────────────────────────────────────────────────
+    // PAGE LIFECYCLE
+    // ─────────────────────────────────────────────────────────
 
     protected override async void OnAppearing()
     {
         base.OnAppearing();
+
         _isProcessing = false;
 
         try
         {
-            var status = await Permissions
-                .RequestAsync<Permissions.Camera>();
+            var status =
+                await Permissions
+                    .RequestAsync<
+                        Permissions.Camera>();
 
-            if (status != PermissionStatus.Granted)
+            if (status !=
+                PermissionStatus.Granted)
             {
                 await DisplayAlert(
                     "Camera Permission Required",
                     "StockGuard needs camera access to scan QR codes.",
                     "OK");
-                await Shell.Current.GoToAsync("..");
+
+                await Shell.Current
+                    .GoToAsync("..");
+
                 return;
             }
 
-            BarcodeReader.IsDetecting = true;
+            BarcodeReader.IsDetecting =
+                true;
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"[QR] OnAppearing error: {ex.Message}");
+                $"[QR] OnAppearing error: " +
+                $"{ex.Message}");
         }
     }
 
     protected override void OnDisappearing()
     {
         base.OnDisappearing();
-        BarcodeReader.IsDetecting = false;
+
+        BarcodeReader.IsDetecting =
+            false;
     }
 
-    private void OnBarcodesDetected(
-        object sender, BarcodeDetectionEventArgs e)
-    {
-        if (_isProcessing) return;
-        _isProcessing = true;
-        BarcodeReader.IsDetecting = false;
+    // ─────────────────────────────────────────────────────────
+    // BARCODE DETECTION
+    // ─────────────────────────────────────────────────────────
 
-        var result = e.Results?.FirstOrDefault();
-        if (result is null)
+    private void OnBarcodesDetected(
+        object sender,
+        BarcodeDetectionEventArgs e)
+    {
+        if (_isProcessing)
+            return;
+
+        _isProcessing =
+            true;
+
+        BarcodeReader.IsDetecting =
+            false;
+
+        var result =
+            e.Results?.FirstOrDefault();
+
+        if (result == null)
         {
-            _isProcessing = false;
-            BarcodeReader.IsDetecting = true;
+            ResumeScanning();
             return;
         }
 
-        var scannedValue = result.Value;
-        MainThread.BeginInvokeOnMainThread(async () =>
-            await HandleScannedCode(scannedValue));
+        var scannedValue =
+            result.Value?.Trim();
+
+        MainThread.BeginInvokeOnMainThread(
+            async () =>
+                await HandleScannedCode(
+                    scannedValue ??
+                    string.Empty));
     }
 
-    private async Task HandleScannedCode(string toolId)
+    // ─────────────────────────────────────────────────────────
+    // MAIN SCAN HANDLER
+    // ─────────────────────────────────────────────────────────
+
+    private async Task HandleScannedCode(
+        string toolId)
     {
-        if (string.IsNullOrWhiteSpace(toolId))
+        if (string.IsNullOrWhiteSpace(
+                toolId))
         {
             await DisplayAlert(
                 "Invalid QR",
                 "Could not read a valid Tool ID.",
                 "OK");
-            BarcodeReader.IsDetecting = true;
-            _isProcessing = false;
+
+            ResumeScanning();
             return;
         }
 
-        // ── Branch: Assign Equipment mode ──────────────────────
-        if (Mode == "AssignEquipment")
-        {
-            await HandleAssignEquipmentScan(toolId);
-            return;
-        }
-        if (Mode == "Distribute")
-        {
-            await HandleDistributeScan(toolId);
-            return;
-        }
-      
+        // ── ASSIGN EQUIPMENT ───────────────────────────────
 
-        // ── Default: original scan-to-view-details behavior ────
+        if (Mode ==
+            "AssignEquipment")
+        {
+            await HandleAssignEquipmentScan(
+                toolId);
+
+            return;
+        }
+
+        // ── BULK DISTRIBUTE ────────────────────────────────
+
+        if (Mode ==
+            "Distribute")
+        {
+            await HandleDistributeScan(
+                toolId);
+
+            return;
+        }
+
+        // ── NORMAL SCAN ────────────────────────────────────
+
         try
         {
-            var role = _auth.CurrentUser?.Role ?? "Worker";
-            var encodedId = Uri.EscapeDataString(toolId);
+            var role =
+                _auth.CurrentUser?.Role ??
+                "Worker";
 
-            if (role == "Project Engineer")
+            var encodedId =
+                Uri.EscapeDataString(
+                    toolId);
+
+            if (role ==
+                "Project Engineer")
             {
-                await Shell.Current.GoToAsync(
-                    $"{nameof(AdminToolDetailsView)}" +
-                    $"?toolId={encodedId}");
+                await Shell.Current
+                    .GoToAsync(
+                        $"{nameof(AdminToolDetailsView)}" +
+                        $"?toolId={encodedId}");
             }
             else
             {
-                await Shell.Current.GoToAsync(
-                    $"{nameof(WorkerToolDetailsView)}" +
-                    $"?toolId={encodedId}");
+                await Shell.Current
+                    .GoToAsync(
+                        $"{nameof(WorkerToolDetailsView)}" +
+                        $"?toolId={encodedId}");
             }
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"[QR] Navigation failed: {ex.Message}");
+                $"[QR] Navigation failed: " +
+                $"{ex.Message}");
+
             await DisplayAlert(
                 "Scan Error",
-                $"Could not open tool details.\n{ex.Message}",
+                $"Could not open tool details.\n" +
+                $"{ex.Message}",
                 "OK");
         }
         finally
         {
-            _isProcessing = false;
-            BarcodeReader.IsDetecting = true;
+            ResumeScanning();
         }
     }
-    private async Task HandleAssignEquipmentScan(string toolId)
+
+    // ─────────────────────────────────────────────────────────
+    // ASSIGN EQUIPMENT
+    // ─────────────────────────────────────────────────────────
+
+    private async Task HandleAssignEquipmentScan(
+        string toolId)
     {
         try
         {
-            var allTools = await _firebase.GetAllToolsAsync();
-            var tool = allTools.FirstOrDefault(t => t.ToolId == toolId);
+            var allTools =
+                await _firebase
+                    .GetAllToolsAsync(
+                        forceRefresh: true);
 
-            if (tool is null)
-            {
-                await DisplayAlert("Not Found", $"No tool found with ID {toolId}.", "OK");
-                return;
-            }
+            var tool =
+                allTools.FirstOrDefault(t =>
+                    t.ToolId ==
+                    toolId);
 
-            bool assigned = await WorkerAssignmentHelper.AssignToolToWorkerViaPickerAsync(
-                _firebase, _auth, tool, ProjectId);
-
-            if (assigned)
-                await Shell.Current.GoToAsync("..");
-        }
-        catch (Exception ex)
-        {
-            await DisplayAlert("Error", $"Could not assign equipment.\n{ex.Message}", "OK");
-        }
-        finally
-        {
-            _isProcessing = false;
-            BarcodeReader.IsDetecting = true;
-        }
-    }
-    // NEW method — place it next to HandleAssignEquipmentScan
-    private async Task HandleDistributeScan(string toolId)
-    {
-        try
-        {
-            // Get fresh tool data
-            var allTools = await _firebase.GetAllToolsAsync(
-                forceRefresh: true);
-
-            var tool = allTools.FirstOrDefault(
-                t => t.ToolId == toolId);
-
-            if (tool is null)
+            if (tool == null)
             {
                 await DisplayAlert(
                     "Not Found",
-                    $"No tool found with ID {toolId}.",
+                    $"No tool found with ID " +
+                    $"{toolId}.",
                     "OK");
 
                 return;
             }
 
-            // Make sure scanned tool matches the catalog
-            // the PE is currently distributing
-            if (tool.CatalogId != CatalogId)
+            bool assigned =
+                await WorkerAssignmentHelper
+                    .AssignToolToWorkerViaPickerAsync(
+                        _firebase,
+                        _auth,
+                        tool,
+                        ProjectId);
+
+            if (assigned)
+            {
+                await Shell.Current
+                    .GoToAsync("..");
+            }
+        }
+        catch (Exception ex)
+        {
+            await DisplayAlert(
+                "Error",
+                $"Could not assign equipment.\n" +
+                $"{ex.Message}",
+                "OK");
+        }
+        finally
+        {
+            ResumeScanning();
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────
+    // BULK QR DISTRIBUTION
+    // ─────────────────────────────────────────────────────────
+
+    private async Task HandleDistributeScan(
+        string toolId)
+    {
+        try
+        {
+            // Prevent the same QR from being used twice
+            // during the current scan session.
+            if (_distributedToolIds.Contains(
+                    toolId))
+            {
+                await DisplayAlert(
+                    "Already Distributed",
+                    $"Equipment {toolId} was already " +
+                    "distributed during this session.",
+                    "OK");
+
+                ResumeScanning();
+                return;
+            }
+
+            var allTools =
+                await _firebase
+                    .GetAllToolsAsync(
+                        forceRefresh: true);
+
+            var tool =
+                allTools.FirstOrDefault(t =>
+                    string.Equals(
+                        t.ToolId,
+                        toolId,
+                        StringComparison
+                            .OrdinalIgnoreCase));
+
+            if (tool == null)
+            {
+                await DisplayAlert(
+                    "Not Found",
+                    $"No tool found with ID " +
+                    $"{toolId}.",
+                    "OK");
+
+                ResumeScanning();
+                return;
+            }
+
+            // ─────────────────────────────────────────────
+            // CATALOG VALIDATION
+            // ─────────────────────────────────────────────
+
+            if (!string.IsNullOrWhiteSpace(
+                    CatalogId) &&
+                tool.CatalogId !=
+                    CatalogId)
             {
                 await DisplayAlert(
                     "Wrong Equipment",
-                    $"{tool.ToolName} ({tool.ToolId}) doesn't match " +
-                    $"the equipment you're distributing.",
+                    $"{tool.ToolName} " +
+                    $"({tool.ToolId}) does not match " +
+                    "the equipment category currently " +
+                    "being distributed.",
                     "OK");
 
+                ResumeScanning();
                 return;
             }
 
-            // Tool must still be available
-            if (tool.Status != "Available")
+            // ─────────────────────────────────────────────
+            // TOOL STATUS
+            // ─────────────────────────────────────────────
+
+            if (tool.Status !=
+                "Available")
             {
                 await DisplayAlert(
                     "Not Available",
-                    $"{tool.ToolName} ({tool.ToolId}) is currently " +
+                    $"{tool.ToolName} " +
+                    $"({tool.ToolId}) is currently " +
                     $"{tool.Status}.",
                     "OK");
 
+                ResumeScanning();
                 return;
             }
 
-            // Get workers assigned to this project
-            var workerKeys = await _firebase
-                .GetProjectWorkerKeysAsync(ProjectId);
+            // ─────────────────────────────────────────────
+            // PROJECT
+            // ─────────────────────────────────────────────
 
-            var allUsers = await _firebase
-                .GetAllUsersAsync();
+            var projects =
+                await _firebase
+                    .GetAllProjectsAsync();
 
-            var workers = allUsers
-                .Where(u =>
-                    u.Role == "Worker" &&
-                    u.AccountStatus == "Approved" &&
-                    workerKeys.Contains(u.UniqueKey))
-                .ToList();
+            var project =
+                projects.FirstOrDefault(p =>
+                    p.ProjectId ==
+                    ProjectId);
 
-            if (workers.Count == 0)
-            {
-                await DisplayAlert(
-                    "No Workers",
-                    "Assign workers to this project first.",
-                    "OK");
-
-                return;
-            }
-
-            // Select worker
-            var workerNames = workers
-                .Select(w => w.FullName)
-                .ToArray();
-
-            var selectedWorkerName =
-                await DisplayActionSheet(
-                    $"Distribute {tool.ToolName} ({tool.ToolId}) to:",
-                    "Cancel",
-                    null,
-                    workerNames);
-
-            if (selectedWorkerName == null ||
-                selectedWorkerName == "Cancel")
-                return;
-
-            var worker = workers.FirstOrDefault(
-                w => w.FullName == selectedWorkerName);
-
-            if (worker is null)
-                return;
-
-            // Get project information
-            var projects = await _firebase
-                .GetAllProjectsAsync();
-
-            var project = projects.FirstOrDefault(
-                p => p.ProjectId == ProjectId);
-
-            if (project is null)
+            if (project == null)
             {
                 await DisplayAlert(
                     "Project Not Found",
                     "Could not find the project information.",
                     "OK");
 
+                ResumeScanning();
                 return;
             }
 
-            // Create pending distribution.
-            // IMPORTANT:
-            // Tool stays Available until worker accepts.
-            var assignment = new PreAssignment
+            // ─────────────────────────────────────────────
+            // PROJECT WORKERS
+            // ─────────────────────────────────────────────
+
+            var workerKeys =
+                await _firebase
+                    .GetProjectWorkerKeysAsync(
+                        ProjectId);
+
+            var allUsers =
+                await _firebase
+                    .GetAllUsersAsync();
+
+            var workers =
+                allUsers
+                    .Where(u =>
+                        u.Role ==
+                            "Worker" &&
+                        u.AccountStatus ==
+                            "Approved" &&
+                        workerKeys.Contains(
+                            u.UniqueKey))
+                    .OrderBy(u =>
+                        u.FullName)
+                    .ToList();
+
+            if (workers.Count ==
+                0)
             {
-                ToolId = tool.ToolId,
-                ToolName = tool.ToolName,
+                await DisplayAlert(
+                    "No Workers",
+                    "Assign workers to this project first.",
+                    "OK");
 
-                WorkerId = worker.UniqueKey,
-                WorkerName = worker.FullName,
+                ResumeScanning();
+                return;
+            }
 
-                ProjectId = ProjectId,
-                ProjectName = project.ProjectName,
+            // ─────────────────────────────────────────────
+            // SELECT WORKER
+            // ─────────────────────────────────────────────
 
-                AssignedByName =
-                    _auth.CurrentUser?.FullName ??
-                    "Project Engineer",
+            var workerNames =
+                workers
+                    .Select(w =>
+                        w.FullName)
+                    .ToArray();
 
-                Status = "Pending",
-                DateCreated = DateTime.Now
-            };
+            var selectedWorkerName =
+                await DisplayActionSheet(
+                    $"Assign {tool.ToolName} " +
+                    $"({tool.ToolId})",
+                    "Cancel",
+                    null,
+                    workerNames);
+
+            if (string.IsNullOrWhiteSpace(
+                    selectedWorkerName) ||
+                selectedWorkerName ==
+                    "Cancel")
+            {
+                ResumeScanning();
+                return;
+            }
+
+            var worker =
+                workers.FirstOrDefault(w =>
+                    w.FullName ==
+                    selectedWorkerName);
+
+            if (worker == null)
+            {
+                ResumeScanning();
+                return;
+            }
+
+            // ─────────────────────────────────────────────
+            // CURRENT PE
+            // ─────────────────────────────────────────────
+
+            var currentUser =
+                _auth.CurrentUser;
+
+            if (currentUser == null)
+            {
+                await DisplayAlert(
+                    "Error",
+                    "Current Project Engineer could not be identified.",
+                    "OK");
+
+                ResumeScanning();
+                return;
+            }
+
+            // ─────────────────────────────────────────────
+            // CREATE PRE-ASSIGNMENT
+            // ─────────────────────────────────────────────
+            //
+            // Tool remains Available until worker accepts.
+
+            var assignment =
+                new PreAssignment
+                {
+                    ToolId =
+                        tool.ToolId,
+
+                    ToolName =
+                        tool.ToolName,
+
+                    WorkerId =
+                        worker.UniqueKey,
+
+                    WorkerName =
+                        worker.FullName,
+
+                    ProjectId =
+                        ProjectId,
+
+                    ProjectName =
+                        project.ProjectName,
+
+                    AssignedById =
+                        currentUser.UniqueKey,
+
+                    AssignedByName =
+                        currentUser.FullName,
+
+                    Status =
+                        "Pending",
+
+                    DateCreated =
+                        DateTime.Now
+                };
 
             bool success =
-                await _firebase.CreatePreAssignmentAsync(
-                    assignment);
+                await _firebase
+                    .CreatePreAssignmentAsync(
+                        assignment);
 
             if (!success)
             {
                 await DisplayAlert(
                     "Could Not Distribute",
-                    $"{tool.ToolName} could not be distributed.\n\n" +
-                    $"It may already have a pending distribution.",
+                    $"{tool.ToolName} " +
+                    $"({tool.ToolId}) could not be " +
+                    "distributed.\n\n" +
+                    "It may already have a pending " +
+                    "assignment.",
                     "OK");
 
+                ResumeScanning();
                 return;
             }
 
-            await DisplayAlert(
-                "✅ Distribution Sent",
-                $"{tool.ToolName} ({tool.ToolId}) was distributed " +
-                $"to {worker.FullName}.\n\n" +
-                $"The tool will remain Available until " +
-                $"{worker.FullName} accepts it.",
-                "OK");
+            // Mark this QR as used in this session.
+            _distributedToolIds.Add(
+                tool.ToolId);
 
-            await Shell.Current.GoToAsync("..");
+            _distributedCount++;
+
+            // ─────────────────────────────────────────────
+            // CONTINUE OR FINISH
+            // ─────────────────────────────────────────────
+
+            bool scanAnother =
+                await DisplayAlert(
+                    "Distribution Sent",
+                    $"{tool.ToolName} " +
+                    $"({tool.ToolId}) → " +
+                    $"{worker.FullName}\n\n" +
+                    $"Distributed this session: " +
+                    $"{_distributedCount}\n\n" +
+                    "The equipment remains Available " +
+                    "until the worker confirms receipt.",
+                    "Scan Another",
+                    "Finish");
+
+            if (scanAnother)
+            {
+                ResumeScanning();
+                return;
+            }
+
+            await FinishDistributionAsync();
         }
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"HandleDistributeScan error: {ex.Message}");
+                $"HandleDistributeScan error: " +
+                $"{ex.Message}");
 
             await DisplayAlert(
                 "Error",
-                $"Could not distribute equipment.\n{ex.Message}",
+                $"Could not distribute equipment.\n" +
+                $"{ex.Message}",
                 "OK");
-        }
-        finally
-        {
-            _isProcessing = false;
-            BarcodeReader.IsDetecting = true;
+
+            ResumeScanning();
         }
     }
-    //// ── Assign Equipment scan handling ──────────────────────────
-    //private async Task HandleAssignEquipmentScan(string toolId)
-    //{
-    //    try
-    //    {
-    //        var allTools = await _firebase.GetAllToolsAsync();
-    //        var tool = allTools.FirstOrDefault(t => t.ToolId == toolId);
 
-    //        if (tool is null)
-    //        {
-    //            await DisplayAlert(
-    //                "Not Found",
-    //                $"No tool found with ID {toolId}.",
-    //                "OK");
-    //            _isProcessing = false;
-    //            BarcodeReader.IsDetecting = true;
-    //            return;
-    //        }
+    // ─────────────────────────────────────────────────────────
+    // FINISH BULK DISTRIBUTION
+    // ─────────────────────────────────────────────────────────
 
-    //        if (tool.Status != "Available")
-    //        {
-    //            await DisplayAlert(
-    //                "Not Available",
-    //                $"{tool.ToolName} ({tool.ToolId}) is currently " +
-    //                $"{tool.Status} and cannot be assigned right now.",
-    //                "OK");
-    //            _isProcessing = false;
-    //            BarcodeReader.IsDetecting = true;
-    //            return;
-    //        }
+    private async Task FinishDistributionAsync()
+    {
+        BarcodeReader.IsDetecting =
+            false;
 
-    //        // Get workers on this project
-    //        var workerKeys = await _firebase
-    //            .GetProjectWorkerKeysAsync(ProjectId);
+        _isProcessing =
+            true;
 
-    //        var allUsers = await _firebase.GetAllUsersAsync();
+        if (_distributedCount >
+            0)
+        {
+            await DisplayAlert(
+                "Distribution Complete",
+                $"{_distributedCount} equipment " +
+                $"item(s) were distributed.\n\n" +
+                "Each worker must confirm receipt " +
+                "before their equipment becomes Borrowed.",
+                "OK");
+        }
 
-    //        var workers = allUsers
-    //            .Where(u =>
-    //                u.Role == "Worker" &&
-    //                u.AccountStatus == "Approved" &&
-    //                workerKeys.Contains(u.UniqueKey))
-    //            .ToList();
+        await Shell.Current
+            .GoToAsync("..");
+    }
 
-    //        if (workers.Count == 0)
-    //        {
-    //            await DisplayAlert(
-    //                "No Workers",
-    //                "Assign workers to this project first.",
-    //                "OK");
-    //            _isProcessing = false;
-    //            BarcodeReader.IsDetecting = true;
-    //            return;
-    //        }
+    // ─────────────────────────────────────────────────────────
+    // RESUME CAMERA
+    // ─────────────────────────────────────────────────────────
 
-    //        var workerNames = workers.Select(w => w.FullName).ToArray();
+    private void ResumeScanning()
+    {
+        _isProcessing =
+            false;
 
-    //        var selectedWorkerName = await DisplayActionSheet(
-    //            $"Assign {tool.ToolName} ({tool.ToolId}) to:",
-    //            "Cancel", null,
-    //            workerNames);
+        if (BarcodeReader !=
+            null)
+        {
+            BarcodeReader.IsDetecting =
+                true;
+        }
+    }
 
-    //        if (selectedWorkerName == null || selectedWorkerName == "Cancel")
-    //        {
-    //            _isProcessing = false;
-    //            BarcodeReader.IsDetecting = true;
-    //            return;
-    //        }
+    // ─────────────────────────────────────────────────────────
+    // CLOSE
+    // ─────────────────────────────────────────────────────────
 
-    //        var worker = workers.FirstOrDefault(
-    //            w => w.FullName == selectedWorkerName);
+    private async void OnCloseClicked(
+        object sender,
+        EventArgs e)
+    {
+        BarcodeReader.IsDetecting =
+            false;
 
-    //        if (worker is null)
-    //        {
-    //            _isProcessing = false;
-    //            BarcodeReader.IsDetecting = true;
-    //            return;
-    //        }
+        if (Mode ==
+                "Distribute" &&
+            _distributedCount >
+                0)
+        {
+            bool finish =
+                await DisplayAlert(
+                    "Finish Distribution",
+                    $"You distributed " +
+                    $"{_distributedCount} equipment " +
+                    "item(s) in this session.\n\n" +
+                    "Finish and return to the project?",
+                    "Finish",
+                    "Continue Scanning");
 
-    //        // Deploy + pre-assign in one shot
-    //        await _firebase.DeployToolToProjectAsync(ProjectId, tool.ToolId);
-    //        tool.ProjectId = ProjectId;
-    //        await _firebase.UpdateToolAsync(tool);
+            if (!finish)
+            {
+                ResumeScanning();
+                return;
+            }
+        }
 
-    //        var projects = await _firebase.GetAllProjectsAsync();
-    //        var project = projects.FirstOrDefault(p => p.ProjectId == ProjectId);
-
-    //        await _firebase.PreAssignToolAsync(
-    //            tool.ToolId,
-    //            tool.ToolName,
-    //            worker.UniqueKey,
-    //            worker.FullName,
-    //            ProjectId,
-    //            project?.ProjectName ?? string.Empty,
-    //            _auth.CurrentUser?.FullName ?? "Project Engineer");
-
-    //        await DisplayAlert(
-    //            "✅ Equipment Assigned",
-    //            $"{tool.ToolName} ({tool.ToolId}) assigned to {worker.FullName}.\n\n" +
-    //            $"They'll confirm receipt when they arrive at the site.",
-    //            "OK");
-
-    //        await Shell.Current.GoToAsync("..");
-    //    }
-    //    catch (Exception ex)
-    //    {
-    //        await DisplayAlert(
-    //            "Error",
-    //            $"Could not assign equipment.\n{ex.Message}",
-    //            "OK");
-    //        _isProcessing = false;
-    //        BarcodeReader.IsDetecting = true;
-    //    }
-
-
-    private async void OnCloseClicked(object sender, EventArgs e)
-        => await Shell.Current.GoToAsync("..");
-
-
-
+        await Shell.Current
+            .GoToAsync("..");
+    }
 }

@@ -8,140 +8,342 @@ public partial class AppShell : Shell
 {
     private readonly AuthService _auth;
     private readonly NotificationSyncService _notifSync;
+
     private Button[] _navButtons = Array.Empty<Button>();
 
-    public AppShell(AuthService auth, NotificationSyncService notifSync, IServiceProvider services)
+    // ─────────────────────────────────────────────────────────────
+    // CONSTRUCTOR
+    // ─────────────────────────────────────────────────────────────
+
+    public AppShell(
+        AuthService auth,
+        NotificationSyncService notifSync,
+        IServiceProvider services)
     {
         _auth = auth;
         _notifSync = notifSync;
+
         InitializeComponent();
-        var homeView = services.GetRequiredService<HomeView>();
-        var homeVm = services.GetRequiredService<HomeViewModel>();
+
+        // ── Home ─────────────────────────────────────────────
+
+        var homeView =
+            services.GetRequiredService<HomeView>();
+
+        var homeVm =
+            services.GetRequiredService<HomeViewModel>();
+
         homeView.BindingContext = homeVm;
+
+        // ── Routes ───────────────────────────────────────────
+
         RegisterDetailRoutes();
 
-        // Bind flyout badges to NotificationState singleton
-        BindingContext = NotificationState.Instance;
+        // ── Notification State ───────────────────────────────
+
+        BindingContext =
+            NotificationState.Instance;
+
+        // ── Flyout Navigation Buttons ────────────────────────
 
         _navButtons = new[]
         {
             BtnDashboard,
-            BtnProjects,     BtnCatalog,
-            BtnTools,     BtnWorkers,      BtnPause,
-            BtnDamage,    BtnTransactions,
-            //BtnAnalytics
+            BtnProjects,
+            BtnCatalog,
+            BtnTools,
+            BtnWorkers,
+            BtnPause,
+            BtnDamage,
+            BtnTransactions
         };
 
-        //SetActive(BtnDashboard);
+        // Load current notification counts
+        // and start Firebase synchronization.
+        _ = InitializeNotificationsAsync();
     }
 
-    // ── Route registration ────────────────────────────────────────────────────
-    //
-    // RULE: Only detail/sub-pages go here.
-    //       FlyoutItem pages are auto-routed by Shell — never register them here.
-    //
-    // FlyoutItem pages (NEVER register):
-    //   LoginView, WorkerDashboardView, PEDashboardView,
-    //   ProjectManagementView, EquipmentCatalogView, ToolDetailsView,
-    //   WorkerManagementView, PauseRequestsView, DamageReportsView,
-    //   TransactionHistoryView, ProjectAnalyticsView
-    //
-    // Detail pages (registered below):
-    //   Everything that is navigated to with GoToAsync("PageName?param=...")
-    //   and popped with GoToAsync("..").
+    // ─────────────────────────────────────────────────────────────
+    // NOTIFICATIONS
+    // ─────────────────────────────────────────────────────────────
+
+    private async Task InitializeNotificationsAsync()
+    {
+        try
+        {
+            System.Diagnostics.Debug.WriteLine(
+                "[AppShell] Initializing notifications...");
+
+            // Load existing pending counts.
+            await _notifSync.RefreshAsync();
+
+            // Start listening for Firebase changes.
+            _notifSync.StartLiveSync();
+
+            System.Diagnostics.Debug.WriteLine(
+                "[AppShell] Notification sync started.");
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[AppShell] Notification initialization error: " +
+                $"{ex.Message}");
+        }
+    }
+
+    private async Task RefreshNotificationsAsync()
+    {
+        try
+        {
+            await _notifSync.RefreshAsync();
+        }
+        catch (Exception ex)
+        {
+            System.Diagnostics.Debug.WriteLine(
+                $"[AppShell] Notification refresh error: " +
+                $"{ex.Message}");
+        }
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // ROUTE REGISTRATION
+    // ─────────────────────────────────────────────────────────────
+
     private static void RegisterDetailRoutes()
     {
-        // ── Auth ──────────────────────────────────────────────────────────────
-        Routing.RegisterRoute(nameof(RegisterView), typeof(RegisterView));
+        // ── Authentication ───────────────────────────────────
 
-        // ── QR ────────────────────────────────────────────────────────────────
-        Routing.RegisterRoute(nameof(QrScannerView), typeof(QrScannerView));
-        Routing.RegisterRoute(nameof(QrDisplayView), typeof(QrDisplayView));
+        Routing.RegisterRoute(
+            nameof(RegisterView),
+            typeof(RegisterView));
 
-        // ── QR scan destinations (role-based) ─────────────────────────────────
-        // Worker scans QR  → WorkerToolDetailsView (actions: borrow, pause, etc.)
-        // Admin  scans QR  → AdminToolDetailsView  (read-only: info + history)
-        // Both are registered routes so GoToAsync("..") pops them correctly.
-        Routing.RegisterRoute(nameof(WorkerToolDetailsView), typeof(WorkerToolDetailsView));
-        Routing.RegisterRoute(nameof(AdminToolDetailsView), typeof(AdminToolDetailsView));
+        // ── QR ───────────────────────────────────────────────
 
-        // NOTE: ToolDetailsView is NOT registered here.
-        // It is a FlyoutItem in AppShell.xaml (the admin tool browser).
-        // Registering it here too would push it as a modal ON TOP of Shell,
-        // making the sidebar disappear. Navigate to it with //ToolDetailsView.
+        Routing.RegisterRoute(
+            nameof(QrScannerView),
+            typeof(QrScannerView));
 
-        // ── Equipment catalog detail ───────────────────────────────────────────
-        Routing.RegisterRoute(nameof(ToolListView), typeof(ToolListView));
+        Routing.RegisterRoute(
+            nameof(QrDisplayView),
+            typeof(QrDisplayView));
 
-        // ── Borrow requests ───────────────────────────────────────────────────
-        Routing.RegisterRoute(nameof(BorrowRequestsView), typeof(BorrowRequestsView));
+        // ── QR Scan Destinations ─────────────────────────────
 
-        // ── Project details ───────────────────────────────────────────────────
-        Routing.RegisterRoute(nameof(ProjectDetailsView), typeof(ProjectDetailsView));
+        Routing.RegisterRoute(
+            nameof(WorkerToolDetailsView),
+            typeof(WorkerToolDetailsView));
 
-        // ── Bulk select ───────────────────────────────────────────────────────
-        Routing.RegisterRoute(nameof(BulkSelectView), typeof(BulkSelectView));
+        Routing.RegisterRoute(
+            nameof(AdminToolDetailsView),
+            typeof(AdminToolDetailsView));
+
+        // ── Equipment Catalog Detail ─────────────────────────
+
+        Routing.RegisterRoute(
+            nameof(ToolListView),
+            typeof(ToolListView));
+
+        // ── Borrow Requests ──────────────────────────────────
+
+        Routing.RegisterRoute(
+            nameof(BorrowRequestsView),
+            typeof(BorrowRequestsView));
+
+        // ── Project Details ──────────────────────────────────
+
+        Routing.RegisterRoute(
+            nameof(ProjectDetailsView),
+            typeof(ProjectDetailsView));
+
+        // ── Bulk Select ──────────────────────────────────────
+
+        Routing.RegisterRoute(
+            nameof(BulkSelectView),
+            typeof(BulkSelectView));
     }
 
-    // ── Active item highlight ─────────────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────────
+    // ACTIVE NAVIGATION ITEM
+    // ─────────────────────────────────────────────────────────────
+
     private void SetActive(Button active)
     {
-        foreach (var btn in _navButtons)
+        foreach (var button in _navButtons)
         {
-            btn.BackgroundColor = Colors.Transparent;
-            btn.TextColor = Color.FromArgb("#94a3b8");
+            button.BackgroundColor =
+                Colors.Transparent;
+
+            button.TextColor =
+                Color.FromArgb("#94a3b8");
         }
-        active.BackgroundColor = Color.FromArgb("#1e3a5f");
-        active.TextColor = Color.FromArgb("#60a5fa");
+
+        active.BackgroundColor =
+            Color.FromArgb("#1e3a5f");
+
+        active.TextColor =
+            Color.FromArgb("#60a5fa");
     }
 
-    // ── Nav helper ────────────────────────────────────────────────────────────
-    private async Task NavigateTo(string absoluteRoute, Button sender)
+    // ─────────────────────────────────────────────────────────────
+    // NAVIGATION
+    // ─────────────────────────────────────────────────────────────
+
+    private async Task NavigateTo(
+        string absoluteRoute,
+        Button sender)
     {
         SetActive(sender);
+
         FlyoutIsPresented = false;
-        await GoToAsync(absoluteRoute);
+
+        await GoToAsync(
+            absoluteRoute);
     }
 
-    // ── Flyout handlers ───────────────────────────────────────────────────────
-    private async void OnDashboardClicked(object s, EventArgs e)
-        => await NavigateTo("//PEDashboardView", BtnDashboard);
+    // ─────────────────────────────────────────────────────────────
+    // DASHBOARD
+    // ─────────────────────────────────────────────────────────────
 
-    private async void OnProjectsClicked(object s, EventArgs e)
-        => await NavigateTo("//ProjectManagementView", BtnProjects);
-
-    private async void OnCatalogClicked(object s, EventArgs e)
-        => await NavigateTo("//EquipmentCatalogView", BtnCatalog);
-
-    private async void OnToolsClicked(object s, EventArgs e)
-        => await NavigateTo("//ToolDetailsView", BtnTools);
-
-    private async void OnWorkersClicked(object s, EventArgs e)
-        => await NavigateTo("//WorkerManagementView", BtnWorkers);
-
-    private async void OnPauseClicked(object s, EventArgs e)
-        => await NavigateTo("//PauseRequestsView", BtnPause);
-
-    private async void OnDamageClicked(object s, EventArgs e)
-        => await NavigateTo("//DamageReportsView", BtnDamage);
-
-    private async void OnTransactionsClicked(object s, EventArgs e)
-        => await NavigateTo("//TransactionHistoryView", BtnTransactions);
-
-    //private async void OnAnalyticsClicked(object s, EventArgs e)
-    //    => await NavigateTo("//ProjectAnalyticsView", BtnAnalytics);
-
-    // ── Logout ────────────────────────────────────────────────────────────────
-    private async void OnLogoutClicked(object s, EventArgs e)
+    private async void OnDashboardClicked(
+        object sender,
+        EventArgs e)
     {
-        bool confirm = await DisplayAlert(
-            "Logout", "Are you sure you want to logout?",
-            "Logout", "Cancel");
+        await RefreshNotificationsAsync();
 
-        if (!confirm) return;
+        await NavigateTo(
+            "//PEDashboardView",
+            BtnDashboard);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PROJECTS
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnProjectsClicked(
+        object sender,
+        EventArgs e)
+    {
+        await NavigateTo(
+            "//ProjectManagementView",
+            BtnProjects);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // CATALOG
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnCatalogClicked(
+        object sender,
+        EventArgs e)
+    {
+        await NavigateTo(
+            "//EquipmentCatalogView",
+            BtnCatalog);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // EQUIPMENT
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnToolsClicked(
+        object sender,
+        EventArgs e)
+    {
+        await NavigateTo(
+            "//ToolDetailsView",
+            BtnTools);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // WORKERS
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnWorkersClicked(
+        object sender,
+        EventArgs e)
+    {
+        await RefreshNotificationsAsync();
+
+        await NavigateTo(
+            "//WorkerManagementView",
+            BtnWorkers);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // RETURN & CHECK-IN
+    // ─────────────────────────────────────────────────────────────
+    //
+    // The internal page/route name remains PauseRequestsView
+    // because it comes from the original Pause workflow.
+    //
+    // The actual current UI handles:
+    // - End-Day Check-In verification
+    // - Formal Return requests
+
+    private async void OnPauseClicked(
+        object sender,
+        EventArgs e)
+    {
+        await RefreshNotificationsAsync();
+
+        await NavigateTo(
+            "//PauseRequestsView",
+            BtnPause);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DAMAGE REPORTS
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnDamageClicked(
+        object sender,
+        EventArgs e)
+    {
+        await RefreshNotificationsAsync();
+
+        await NavigateTo(
+            "//DamageReportsView",
+            BtnDamage);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // TRANSACTIONS
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnTransactionsClicked(
+        object sender,
+        EventArgs e)
+    {
+        await RefreshNotificationsAsync();
+
+        await NavigateTo(
+            "//TransactionHistoryView",
+            BtnTransactions);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // LOGOUT
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnLogoutClicked(
+        object sender,
+        EventArgs e)
+    {
+        bool confirm =
+            await DisplayAlert(
+                "Logout",
+                "Are you sure you want to logout?",
+                "Logout",
+                "Cancel");
+
+        if (!confirm)
+            return;
 
         FlyoutIsPresented = false;
+
         _auth.Logout();
-        await GoToAsync("//LoginView");
+
+        await GoToAsync(
+            "//LoginView");
     }
 }

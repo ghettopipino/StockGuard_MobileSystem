@@ -830,32 +830,46 @@ namespace StockGuard.ViewModels
                     return;
 
                 var request =
-                    new TransferRequest
-                    {
-                        ToolId =
-                            Tool.ToolId,
+                new TransferRequest
+                {
+                    ToolId =
+                        Tool.ToolId,
 
-                        ToolName =
-                            Tool.ToolName,
+                    ToolName =
+                        Tool.ToolName,
 
-                        FromWorkerId =
-                            user.UniqueKey,
+                    FromWorkerId =
+                        user.UniqueKey,
 
-                        FromWorkerName =
-                            user.FullName,
+                    FromWorkerName =
+                        user.FullName,
 
-                        ToWorkerId =
-                            target.UniqueKey,
+                    ToWorkerId =
+                        target.UniqueKey,
 
-                        ToWorkerName =
-                            target.FullName,
+                    ToWorkerName =
+                        target.FullName,
 
-                        Status =
-                            "Pending",
+                    ProjectId =
+                        Tool.BorrowedProjectId ??
+                        string.Empty,
 
-                        RequestDate =
-                            DateTime.Now
-                    };
+                    ProjectName =
+                        Tool.BorrowedProjectName ??
+                        string.Empty,
+
+                    Condition =
+                        string.IsNullOrWhiteSpace(
+                            Tool.Condition)
+                            ? "Good"
+                            : Tool.Condition,
+
+                    Status =
+                        "Pending",
+
+                    RequestDate =
+                        DateTime.Now
+                };
 
                 var key =
                     await _firebase

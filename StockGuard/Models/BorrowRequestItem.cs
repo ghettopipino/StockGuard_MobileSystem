@@ -72,5 +72,18 @@ namespace StockGuard.Models
         {
             Request = request;
         }
+        public string RequestDescription
+        {
+            get
+            {
+                if (IsTransfer && TransferRequest != null)
+                {
+                    return $"{TransferRequest.FromWorkerName} wants to transfer " +
+                           $"{TransferRequest.ToolName} to you.";
+                }
+
+                return $"{RequesterName} wants to borrow {ToolName}.";
+            }
+        }
     }
 }

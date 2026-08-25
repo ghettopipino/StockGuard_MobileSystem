@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Linq;
+﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace StockGuard.Services
 {
@@ -12,74 +7,111 @@ namespace StockGuard.Services
     {
         public static readonly NotificationState Instance = new();
 
-        private NotificationState() { }
+        private NotificationState()
+        {
+        }
+
+        // ── DAMAGE ───────────────────────────────────────
 
         private int _pendingDamage;
+
         public int PendingDamage
         {
             get => _pendingDamage;
             set
             {
-                if (_pendingDamage == value) return;
+                if (_pendingDamage == value)
+                    return;
+
                 _pendingDamage = value;
+
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TotalPending));
-                OnPropertyChanged(nameof(HasAny));
+                NotifyTotals();
             }
         }
 
+        // ── WORKERS ──────────────────────────────────────
+
         private int _pendingWorkers;
+
         public int PendingWorkers
         {
             get => _pendingWorkers;
             set
             {
-                if (_pendingWorkers == value) return;
+                if (_pendingWorkers == value)
+                    return;
+
                 _pendingWorkers = value;
+
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TotalPending));
-                OnPropertyChanged(nameof(HasAny));
+                NotifyTotals();
             }
         }
 
-        private int _pendingPause;
-        public int PendingPause
+        // ── RETURN + END-DAY CHECK-IN ────────────────────
+
+        private int _pendingReturnCheckIn;
+
+        public int PendingReturnCheckIn
         {
-            get => _pendingPause;
+            get => _pendingReturnCheckIn;
             set
             {
-                if (_pendingPause == value) return;
-                _pendingPause = value;
+                if (_pendingReturnCheckIn == value)
+                    return;
+
+                _pendingReturnCheckIn = value;
+
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TotalPending));
-                OnPropertyChanged(nameof(HasAny));
+                NotifyTotals();
             }
         }
 
+        // ── TRANSACTIONS ─────────────────────────────────
+
         private int _pendingTransactions;
+
         public int PendingTransactions
         {
             get => _pendingTransactions;
             set
             {
-                if (_pendingTransactions == value) return;
+                if (_pendingTransactions == value)
+                    return;
+
                 _pendingTransactions = value;
+
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(TotalPending));
-                OnPropertyChanged(nameof(HasAny));
+                NotifyTotals();
             }
         }
 
-        public int TotalPending =>
-            PendingDamage + PendingWorkers +
-            PendingPause + PendingTransactions;
+        // ── TOTAL ────────────────────────────────────────
 
-        public bool HasAny => TotalPending > 0;
+        public int TotalPending =>
+            PendingDamage +
+            PendingWorkers +
+            PendingReturnCheckIn +
+            PendingTransactions;
+
+        public bool HasAny =>
+            TotalPending > 0;
+
+        private void NotifyTotals()
+        {
+            OnPropertyChanged(nameof(TotalPending));
+            OnPropertyChanged(nameof(HasAny));
+        }
 
         public event PropertyChangedEventHandler? PropertyChanged;
+
         private void OnPropertyChanged(
             [CallerMemberName] string? name = null)
-            => PropertyChanged?.Invoke(
-                this, new PropertyChangedEventArgs(name));
+        {
+            PropertyChanged?.Invoke(
+                this,
+                new PropertyChangedEventArgs(name));
+        }
     }
 }
