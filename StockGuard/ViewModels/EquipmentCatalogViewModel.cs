@@ -156,102 +156,297 @@ namespace StockGuard.ViewModels
 
             try
             {
+                // ─────────────────────────────────────────────────────
+                // LOAD BASE DATA
+                // ─────────────────────────────────────────────────────
+
                 var catalogs =
-                    await _firebase.GetAllCatalogsAsync();
+                    await _firebase
+                        .GetAllCatalogsAsync();
 
                 var allTools =
-                    await _firebase.GetAllToolsAsync(
-                        forceRefresh: true);
+                    await _firebase
+                        .GetAllToolsAsync(
+                            forceRefresh: true);
 
-                // Get equipment quantities allocated
-                // to active projects.
+                var projects =
+                    await _firebase
+                        .GetAllProjectsAsync();
+
+                // Only active/non-completed projects reserve equipment.
+                var activeProjects =
+                    projects
+                        .Where(p =>
+                            !p.IsDeleted &&
+                            p.Status != "Completed")
+                        .ToList();
+
                 var allocations =
                     await _firebase
                         .GetAllActiveProjectEquipmentRequirementsAsync();
 
-                if (!string.IsNullOrWhiteSpace(SearchText))
+
+                // ─────────────────────────────────────────────────────
+                // LOAD ACTUAL PROJECT TOOL IDS
+                // ─────────────────────────────────────────────────────
+                //
+                // projectEquipment tells us how many are required.
+                //
+                // projectTools tells us which physical Tool IDs have
+                // actually been deployed to each project.
+                //
+                // We need BOTH so that allocation is not confused with
+                // physical borrowing.
+                // ─────────────────────────────────────────────────────
+
+                var projectToolIds =
+                    new Dictionary<string, HashSet<string>>();
+
+                foreach (var project in activeProjects)
                 {
-                    catalogs = catalogs
-                        .Where(c =>
-                            c.CatalogName.Contains(
-                                SearchText,
-                                StringComparison.OrdinalIgnoreCase))
-                        .ToList();
+                    var ids =
+                        await _firebase
+                            .GetProjectToolIdsAsync(
+                                project.ProjectId);
+
+                    projectToolIds[
+                        project.ProjectId] =
+                        ids.ToHashSet(
+                            StringComparer.OrdinalIgnoreCase);
                 }
 
-                TotalCatalogs = catalogs.Count;
-                TotalTools = allTools.Count;
 
-                int totalAvailable = 0;
+                // ─────────────────────────────────────────────────────
+                // SEARCH
+                // ─────────────────────────────────────────────────────
+
+                if (!string.IsNullOrWhiteSpace(
+                        SearchText))
+                {
+                    catalogs =
+                        catalogs
+                            .Where(c =>
+                                c.CatalogName.Contains(
+                                    SearchText,
+                                    StringComparison
+                                        .OrdinalIgnoreCase))
+                            .ToList();
+                }
+
+
+                // ─────────────────────────────────────────────────────
+                // GLOBAL COUNTS
+                // ─────────────────────────────────────────────────────
+
+                TotalCatalogs =
+                    catalogs.Count;
+
+                // Physical inventory only.
+                TotalTools =
+                    allTools.Count(t =>
+                        !t.IsDeleted);
+
+                int totalPhysicalAvailable =
+                    0;
+
 
                 Catalogs.Clear();
 
+
+                // ─────────────────────────────────────────────────────
+                // BUILD EACH CATALOG
+                // ─────────────────────────────────────────────────────
+
                 foreach (var catalog in catalogs)
                 {
-                    var tools = allTools
-    .Where(t =>
-        t.CatalogId == catalog.CatalogId)
-    .ToList();
+                    var tools =
+                        allTools
+                            .Where(t =>
+                                !t.IsDeleted &&
+                                string.Equals(
+                                    t.CatalogId,
+                                    catalog.CatalogId,
+                                    StringComparison
+                                        .OrdinalIgnoreCase))
+                            .ToList();
 
-                    // ── PHYSICAL TOOL STATES ─────────────────────────────
 
-                    int physicalAvailable = tools.Count(t =>
-                        t.Status == "Available");
+                    // ─────────────────────────────────────────────────
+                    // PHYSICAL TOOL STATES
+                    // ─────────────────────────────────────────────────
 
-                    int actualBorrowed = tools.Count(t =>
-                        t.Status == "Borrowed" ||
-                        t.Status == "PendingPause" ||
-                        t.Status == "PendingReturn");
+                    int physicalAvailable =
+                        tools.Count(t =>
+                            t.Status ==
+                            "Available");
 
-                    int onHold = tools.Count(t =>
-                        t.Status == "OnHold");
+                    int actualBorrowed =
+                        tools.Count(t =>
+                            t.Status ==
+                                "Borrowed" ||
+                            t.Status ==
+                                "PendingReturn");
 
-                    int damaged = tools.Count(t =>
-                        t.Status == "Damaged" ||
-                        t.Status == "UnderRepair");
+                    int damaged =
+                        tools.Count(t =>
+                            t.Status ==
+                                "Damaged" ||
+                            t.Status ==
+                                "UnderRepair");
 
-                    // ── PROJECT ALLOCATION ────────────────────────────────
+                    int lost =
+                        tools.Count(t =>
+                            t.Status ==
+                            "Lost");
 
-                    int allocated = allocations
-                        .Where(a =>
-                            a.CatalogId == catalog.CatalogId)
-                        .Sum(a => a.QuantityNeeded);
 
-                    // Tools already under project custody
-                    int alreadyInProjectCustody =
-                        actualBorrowed + onHold;
+                    // ─────────────────────────────────────────────────
+                    // PROJECT ALLOCATION
+                    // ─────────────────────────────────────────────────
+                    //
+                    // Example:
+                    //
+                    // Project A requires 5 drills.
+                    // Project B requires 3 drills.
+                    //
+                    // Allocated = 8.
+                    //
+                    // This does NOT mean 8 drills are Borrowed.
+                    // ─────────────────────────────────────────────────
 
-                    // Allocation that is still reserved but has not
-                    // physically left Available stock yet
-                    int remainingReserved = Math.Max(
-                        0,
-                        allocated - alreadyInProjectCustody);
+                    var catalogAllocations =
+                        allocations
+                            .Where(a =>
+                                string.Equals(
+                                    a.CatalogId,
+                                    catalog.CatalogId,
+                                    StringComparison
+                                        .OrdinalIgnoreCase))
+                            .ToList();
 
-                    // Actual company/shop availability
-                    int companyAvailable = Math.Max(
-                        0,
-                        physicalAvailable - remainingReserved);
+                    int allocated =
+                        catalogAllocations
+                            .Sum(a =>
+                                a.QuantityNeeded);
 
-                    totalAvailable += companyAvailable;
+
+                    // ─────────────────────────────────────────────────
+                    // OUTSTANDING PROJECT REQUIREMENTS
+                    // ─────────────────────────────────────────────────
+                    //
+                    // IMPORTANT:
+                    //
+                    // Calculate fulfillment PER PROJECT.
+                    //
+                    // We cannot simply do:
+                    //
+                    // allocated - allBorrowed
+                    //
+                    // because a tool borrowed under Project B must not
+                    // accidentally satisfy Project A's requirement.
+                    // ─────────────────────────────────────────────────
+
+                    int awaitingDistribution =
+                        0;
+
+                    foreach (var requirement
+                             in catalogAllocations)
+                    {
+                        if (!projectToolIds.TryGetValue(
+                                requirement.ProjectId,
+                                out var deployedIds))
+                        {
+                            deployedIds =
+                                new HashSet<string>(
+                                    StringComparer
+                                        .OrdinalIgnoreCase);
+                        }
+
+
+                        // Count actual physical tools from THIS catalog
+                        // deployed to THIS project.
+                        int deployedForProject =
+                            tools.Count(t =>
+                                deployedIds.Contains(
+                                    t.ToolId));
+
+
+                        int remaining =
+                            Math.Max(
+                                0,
+                                requirement.QuantityNeeded -
+                                deployedForProject);
+
+                        awaitingDistribution +=
+                            remaining;
+                    }
+
+
+                    // ─────────────────────────────────────────────────
+                    // UNALLOCATED STOCK
+                    // ─────────────────────────────────────────────────
+                    //
+                    // Available:
+                    //     physically available right now.
+                    //
+                    // AwaitingDistribution:
+                    //     available stock still needed to satisfy
+                    //     active project requirements.
+                    //
+                    // Unallocated:
+                    //     physically available stock not committed
+                    //     to those outstanding requirements.
+                    // ─────────────────────────────────────────────────
+
+                    int unallocated =
+                        Math.Max(
+                            0,
+                            physicalAvailable -
+                            awaitingDistribution);
+
+
+                    totalPhysicalAvailable +=
+                        physicalAvailable;
+
+
+                    // ─────────────────────────────────────────────────
+                    // DISPLAY ITEM
+                    // ─────────────────────────────────────────────────
 
                     Catalogs.Add(
-                        new CatalogDisplayItem(catalog)
+                        new CatalogDisplayItem(
+                            catalog)
                         {
-                            TotalTools = tools.Count,
+                            TotalTools =
+                                tools.Count,
 
-                            AvailableTools = companyAvailable,
+                            AvailableTools =
+                                physicalAvailable,
 
-                            // SAME behavior as ToolList:
-                            // allocated equipment counts as Borrowed
-                            BorrowedTools = allocated,
+                            BorrowedTools =
+                                actualBorrowed,
 
-                            OnHoldTools = onHold,
+                            DamagedTools =
+                                damaged,
 
-                            DamagedTools = damaged
+                            LostTools =
+                                lost,
+
+                            AllocatedTools =
+                                allocated,
+
+                            AwaitingDistributionTools =
+                                awaitingDistribution,
+
+                            UnallocatedTools =
+                                unallocated
                         });
                 }
 
-                AvailableTools = totalAvailable;
+
+                // Header Available means PHYSICALLY AVAILABLE.
+                AvailableTools =
+                    totalPhysicalAvailable;
 
                 HasCatalogs =
                     Catalogs.Count > 0;
@@ -259,7 +454,8 @@ namespace StockGuard.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"LoadCatalogs error: {ex.Message}");
+                    $"LoadCatalogs error: " +
+                    $"{ex.Message}");
             }
             finally
             {

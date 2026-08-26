@@ -1,192 +1,345 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:StockGuard.ViewModels"
-             xmlns:models="clr-namespace:StockGuard.Models"
-             x:Class="StockGuard.Views.ToolListView"
-             x:DataType="vm:ToolListViewModel"
-             Shell.NavBarIsVisible="False"
-             BackgroundColor="{DynamicResource BgBase}">
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:StockGuard.ViewModels"
+    xmlns:models="clr-namespace:StockGuard.Models"
+    x:Class="StockGuard.Views.ToolListView"
+    x:DataType="vm:ToolListViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{DynamicResource BgBase}">
 
     <Grid>
+
         <RefreshView
             IsRefreshing="{Binding IsRefreshing}"
             Command="{Binding RefreshCommand}"
             RefreshColor="{DynamicResource Blue}">
+
             <ScrollView>
-                <VerticalStackLayout Spacing="0"
-                                     Padding="0,0,0,40">
 
-                    <!-- ── HEADER ──────────────────────────── -->
-                    <!--
-                        COLUMN LAYOUT:
-                        [0] ← Back     — pops detail page, returns to EquipmentCatalogView
-                        [1] Title area
-                        [2] 🔄 Refresh
-                        [3] ☰ Menu     — opens the flyout sidebar
-                        
-                        WHY THE ☰ BUTTON:
-                        Shell.NavBarIsVisible="False" removes the Shell NavBar entirely.
-                        The only built-in hamburger (☰) button lives in that NavBar.
-                        Without it, the user has zero way to open the flyout sidebar.
-                        This button calls OpenFlyoutCommand (defined in BaseViewModel)
-                        which sets Shell.Current.FlyoutIsPresented = true.
-                    -->
-                    <Grid ColumnDefinitions="Auto,*,Auto,Auto"
-                          ColumnSpacing="10"
-                          Padding="20,52,20,16"
-                          BackgroundColor="{DynamicResource BgSurface}">
+                <VerticalStackLayout
+                    Spacing="0"
+                    Padding="0,0,0,40">
 
-                        <!--
-                            BACK BUTTON — has BOTH Command AND Clicked handler.
-                            
-                            WHY BOTH:
-                            new Command(async () => ...) in a ViewModel silently
-                            swallows unhandled async exceptions — if anything throws
-                            inside GoToAsync(".."), the command completes with no
-                            visible error and the user sees "nothing happened."
-                            
-                            The Clicked="OnBackClicked" handler in code-behind is a
-                            guaranteed fallback: it runs directly on the UI thread
-                            and cannot be silently swallowed.
-                            
-                            In practice only one fires — whichever wins the tap event.
-                        -->
-                        <Button Grid.Column="0"
-                                Text="←"
-                                Command="{Binding GoBackCommand}"
-                                Clicked="OnBackClicked"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="18" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
 
-                        <VerticalStackLayout Grid.Column="1"
-                                             VerticalOptions="Center"
-                                             Spacing="1">
-                            <Label Text="{Binding CatalogName}"
-                                   FontSize="16"
-                                   FontAttributes="Bold"
-                                   TextColor="{DynamicResource Text1}"/>
-                            <Label Text="{Binding ToolCountLabel}"
-                                   FontSize="11"
-                                   TextColor="{DynamicResource Text3}"/>
+                    <!-- ═══════════════════════════════════════
+                         HEADER
+                         ═══════════════════════════════════════ -->
+
+                    <Grid
+                        ColumnDefinitions="Auto,*,Auto,Auto"
+                        ColumnSpacing="10"
+                        Padding="20,52,20,16"
+                        BackgroundColor="{DynamicResource BgSurface}">
+
+                        <!-- BACK -->
+                        <Button
+                            Grid.Column="0"
+                            Text="←"
+                            Command="{Binding GoBackCommand}"
+                            Clicked="OnBackClicked"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
+
+
+                        <!-- TITLE -->
+                        <VerticalStackLayout
+                            Grid.Column="1"
+                            VerticalOptions="Center"
+                            Spacing="1">
+
+                            <Label
+                                Text="{Binding CatalogName}"
+                                FontSize="16"
+                                FontAttributes="Bold"
+                                TextColor="{DynamicResource Text1}"/>
+
+                            <Label
+                                Text="{Binding ToolCountLabel}"
+                                FontSize="11"
+                                TextColor="{DynamicResource Text3}"/>
+
                         </VerticalStackLayout>
 
-                        <Button Grid.Column="2"
-                                Text="🔄"
-                                Command="{Binding RefreshCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="16" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
 
-                        <!-- ☰ Opens the flyout sidebar -->
-                        <Button Grid.Column="3"
-                                Text="☰"
-                                Command="{Binding OpenFlyoutCommand}"
-                                BackgroundColor="{DynamicResource BgElevated}"
-                                TextColor="{DynamicResource Text2}"
-                                FontSize="18" CornerRadius="8"
-                                WidthRequest="40" HeightRequest="36"
-                                Padding="0"/>
+                        <!-- REFRESH -->
+                        <Button
+                            Grid.Column="2"
+                            Text="↻"
+                            Command="{Binding RefreshCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="19"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
+
+
+                        <!-- FLYOUT -->
+                        <Button
+                            Grid.Column="3"
+                            Text="☰"
+                            Command="{Binding OpenFlyoutCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Text2}"
+                            FontSize="18"
+                            CornerRadius="8"
+                            WidthRequest="40"
+                            HeightRequest="36"
+                            Padding="0"/>
+
                     </Grid>
 
-                    <!-- ── STATS ROW ───────────────────────── -->
-                    <Grid ColumnDefinitions="*,*,*"
-                          ColumnSpacing="10"
-                          Padding="20,14">
 
-                        <Frame Grid.Column="0"
-                               BackgroundColor="{DynamicResource BgCard}"
-                               BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14" Padding="0"
-                               HasShadow="False">
-                            <VerticalStackLayout
-                                Padding="0,12" Spacing="4"
-                                HorizontalOptions="Center">
-                                <Label Text="{Binding AvailableCount}"
-                                       FontSize="22"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Green}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="Available"
-                                       FontSize="10"
-                                       TextColor="{DynamicResource Text3}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
+
+                    <!-- ═══════════════════════════════════════
+                         INVENTORY SUMMARY
+                         ═══════════════════════════════════════ -->
+
+                    <VerticalStackLayout
+                        Padding="20,16,20,14"
+                        Spacing="10">
+
+                        <Label
+                            Text="Inventory Summary"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text2}"/>
+
+
+                        <!-- ROW 1 -->
+                        <Grid
+                            ColumnDefinitions="*,*,*"
+                            ColumnSpacing="10">
+
+
+                            <!-- AVAILABLE -->
+                            <Frame
+                                Grid.Column="0"
+                                BackgroundColor="{DynamicResource BgCard}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                CornerRadius="14"
+                                Padding="0"
+                                HasShadow="False">
+
+                                <VerticalStackLayout
+                                    Padding="4,13"
+                                    Spacing="4"
+                                    HorizontalOptions="Center">
+
+                                    <Label
+                                        Text="{Binding AvailableCount}"
+                                        FontSize="22"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Green}"
+                                        HorizontalOptions="Center"/>
+
+                                    <Label
+                                        Text="Available"
+                                        FontSize="10"
+                                        TextColor="{DynamicResource Text3}"
+                                        HorizontalOptions="Center"/>
+
+                                </VerticalStackLayout>
+
+                            </Frame>
+
+
+                            <!-- BORROWED -->
+                            <Frame
+                                Grid.Column="1"
+                                BackgroundColor="{DynamicResource BgCard}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                CornerRadius="14"
+                                Padding="0"
+                                HasShadow="False">
+
+                                <VerticalStackLayout
+                                    Padding="4,13"
+                                    Spacing="4"
+                                    HorizontalOptions="Center">
+
+                                    <Label
+                                        Text="{Binding BorrowedCount}"
+                                        FontSize="22"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Amber}"
+                                        HorizontalOptions="Center"/>
+
+                                    <Label
+                                        Text="Borrowed"
+                                        FontSize="10"
+                                        TextColor="{DynamicResource Text3}"
+                                        HorizontalOptions="Center"/>
+
+                                </VerticalStackLayout>
+
+                            </Frame>
+
+
+                            <!-- ALLOCATED -->
+                            <Frame
+                                Grid.Column="2"
+                                BackgroundColor="{DynamicResource BgCard}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                CornerRadius="14"
+                                Padding="0"
+                                HasShadow="False">
+
+                                <VerticalStackLayout
+                                    Padding="4,13"
+                                    Spacing="4"
+                                    HorizontalOptions="Center">
+
+                                    <Label
+                                        Text="{Binding AllocatedCount}"
+                                        FontSize="22"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Blue}"
+                                        HorizontalOptions="Center"/>
+
+                                    <Label
+                                        Text="Allocated"
+                                        FontSize="10"
+                                        TextColor="{DynamicResource Text3}"
+                                        HorizontalOptions="Center"/>
+
+                                </VerticalStackLayout>
+
+                            </Frame>
+
+                        </Grid>
+
+
+                        <!-- ROW 2 -->
+                        <Grid
+                            ColumnDefinitions="*,*"
+                            ColumnSpacing="10">
+
+
+                            <!-- DAMAGED -->
+                            <Frame
+                                Grid.Column="0"
+                                BackgroundColor="{DynamicResource BgCard}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                CornerRadius="14"
+                                Padding="0"
+                                HasShadow="False">
+
+                                <VerticalStackLayout
+                                    Padding="4,13"
+                                    Spacing="4"
+                                    HorizontalOptions="Center">
+
+                                    <Label
+                                        Text="{Binding DamagedCount}"
+                                        FontSize="22"
+                                        FontAttributes="Bold"
+                                        TextColor="#ef4444"
+                                        HorizontalOptions="Center"/>
+
+                                    <Label
+                                        Text="Damaged"
+                                        FontSize="10"
+                                        TextColor="{DynamicResource Text3}"
+                                        HorizontalOptions="Center"/>
+
+                                </VerticalStackLayout>
+
+                            </Frame>
+
+
+                            <!-- LOST -->
+                            <Frame
+                                Grid.Column="1"
+                                BackgroundColor="{DynamicResource BgCard}"
+                                BorderColor="{DynamicResource BorderColor}"
+                                CornerRadius="14"
+                                Padding="0"
+                                HasShadow="False">
+
+                                <VerticalStackLayout
+                                    Padding="4,13"
+                                    Spacing="4"
+                                    HorizontalOptions="Center">
+
+                                    <Label
+                                        Text="{Binding LostCount}"
+                                        FontSize="22"
+                                        FontAttributes="Bold"
+                                        TextColor="#ef4444"
+                                        HorizontalOptions="Center"/>
+
+                                    <Label
+                                        Text="Lost"
+                                        FontSize="10"
+                                        TextColor="{DynamicResource Text3}"
+                                        HorizontalOptions="Center"/>
+
+                                </VerticalStackLayout>
+
+                            </Frame>
+
+                        </Grid>
+
+
+                        <!-- ACCOUNTABILITY NOTE -->
+                        <Frame
+                            BackgroundColor="{DynamicResource BlueSubtle}"
+                            BorderColor="{DynamicResource BorderColor}"
+                            CornerRadius="12"
+                            Padding="12"
+                            HasShadow="False">
+
+                            <Grid
+                                ColumnDefinitions="4,*"
+                                ColumnSpacing="10">
+
+                                <BoxView
+                                    Grid.Column="0"
+                                    WidthRequest="4"
+                                    CornerRadius="2"
+                                    Color="{DynamicResource Blue}"
+                                    VerticalOptions="Fill"/>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="2">
+
+                                    <Label
+                                        Text="Project Allocation"
+                                        FontSize="11"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Blue}"/>
+
+                                    <Label
+                                        Text="Allocated equipment is managed under the Project Engineer until distributed to workers."
+                                        FontSize="10"
+                                        LineBreakMode="WordWrap"
+                                        TextColor="{DynamicResource Text3}"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
                         </Frame>
 
-                        <Frame Grid.Column="1"
-                               BackgroundColor="{DynamicResource BgCard}"
-                               BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14" Padding="0"
-                               HasShadow="False">
-                            <VerticalStackLayout
-                                Padding="0,12" Spacing="4"
-                                HorizontalOptions="Center">
-                                <Label Text="{Binding BorrowedCount}"
-                                       FontSize="22"
-                                       FontAttributes="Bold"
-                                       TextColor="{DynamicResource Amber}"
-                                       HorizontalOptions="Center"/>
-                                <Label Text="Borrowed"
-                                       FontSize="10"
-                                       TextColor="{DynamicResource Text3}"
-                                       HorizontalOptions="Center"/>
-                            </VerticalStackLayout>
-                        </Frame>
-                        
-                        
-
-                        <Frame Grid.Column="2"
-                               BackgroundColor="{DynamicResource BgCard}"
-                               BorderColor="{DynamicResource BorderColor}"
-                               CornerRadius="14"
-                               Padding="0"
-                               HasShadow="False">
-
-                            <VerticalStackLayout
-                                Padding="0,12"
-                                Spacing="4"
-                                HorizontalOptions="Center">
+                    </VerticalStackLayout>
 
 
 
-                                <!-- DAMAGE -->
-                                <Label
-                                    Text="{Binding DamagedCount}"
-                                    FontSize="22"
-                                    FontAttributes="Bold"
-                                    TextColor="#ef4444"
-                                    HorizontalOptions="Center"/>
+                    <!-- ═══════════════════════════════════════
+                         LOADING
+                         ═══════════════════════════════════════ -->
 
-                                <Label
-                                    Text="Damaged"
-                                    FontSize="10"   
-                                    TextColor="{DynamicResource Text3}"
-                                    HorizontalOptions="Center"/>
-
-                                <!--<Label
-                                Text="{Binding OnHoldCount}"
-                                FontSize="22"
-                                FontAttributes="Bold"
-                                TextColor="#8b5cf6"
-                                HorizontalOptions="Center"/>
-
-                                <Label
-                                Text="On Hold"
-                                FontSize="10"
-                                TextColor="{DynamicResource Text3}"
-                                HorizontalOptions="Center"/>-->
-
-                            </VerticalStackLayout>
-                        </Frame>
-                    </Grid>
-
-                    <!-- ── LOADING ─────────────────────────── -->
                     <ActivityIndicator
                         IsRunning="{Binding IsBusy}"
                         IsVisible="{Binding IsBusy}"
@@ -194,110 +347,177 @@
                         HorizontalOptions="Center"
                         Margin="0,20"/>
 
-                    <!-- ── TOOL LIST ───────────────────────── -->
+
+
+                    <!-- ═══════════════════════════════════════
+                         EQUIPMENT LIST TITLE
+                         ═══════════════════════════════════════ -->
+
+                    <Grid
+                        ColumnDefinitions="*,Auto"
+                        Padding="20,4,20,10">
+
+                        <Label
+                            Grid.Column="0"
+                            Text="Equipment"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text2}"/>
+
+                        <Label
+                            Grid.Column="1"
+                            Text="{Binding ToolCountLabel}"
+                            FontSize="10"
+                            TextColor="{DynamicResource Text3}"
+                            VerticalOptions="Center"/>
+
+                    </Grid>
+
+
+
+                    <!-- ═══════════════════════════════════════
+                         TOOL LIST
+                         ═══════════════════════════════════════ -->
+
                     <VerticalStackLayout
                         BindableLayout.ItemsSource="{Binding Tools}"
                         Padding="20,0"
                         Spacing="10">
+
                         <BindableLayout.ItemTemplate>
-                            <DataTemplate x:DataType="models:Tool">
+
+                            <DataTemplate
+                                x:DataType="models:Tool">
+
                                 <Frame
                                     BackgroundColor="{DynamicResource BgCard}"
                                     BorderColor="{DynamicResource BorderColor}"
-                                    CornerRadius="14" Padding="0"
+                                    CornerRadius="14"
+                                    Padding="0"
                                     HasShadow="False">
-                                    <VerticalStackLayout Spacing="0">
 
-                                        <Grid ColumnDefinitions="Auto,*,Auto"
-                                              Padding="14,14,14,12"
-                                              ColumnSpacing="12">
+                                    <VerticalStackLayout
+                                        Spacing="0">
 
-                                            <Frame Grid.Column="0"
-                                                   BackgroundColor="{DynamicResource BlueSubtle}"
-                                                   CornerRadius="12"
-                                                   WidthRequest="48"
-                                                   HeightRequest="48"
-                                                   Padding="0"
-                                                   HasShadow="False"
-                                                   BorderColor="Transparent"
-                                                   VerticalOptions="Center">
-                                                <Label Text="{Binding ToolIcon}"
-                                                       FontSize="24"
-                                                       HorizontalOptions="Center"
-                                                       VerticalOptions="Center"/>
+
+                                        <!-- TOOL INFORMATION -->
+                                        <Grid
+                                            ColumnDefinitions="Auto,*,Auto"
+                                            Padding="14,14,14,12"
+                                            ColumnSpacing="12">
+
+
+                                            <!-- TOOL ICON -->
+                                            <Frame
+                                                Grid.Column="0"
+                                                BackgroundColor="{DynamicResource BlueSubtle}"
+                                                CornerRadius="12"
+                                                WidthRequest="48"
+                                                HeightRequest="48"
+                                                Padding="0"
+                                                HasShadow="False"
+                                                BorderColor="Transparent"
+                                                VerticalOptions="Start">
+
+                                                <Label
+                                                    Text="{Binding ToolIcon}"
+                                                    FontSize="24"
+                                                    HorizontalOptions="Center"
+                                                    VerticalOptions="Center"/>
+
                                             </Frame>
 
+
+                                            <!-- TOOL DETAILS -->
                                             <VerticalStackLayout
                                                 Grid.Column="1"
                                                 Spacing="4"
                                                 VerticalOptions="Center">
-                                                <Label Text="{Binding ToolId}"
-                                                       FontSize="15"
-                                                       FontAttributes="Bold"
-                                                       TextColor="{DynamicResource Text1}"/>
-                                                <Label Text="{Binding ToolName}"
-                                                       FontSize="12"
-                                                       TextColor="{DynamicResource Text3}"/>
-                                                <HorizontalStackLayout Spacing="6">
-                                                    <Label Text="{Binding StatusIcon}"
-                                                           FontSize="11"/>
-                                                    <Label Text="{Binding Status}"
-                                                           FontSize="11"
-                                                           FontAttributes="Bold"
-                                                           TextColor="{Binding StatusColor}"/>
+
+
+                                                <!-- TOOL ID -->
+                                                <Label
+                                                    Text="{Binding ToolId}"
+                                                    FontSize="15"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text1}"/>
+
+
+                                                <!-- TOOL NAME -->
+                                                <Label
+                                                    Text="{Binding ToolName}"
+                                                    FontSize="12"
+                                                    TextColor="{DynamicResource Text3}"/>
+
+
+                                                <!-- STATUS -->
+                                                <HorizontalStackLayout
+                                                    Spacing="6">
+
+                                                    <Label
+                                                        Text="{Binding StatusIcon}"
+                                                        FontSize="11"/>
+
+                                                    <Label
+                                                        Text="{Binding Status}"
+                                                        FontSize="11"
+                                                        FontAttributes="Bold"
+                                                        TextColor="{Binding StatusColor}"/>
+
                                                 </HorizontalStackLayout>
+
+
+                                                <!-- CURRENT WORKER -->
                                                 <Label
                                                     Text="{Binding AssignedWorkerName}"
                                                     FontSize="11"
+                                                    FontAttributes="Bold"
                                                     TextColor="{DynamicResource Blue}"
                                                     IsVisible="{Binding IsBorrowed}"/>
+
+
+                                                <!-- CURRENT PROJECT -->
                                                 <Label
-                                                    Text="{Binding BorrowedProjectName, StringFormat='📍 {0}'}"
+                                                    Text="{Binding BorrowedProjectName}"
                                                     FontSize="11"
                                                     TextColor="{DynamicResource Text3}"
                                                     IsVisible="{Binding IsBorrowed}"/>
-                                                <VerticalStackLayout
-                                                    IsVisible="{Binding IsOnHold}"
-                                                    Spacing="3"
-                                                    Margin="0,3,0,0">
 
-                                                    <Label
-                                                    Text="{Binding HoldProjectName, StringFormat='📁 Project: {0}'}"
-                                                    FontSize="11"
-                                                    TextColor="{DynamicResource Text2}"/>
-
-                                                    <Label
-                                                    Text="{Binding HoldLocation, StringFormat='📍 Location: {0}'}"
-                                                    FontSize="11"
-                                                    TextColor="{DynamicResource Text3}"/>
-
-                                                    <Label
-                                                    Text="{Binding LastBorrowerName, StringFormat='👤 Last borrower: {0}'}"
-                                                    FontSize="11"
-                                                    TextColor="{DynamicResource Blue}"/>
-
-                                                </VerticalStackLayout>
                                             </VerticalStackLayout>
 
-                                            <Frame Grid.Column="2"
-                                                   BackgroundColor="{DynamicResource BgElevated}"
-                                                   BorderColor="Transparent"
-                                                   CornerRadius="8"
-                                                   Padding="8,4"
-                                                   HasShadow="False"
-                                                   VerticalOptions="Start">
-                                                <Label Text="{Binding Condition}"
-                                                       FontSize="10"
-                                                       FontAttributes="Bold"
-                                                       TextColor="{DynamicResource Text2}"/>
+
+                                            <!-- CONDITION -->
+                                            <Frame
+                                                Grid.Column="2"
+                                                BackgroundColor="{DynamicResource BgElevated}"
+                                                BorderColor="Transparent"
+                                                CornerRadius="8"
+                                                Padding="8,4"
+                                                HasShadow="False"
+                                                VerticalOptions="Start">
+
+                                                <Label
+                                                    Text="{Binding Condition}"
+                                                    FontSize="10"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Text2}"/>
+
                                             </Frame>
+
                                         </Grid>
 
-                                        <BoxView HeightRequest="1"
-                                                 Color="{DynamicResource BorderSoft}"/>
 
+
+                                        <!-- DIVIDER -->
+                                        <BoxView
+                                            HeightRequest="1"
+                                            Color="{DynamicResource BorderSoft}"/>
+
+
+
+                                        <!-- QR ACTION -->
                                         <Button
-                                            Text="📱  Show QR Code"
+                                            Text="Show QR Code"
                                             CommandParameter="{Binding .}"
                                             Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ToolListViewModel}}, Path=ShowQrCommand}"
                                             BackgroundColor="Transparent"
@@ -307,14 +527,21 @@
                                             HeightRequest="44"/>
 
                                     </VerticalStackLayout>
+
                                 </Frame>
+
                             </DataTemplate>
+
                         </BindableLayout.ItemTemplate>
+
                     </VerticalStackLayout>
 
                 </VerticalStackLayout>
+
             </ScrollView>
+
         </RefreshView>
+
     </Grid>
 
 </ContentPage>

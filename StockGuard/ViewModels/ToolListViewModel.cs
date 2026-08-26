@@ -13,169 +13,315 @@ namespace StockGuard.ViewModels
         private readonly FirebaseService _firebase;
         private readonly ThemeService _theme;
 
-        // ── Query Properties ──────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // QUERY PROPERTIES
+        // ─────────────────────────────────────────────────────────
+
         private string _catalogId = string.Empty;
+
         public string CatalogId
         {
             get => _catalogId;
-            set => SetProperty(ref _catalogId, value);
-            // ✔ Property is set. That's all.
-            // ✗ DO NOT call LoadToolsAsync() here.
-            //
-            // Why: Shell sets CatalogId (and CatalogName) synchronously during
-            // navigation, BEFORE OnAppearing fires. Queuing an async load here
-            // via MainThread.BeginInvokeOnMainThread races against the Shell
-            // navigation completion and can freeze ".." back navigation because
-            // the navigation stack isn't fully committed yet.
-            //
-            // OnAppearing in ToolListView.xaml.cs is the correct single place
-            // to trigger LoadToolsAsync() — Shell guarantees QueryProperty
-            // setters run before OnAppearing.
+            set => SetProperty(
+                ref _catalogId,
+                value);
         }
 
         private string _catalogName = string.Empty;
+
         public string CatalogName
         {
             get => _catalogName;
-            set => SetProperty(ref _catalogName, value);
+            set => SetProperty(
+                ref _catalogName,
+                value);
         }
 
-        // ── Stats ─────────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // PHYSICAL INVENTORY STATS
+        // ─────────────────────────────────────────────────────────
+
         private int _availableCount;
+
         public int AvailableCount
         {
             get => _availableCount;
-            private set => SetProperty(ref _availableCount, value);
+            private set => SetProperty(
+                ref _availableCount,
+                value);
         }
 
+
         private int _borrowedCount;
+
         public int BorrowedCount
         {
             get => _borrowedCount;
-            private set => SetProperty(ref _borrowedCount, value);
+            private set => SetProperty(
+                ref _borrowedCount,
+                value);
         }
 
+
         private int _damagedCount;
+
         public int DamagedCount
         {
             get => _damagedCount;
-            private set => SetProperty(ref _damagedCount, value);
+            private set => SetProperty(
+                ref _damagedCount,
+                value);
         }
 
-        private int _onHoldCount;
-        public int OnHoldCount
+
+        private int _lostCount;
+
+        public int LostCount
         {
-            get => _onHoldCount;
-            private set => SetProperty(ref _onHoldCount, value);
+            get => _lostCount;
+            private set => SetProperty(
+                ref _lostCount,
+                value);
         }
 
-        public string ToolCountLabel => $"{Tools.Count} tools in catalog";
 
-        // ── Collections ───────────────────────────────────────────────────────
-        public ObservableCollection<Tool> Tools { get; } = new();
+        // ─────────────────────────────────────────────────────────
+        // PROJECT ALLOCATION
+        // ─────────────────────────────────────────────────────────
+        //
+        // Allocated does NOT mean Borrowed.
+        //
+        // It represents the quantity currently required/reserved
+        // by active projects.
+        //
+        // The Project Engineer is accountable for managing this
+        // quantity for their project.
+        // ─────────────────────────────────────────────────────────
 
-        // ── Pull to Refresh ───────────────────────────────────────────────────
+        private int _allocatedCount;
+
+        public int AllocatedCount
+        {
+            get => _allocatedCount;
+            private set => SetProperty(
+                ref _allocatedCount,
+                value);
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // LABEL
+        // ─────────────────────────────────────────────────────────
+
+        public string ToolCountLabel =>
+            Tools.Count == 1
+                ? "1 tool in catalog"
+                : $"{Tools.Count} tools in catalog";
+
+
+        // ─────────────────────────────────────────────────────────
+        // COLLECTION
+        // ─────────────────────────────────────────────────────────
+
+        public ObservableCollection<Tool>
+            Tools
+        { get; } = new();
+
+
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
+
         private bool _isRefreshing;
+
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
+            set => SetProperty(
+                ref _isRefreshing,
+                value);
         }
 
-        // ── Commands ──────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // COMMANDS
+        // ─────────────────────────────────────────────────────────
+
         public ICommand GoBackCommand { get; }
+
         public ICommand RefreshCommand { get; }
+
         public ICommand ShowQrCommand { get; }
 
-        // ── Constructor ───────────────────────────────────────────────────────
-        public ToolListViewModel(FirebaseService firebase, ThemeService theme)
+
+        // ─────────────────────────────────────────────────────────
+        // CONSTRUCTOR
+        // ─────────────────────────────────────────────────────────
+
+        public ToolListViewModel(
+            FirebaseService firebase,
+            ThemeService theme)
         {
             _firebase = firebase;
             _theme = theme;
 
-            // ✔ ".." = pop one level in Shell stack.
-            // ✔ Shell.Current is always non-null inside a Shell app.
-            // ✗ Never use Navigation.PopAsync() — it bypasses Shell.
-            GoBackCommand = new Command(async () =>
-                await Shell.Current.GoToAsync(".."));
+            GoBackCommand =
+                new Command(
+                    async () =>
+                        await Shell.Current
+                            .GoToAsync(".."));
 
-            RefreshCommand = new Command(async () => await RefreshAsync());
+            RefreshCommand =
+                new Command(
+                    async () =>
+                        await RefreshAsync());
 
-            ShowQrCommand = new Command<Tool>(async tool => await ShowQrAsync(tool));
+            ShowQrCommand =
+                new Command<Tool>(
+                    async tool =>
+                        await ShowQrAsync(
+                            tool));
         }
 
-        // ── Load ──────────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────────
+        // LOAD TOOLS
+        // ─────────────────────────────────────────────────────────
+
         public async Task LoadToolsAsync()
         {
-            if (string.IsNullOrEmpty(CatalogId))
+            if (string.IsNullOrWhiteSpace(
+                    CatalogId))
+            {
                 return;
+            }
 
             IsBusy = true;
 
             try
             {
-                // Get fresh physical tools
-                var tools = await _firebase
-                    .GetToolsByCatalogAsync(CatalogId);
+                // ─────────────────────────────────────────────
+                // PHYSICAL TOOLS
+                // ─────────────────────────────────────────────
 
-                // Get project allocations
-                var allocations = await _firebase
-                    .GetAllActiveProjectEquipmentRequirementsAsync();
+                var tools =
+                    await _firebase
+                        .GetToolsByCatalogAsync(
+                            CatalogId);
+
+
+                // ─────────────────────────────────────────────
+                // ACTIVE PROJECT REQUIREMENTS
+                // ─────────────────────────────────────────────
+
+                var allocations =
+                    await _firebase
+                        .GetAllActiveProjectEquipmentRequirementsAsync();
+
+
+                // ─────────────────────────────────────────────
+                // DISPLAY PHYSICAL TOOLS
+                // ─────────────────────────────────────────────
 
                 Tools.Clear();
 
-                foreach (var tool in tools.OrderBy(t => t.ToolId))
+                foreach (var tool in
+                         tools
+                             .Where(t =>
+                                 !t.IsDeleted)
+                             .OrderBy(t =>
+                                 t.ToolId))
                 {
                     Tools.Add(tool);
                 }
 
-                // ── PHYSICAL TOOL STATES ─────────────────────────────
 
-                int physicalAvailable = tools.Count(t =>
-                    t.Status == "Available");
+                // ─────────────────────────────────────────────
+                // PHYSICAL STATUS COUNTS
+                // ─────────────────────────────────────────────
 
-                int actualBorrowed = tools.Count(t =>
-                    t.Status == "Borrowed");
+                AvailableCount =
+                    tools.Count(t =>
+                        !t.IsDeleted &&
+                        t.Status ==
+                            "Available");
 
-                OnHoldCount = tools.Count(t =>
-                    t.Status == "OnHold");
 
-                DamagedCount = tools.Count(t =>
-                    t.Status is "Damaged" or "UnderRepair");
+                // PendingReturn is still physically
+                // in the worker's custody until the PE
+                // approves the return.
+                BorrowedCount =
+                    tools.Count(t =>
+                        !t.IsDeleted &&
+                        (
+                            t.Status ==
+                                "Borrowed" ||
 
-                // ── PROJECT ALLOCATION ────────────────────────────────
+                            t.Status ==
+                                "PendingReturn"
+                        ));
 
-                int allocated = allocations
-                    .Where(a => a.CatalogId == CatalogId)
-                    .Sum(a => a.QuantityNeeded);
 
-              
-                // Borrowed tools already consume part
-                // of the allocated quantity.
+                DamagedCount =
+                    tools.Count(t =>
+                        !t.IsDeleted &&
+                        (
+                            t.Status ==
+                                "Damaged" ||
+
+                            t.Status ==
+                                "UnderRepair"
+                        ));
+
+
+                LostCount =
+                    tools.Count(t =>
+                        !t.IsDeleted &&
+                        t.Status ==
+                            "Lost");
+
+
+                // ─────────────────────────────────────────────
+                // PROJECT ALLOCATION
+                // ─────────────────────────────────────────────
                 //
                 // Example:
-                // Allocated = 3
-                // Worker borrowed = 1
-                // Still reserved = 2
-                int remainingReserved = Math.Max(
-                    0,
-                    allocated - actualBorrowed);
+                //
+                // Project A requires 5 drills.
+                // Project B requires 3 drills.
+                //
+                // AllocatedCount = 8
+                //
+                // This does NOT mean 8 drills are borrowed.
+                // ─────────────────────────────────────────────
 
-                // Company/shop availability
-                AvailableCount = Math.Max(
-                    0,
-                    physicalAvailable - remainingReserved);
+                AllocatedCount =
+                    allocations
+                        .Where(a =>
+                            string.Equals(
+                                a.CatalogId,
+                                CatalogId,
+                                StringComparison
+                                    .OrdinalIgnoreCase))
+                        .Sum(a =>
+                            a.QuantityNeeded);
 
-                // From company perspective, all allocated
-                // equipment is already under PE/project custody.
-                BorrowedCount = allocated;
-           
-                OnPropertyChanged(nameof(ToolCountLabel));
+
+                // ─────────────────────────────────────────────
+                // UPDATE LABEL
+                // ─────────────────────────────────────────────
+
+                OnPropertyChanged(
+                    nameof(
+                        ToolCountLabel));
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"LoadTools error: {ex.Message}");
+                System.Diagnostics.Debug
+                    .WriteLine(
+                        $"LoadTools error: " +
+                        $"{ex.Message}");
             }
             finally
             {
@@ -183,24 +329,47 @@ namespace StockGuard.ViewModels
             }
         }
 
+
+        // ─────────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────────
+
         private async Task RefreshAsync()
         {
             IsRefreshing = true;
-            await LoadToolsAsync();
-            IsRefreshing = false;
+
+            try
+            {
+                await LoadToolsAsync();
+            }
+            finally
+            {
+                IsRefreshing = false;
+            }
         }
 
-        // ── QR ────────────────────────────────────────────────────────────────
-        private async Task ShowQrAsync(Tool tool)
-        {
-            if (tool is null) return;
 
-            await Shell.Current.GoToAsync(
-                $"{nameof(QrDisplayView)}" +
-                $"?toolId={Uri.EscapeDataString(tool.ToolId)}" +
-                $"&toolName={Uri.EscapeDataString(tool.ToolName)}" +
-                $"&status={Uri.EscapeDataString(tool.Status)}" +
-                $"&catalogName={Uri.EscapeDataString(CatalogName)}");
+        // ─────────────────────────────────────────────────────────
+        // QR
+        // ─────────────────────────────────────────────────────────
+
+        private async Task ShowQrAsync(
+            Tool tool)
+        {
+            if (tool == null)
+                return;
+
+            await Shell.Current
+                .GoToAsync(
+                    $"{nameof(QrDisplayView)}" +
+                    $"?toolId=" +
+                    $"{Uri.EscapeDataString(tool.ToolId)}" +
+                    $"&toolName=" +
+                    $"{Uri.EscapeDataString(tool.ToolName)}" +
+                    $"&status=" +
+                    $"{Uri.EscapeDataString(tool.Status)}" +
+                    $"&catalogName=" +
+                    $"{Uri.EscapeDataString(CatalogName)}");
         }
     }
 }
