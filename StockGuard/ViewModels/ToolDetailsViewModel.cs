@@ -9,307 +9,443 @@ namespace StockGuard.ViewModels
     /// <summary>
     /// Lazy-loading tool browser with forced catalog selection and pagination.
     ///
-    /// Key changes vs original:
-    ///   1. No tools are rendered on first load — user must pick a catalog first.
-    ///      This eliminates the "inflate 500 cards" lag on navigation.
-    ///   2. Page-based pagination (PageSize = 20). Tools are loaded in slices;
-    ///      a "Load More" command appends the next page into the ObservableCollection.
-    ///   3. Search is fully functional: it filters across ALL tools in the selected
-    ///      catalog (not just the current page), then resets to page 1.
-    ///   4. Status filter works the same way — resets to page 1.
-    ///   5. Pull-to-refresh forces a Firebase cache bypass and resets pagination.
-    ///   6. NoCatalogSelected drives the "pick a catalog" empty state in the View.
-    ///   7. HasMorePages drives the "Load More" button visibility in the View.
+    /// Company-level stats use PHYSICAL tool status only:
+    /// Total     = all non-deleted physical tools
+    /// Available = Status == Available
+    /// Borrowed  = Status == Borrowed or PendingReturn
+    ///
+    /// Project allocation is NOT treated as borrowing.
     /// </summary>
     public class ToolDetailsViewModel : BaseViewModel
     {
-        // ── Constants ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
+        // CONSTANTS
+        // ─────────────────────────────────────────────────────
+
         private const int PageSize = 20;
 
-        // ── Dependencies ─────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // DEPENDENCIES
+        // ─────────────────────────────────────────────────────
+
         private readonly FirebaseService _firebase;
         private readonly ThemeService _theme;
 
-        // ── Raw data (never modified after load) ──────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // RAW DATA
+        // ─────────────────────────────────────────────────────
+
         private List<Tool> _allTools = new();
         private List<EquipmentCatalog> _allCatalogs = new();
 
-        // ── Pagination state ─────────────────────────────────────────────────
-        // _filteredTools holds the full result of the current filter pass.
-        // Tools is the *paged slice* shown in the CollectionView.
+
+        // ─────────────────────────────────────────────────────
+        // PAGINATION
+        // ─────────────────────────────────────────────────────
+
         private List<Tool> _filteredTools = new();
         private int _currentPage = 0;
 
-        // ── Theme ─────────────────────────────────────────────────────────────
-        public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
 
-        // ── Stats ─────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
+        // THEME
+        // ─────────────────────────────────────────────────────
+
+        public string ThemeIcon =>
+            _theme.IsDark
+                ? "\uf185"
+                : "\uf186";
+
+
+        // ─────────────────────────────────────────────────────
+        // COMPANY-LEVEL PHYSICAL INVENTORY STATS
+        // ─────────────────────────────────────────────────────
+
         private int _totalTools;
+
         public int TotalTools
         {
             get => _totalTools;
-            private set => SetProperty(ref _totalTools, value);
+            private set => SetProperty(
+                ref _totalTools,
+                value);
         }
 
+
         private int _availableTools;
+
         public int AvailableTools
         {
             get => _availableTools;
-            private set => SetProperty(ref _availableTools, value);
+            private set => SetProperty(
+                ref _availableTools,
+                value);
         }
 
+
         private int _borrowedTools;
+
         public int BorrowedTools
         {
             get => _borrowedTools;
-            private set => SetProperty(ref _borrowedTools, value);
+            private set => SetProperty(
+                ref _borrowedTools,
+                value);
         }
 
-        // ── Displayed (paged) tool list ───────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // DISPLAYED TOOL LIST
+        // ─────────────────────────────────────────────────────
+
         private ObservableCollection<Tool> _tools = new();
+
         public ObservableCollection<Tool> Tools
         {
             get => _tools;
-            private set => SetProperty(ref _tools, value);
+            private set => SetProperty(
+                ref _tools,
+                value);
         }
 
-        // ── Catalog picker ────────────────────────────────────────────────────
-        public ObservableCollection<EquipmentCatalog> Catalogs { get; } = new();
 
-        // ── Search ────────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
+        // CATALOG PICKER
+        // ─────────────────────────────────────────────────────
+
+        public ObservableCollection<EquipmentCatalog>
+            Catalogs
+        { get; } = new();
+
+
+        // ─────────────────────────────────────────────────────
+        // SEARCH
+        // ─────────────────────────────────────────────────────
+
         private string _searchText = string.Empty;
+
         public string SearchText
         {
             get => _searchText;
             set
             {
-                if (SetProperty(ref _searchText, value))
+                if (SetProperty(
+                        ref _searchText,
+                        value))
+                {
                     ApplyFilters();
+                }
             }
         }
 
-        // ── Catalog filter ────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // CATALOG FILTER
+        // ─────────────────────────────────────────────────────
+
         private EquipmentCatalog? _selectedCatalog;
+
         public EquipmentCatalog? SelectedCatalog
         {
             get => _selectedCatalog;
             set
             {
-                if (SetProperty(ref _selectedCatalog, value))
+                if (SetProperty(
+                        ref _selectedCatalog,
+                        value))
                 {
-                    OnPropertyChanged(nameof(NoCatalogSelected));
+                    OnPropertyChanged(
+                        nameof(
+                            NoCatalogSelected));
+
                     ApplyFilters();
                 }
             }
         }
 
-        // ── Status filter ─────────────────────────────────────────────────────
-        private string _selectedStatus = string.Empty;
+
+        // ─────────────────────────────────────────────────────
+        // STATUS FILTER
+        // ─────────────────────────────────────────────────────
+
+        private string _selectedStatus =
+            string.Empty;
+
         public string SelectedStatus
         {
             get => _selectedStatus;
             set
             {
-                if (SetProperty(ref _selectedStatus, value))
+                if (SetProperty(
+                        ref _selectedStatus,
+                        value))
+                {
                     ApplyFilters();
+                }
             }
         }
 
-        public List<string> StatusOptions { get; } =
-            new() { "All Status", "Available", "Borrowed", "Damaged" };
 
-        // ── Pull-to-refresh ───────────────────────────────────────────────────
+        public List<string> StatusOptions { get; } =
+            new()
+            {
+                "All Status",
+                "Available",
+                "Borrowed",
+                "Damaged",
+                "UnderRepair",
+                "PendingReturn",
+                "Lost"
+            };
+
+
+        // ─────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────
+
         private bool _isRefreshing;
+
         public bool IsRefreshing
         {
             get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
+            set => SetProperty(
+                ref _isRefreshing,
+                value);
         }
 
-        // ── Empty / pagination states ─────────────────────────────────────────
 
-        /// <summary>
-        /// True while no catalog has been chosen yet (or the placeholder
-        /// "Pick a catalog" item is selected). Drives the "select a catalog first"
-        /// empty state in the View.
-        /// </summary>
+        // ─────────────────────────────────────────────────────
+        // EMPTY / PAGINATION STATES
+        // ─────────────────────────────────────────────────────
+
         public bool NoCatalogSelected =>
-            _selectedCatalog == null || string.IsNullOrEmpty(_selectedCatalog.CatalogId);
+            _selectedCatalog == null ||
+            string.IsNullOrWhiteSpace(
+                _selectedCatalog.CatalogId);
 
-        /// <summary>
-        /// True when the filtered list is empty AND we are not loading AND a real
-        /// catalog is selected. Drives the "No tools found" card.
-        /// </summary>
+
         public bool NoTools =>
-            Tools.Count == 0 && !IsBusy && !NoCatalogSelected;
+            Tools.Count == 0 &&
+            !IsBusy &&
+            !NoCatalogSelected;
 
-        /// <summary>
-        /// True when there are more pages of filtered results beyond what is
-        /// currently shown. Drives the "Load More" button visibility.
-        /// </summary>
+
         public bool HasMorePages =>
-            (_currentPage + 1) * PageSize < _filteredTools.Count;
+            (_currentPage + 1) *
+            PageSize <
+            _filteredTools.Count;
 
-        // ── Commands ──────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // COMMANDS
+        // ─────────────────────────────────────────────────────
+
         public ICommand RefreshCommand { get; }
+
         public ICommand ToggleThemeCommand { get; }
+
         public ICommand ShowQrCommand { get; }
+
         public ICommand ClearFiltersCommand { get; }
+
         public ICommand LoadMoreCommand { get; }
 
-        // ── Constructor ───────────────────────────────────────────────────────
-        public ToolDetailsViewModel(FirebaseService firebase, ThemeService theme)
+
+        // ─────────────────────────────────────────────────────
+        // CONSTRUCTOR
+        // ─────────────────────────────────────────────────────
+
+        public ToolDetailsViewModel(
+            FirebaseService firebase,
+            ThemeService theme)
         {
             _firebase = firebase;
             _theme = theme;
+
             Title = "Tools & QR Codes";
 
             _theme.ThemeChanged += _ =>
-                MainThread.BeginInvokeOnMainThread(() =>
-                    OnPropertyChanged(nameof(ThemeIcon)));
+                MainThread.BeginInvokeOnMainThread(
+                    () =>
+                    {
+                        OnPropertyChanged(
+                            nameof(ThemeIcon));
+                    });
 
-            RefreshCommand = new Command(async () => await RefreshAsync());
-            ToggleThemeCommand = new Command(() => _theme.Toggle());
-            ClearFiltersCommand = new Command(ClearFilters);
-            LoadMoreCommand = new Command(LoadNextPage, () => HasMorePages);
 
-            ShowQrCommand = new Command<Tool>(async tool =>
-            {
-                if (tool is null) return;
-                await Shell.Current.GoToAsync(
-                    $"{nameof(QrDisplayView)}" +
-                    $"?toolId={Uri.EscapeDataString(tool.ToolId)}" +
-                    $"&toolName={Uri.EscapeDataString(tool.ToolName)}" +
-                    $"&status={Uri.EscapeDataString(tool.Status)}" +
-                    $"&catalogName={Uri.EscapeDataString(tool.ToolName)}");
-            });
+            RefreshCommand =
+                new Command(
+                    async () =>
+                        await RefreshAsync());
+
+
+            ToggleThemeCommand =
+                new Command(
+                    () => _theme.Toggle());
+
+
+            ClearFiltersCommand =
+                new Command(
+                    ClearFilters);
+
+
+            LoadMoreCommand =
+                new Command(
+                    LoadNextPage,
+                    () => HasMorePages);
+
+
+            ShowQrCommand =
+                new Command<Tool>(
+                    async tool =>
+                    {
+                        if (tool is null)
+                            return;
+
+                        await Shell.Current
+                            .GoToAsync(
+                                $"{nameof(QrDisplayView)}" +
+                                $"?toolId=" +
+                                $"{Uri.EscapeDataString(tool.ToolId)}" +
+                                $"&toolName=" +
+                                $"{Uri.EscapeDataString(tool.ToolName)}" +
+                                $"&status=" +
+                                $"{Uri.EscapeDataString(tool.Status)}" +
+                                $"&catalogName=" +
+                                $"{Uri.EscapeDataString(tool.ToolName)}");
+                    });
         }
 
-        // ── Load ──────────────────────────────────────────────────────────────
-        /// <summary>
-        /// Fetches tools and catalogs from Firebase (parallel).
-        /// Does NOT render any tools — waits for the user to pick a catalog.
-        /// forceRefresh = true only on pull-to-refresh.
-        /// </summary>
-        public async Task LoadAsync(bool forceRefresh = false)
+
+        // ─────────────────────────────────────────────────────
+        // LOAD
+        // ─────────────────────────────────────────────────────
+
+        public async Task LoadAsync(
+            bool forceRefresh = false)
         {
             IsBusy = true;
 
             try
             {
+                // ─────────────────────────────────────────────
+                // LOAD TOOLS + CATALOGS
+                // ─────────────────────────────────────────────
+
                 var toolsTask =
-                    _firebase.GetAllToolsAsync(forceRefresh);
+                    _firebase
+                        .GetAllToolsAsync(
+                            forceRefresh);
 
                 var catalogsTask =
-                    _firebase.GetAllCatalogsAsync(forceRefresh);
-
-                var allocationsTask =
-                    _firebase.GetAllActiveProjectEquipmentRequirementsAsync();
+                    _firebase
+                        .GetAllCatalogsAsync(
+                            forceRefresh);
 
                 await Task.WhenAll(
                     toolsTask,
-                    catalogsTask,
-                    allocationsTask);
+                    catalogsTask);
+
 
                 _allTools =
-                    toolsTask.Result ??
-                    new List<Tool>();
+                    (toolsTask.Result ??
+                     new List<Tool>())
+                    .Where(t =>
+                        !t.IsDeleted)
+                    .ToList();
+
 
                 _allCatalogs =
-                    catalogsTask.Result ??
-                    new List<EquipmentCatalog>();
+                    (catalogsTask.Result ??
+                     new List<EquipmentCatalog>())
+                    .Where(c =>
+                        !c.IsDeleted)
+                    .ToList();
 
-                var allocations =
-                    allocationsTask.Result ??
-                    new List<ProjectEquipmentRequirement>();
 
-                // ── COMPANY-LEVEL STATS ───────────────────────────────
+                // ─────────────────────────────────────────────
+                // COMPANY-LEVEL PHYSICAL INVENTORY
+                // ─────────────────────────────────────────────
+                //
+                // IMPORTANT:
+                //
+                // These numbers must mean the same thing as
+                // Dashboard and Equipment Catalog.
+                //
+                // Allocation does NOT affect Available or
+                // Borrowed.
+                // ─────────────────────────────────────────────
 
-                TotalTools = _allTools.Count;
 
-                int totalCompanyAvailable = 0;
-                int totalCompanyAllocated = 0;
+                TotalTools =
+                    _allTools.Count;
 
-                foreach (var catalog in _allCatalogs)
-                {
-                    var catalogTools = _allTools
-                        .Where(t =>
-                            t.CatalogId == catalog.CatalogId)
-                        .ToList();
-
-                    // Actual physical Available tools
-                    int physicalAvailable =
-                        catalogTools.Count(t =>
-                            t.Status == "Available");
-
-                    // Actual tools already accepted by workers
-                    int actualBorrowed =
-                        catalogTools.Count(t =>
-                            t.Status == "Borrowed");
-
-                    // Total quantity allocated to active projects
-                    int allocated =
-                        allocations
-                            .Where(a =>
-                                a.CatalogId == catalog.CatalogId)
-                            .Sum(a => a.QuantityNeeded);
-
-                    // Borrowed physical tools already consume
-                    // part of the project's allocation
-                    int remainingReserved =
-                        Math.Max(
-                            0,
-                            allocated - actualBorrowed);
-
-                    // True company/shop availability
-                    int companyAvailable =
-                        Math.Max(
-                            0,
-                            physicalAvailable -
-                            remainingReserved);
-
-                    totalCompanyAvailable +=
-                        companyAvailable;
-
-                    totalCompanyAllocated +=
-                        allocated;
-                }
 
                 AvailableTools =
-                    totalCompanyAvailable;
+                    _allTools.Count(t =>
+                        string.Equals(
+                            t.Status,
+                            "Available",
+                            StringComparison
+                                .OrdinalIgnoreCase));
 
-                // Company perspective:
-                // allocated equipment is already under
-                // project / PE accountability
+
                 BorrowedTools =
-                    totalCompanyAllocated;
+                    _allTools.Count(t =>
+                        string.Equals(
+                            t.Status,
+                            "Borrowed",
+                            StringComparison
+                                .OrdinalIgnoreCase)
+                        ||
+                        string.Equals(
+                            t.Status,
+                            "PendingReturn",
+                            StringComparison
+                                .OrdinalIgnoreCase));
 
-                // ── CATALOG PICKER ────────────────────────────────────
+
+                // ─────────────────────────────────────────────
+                // CATALOG PICKER
+                // ─────────────────────────────────────────────
 
                 bool isFirstLoad =
                     Catalogs.Count == 0;
 
-                if (isFirstLoad || forceRefresh)
+
+                if (isFirstLoad ||
+                    forceRefresh)
                 {
                     var previouslySelectedId =
-                        _selectedCatalog?.CatalogId;
+                        _selectedCatalog
+                            ?.CatalogId;
+
 
                     Catalogs.Clear();
+
 
                     Catalogs.Add(
                         new EquipmentCatalog
                         {
-                            CatalogId = null,
+                            CatalogId =
+                                string.Empty,
+
                             CatalogName =
-                                "Select a catalog…"
+                                "Select a catalog..."
                         });
 
-                    foreach (var c in
-                        _allCatalogs.OrderBy(
-                            c => c.CatalogName))
+
+                    foreach (var catalog in
+                             _allCatalogs
+                                 .OrderBy(c =>
+                                     c.CatalogName))
                     {
-                        Catalogs.Add(c);
+                        Catalogs.Add(
+                            catalog);
                     }
+
 
                     if (isFirstLoad)
                     {
@@ -319,21 +455,28 @@ namespace StockGuard.ViewModels
                     else
                     {
                         _selectedCatalog =
-                            Catalogs.FirstOrDefault(
-                                c =>
-                                    c.CatalogId ==
-                                    previouslySelectedId)
+                            Catalogs
+                                .FirstOrDefault(
+                                    c =>
+                                        c.CatalogId ==
+                                        previouslySelectedId)
                             ?? Catalogs[0];
                     }
 
-                    OnPropertyChanged(
-                        nameof(SelectedCatalog));
 
                     OnPropertyChanged(
-                        nameof(NoCatalogSelected));
+                        nameof(
+                            SelectedCatalog));
+
+                    OnPropertyChanged(
+                        nameof(
+                            NoCatalogSelected));
                 }
 
-                // ── TOOL LIST ─────────────────────────────────────────
+
+                // ─────────────────────────────────────────────
+                // TOOL LIST
+                // ─────────────────────────────────────────────
 
                 if (NoCatalogSelected)
                 {
@@ -352,116 +495,239 @@ namespace StockGuard.ViewModels
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[ToolDetailsVM] Load error: " +
-                    $"{ex.Message}");
+                System.Diagnostics.Debug
+                    .WriteLine(
+                        $"[ToolDetailsVM] " +
+                        $"Load error: " +
+                        $"{ex.Message}");
             }
             finally
             {
                 IsBusy = false;
+
                 NotifyPageStates();
             }
         }
 
-        // Pull-to-refresh: force Firebase + reset pagination
+
+        // ─────────────────────────────────────────────────────
+        // REFRESH
+        // ─────────────────────────────────────────────────────
+
         private async Task RefreshAsync()
         {
             IsRefreshing = true;
+
             _currentPage = 0;
-            await LoadAsync(forceRefresh: true);
-            IsRefreshing = false;
+
+            try
+            {
+                await LoadAsync(
+                    forceRefresh: true);
+            }
+            finally
+            {
+                IsRefreshing = false;
+            }
         }
 
-        // ── Filter + pagination logic ─────────────────────────────────────────
 
-        /// <summary>
-        /// Runs the full filter pass and resets to page 1.
-        /// Called whenever SearchText, SelectedCatalog, or SelectedStatus changes.
-        /// </summary>
+        // ─────────────────────────────────────────────────────
+        // FILTERS
+        // ─────────────────────────────────────────────────────
+
         private void ApplyFilters()
         {
-            // Nothing to show until a real catalog is selected
             if (NoCatalogSelected)
             {
-                _filteredTools = new List<Tool>();
-                Tools = new ObservableCollection<Tool>();
+                _filteredTools =
+                    new List<Tool>();
+
+                Tools =
+                    new ObservableCollection<Tool>();
+
                 _currentPage = 0;
+
                 NotifyPageStates();
+
                 return;
             }
 
-            var filtered = _allTools.AsEnumerable();
 
-            // Catalog filter (always applied when a real catalog is selected)
-            filtered = filtered.Where(t =>
-                t.CatalogId == _selectedCatalog!.CatalogId);
+            var filtered =
+                _allTools
+                    .AsEnumerable();
 
-            // Search: match tool ID or tool name (case-insensitive)
-            if (!string.IsNullOrWhiteSpace(SearchText))
-                filtered = filtered.Where(t =>
-                    t.ToolId.Contains(SearchText, StringComparison.OrdinalIgnoreCase) ||
-                    t.ToolName.Contains(SearchText, StringComparison.OrdinalIgnoreCase));
 
-            // Status filter
-            if (!string.IsNullOrEmpty(SelectedStatus) && SelectedStatus != "All Status")
-                filtered = filtered.Where(t =>
-                    t.Status.Equals(SelectedStatus, StringComparison.OrdinalIgnoreCase));
+            // ─────────────────────────────────────────────
+            // CATALOG
+            // ─────────────────────────────────────────────
 
-            _filteredTools = filtered.OrderBy(t => t.ToolId).ToList();
+            filtered =
+                filtered.Where(t =>
+                    string.Equals(
+                        t.CatalogId,
+                        _selectedCatalog!
+                            .CatalogId,
+                        StringComparison
+                            .OrdinalIgnoreCase));
+
+
+            // ─────────────────────────────────────────────
+            // SEARCH
+            // ─────────────────────────────────────────────
+
+            if (!string.IsNullOrWhiteSpace(
+                    SearchText))
+            {
+                filtered =
+                    filtered.Where(t =>
+                        t.ToolId.Contains(
+                            SearchText,
+                            StringComparison
+                                .OrdinalIgnoreCase)
+                        ||
+                        t.ToolName.Contains(
+                            SearchText,
+                            StringComparison
+                                .OrdinalIgnoreCase));
+            }
+
+
+            // ─────────────────────────────────────────────
+            // STATUS
+            // ─────────────────────────────────────────────
+
+            if (!string.IsNullOrWhiteSpace(
+                    SelectedStatus)
+                &&
+                SelectedStatus !=
+                    "All Status")
+            {
+                filtered =
+                    filtered.Where(t =>
+                        string.Equals(
+                            t.Status,
+                            SelectedStatus,
+                            StringComparison
+                                .OrdinalIgnoreCase));
+            }
+
+
+            _filteredTools =
+                filtered
+                    .OrderBy(t =>
+                        t.ToolId)
+                    .ToList();
+
+
             _currentPage = 0;
 
-            // Show only the first page
-            var firstPage = _filteredTools.Take(PageSize);
-            Tools = new ObservableCollection<Tool>(firstPage);
+
+            Tools =
+                new ObservableCollection<Tool>(
+                    _filteredTools
+                        .Take(PageSize));
+
 
             NotifyPageStates();
         }
 
-        /// <summary>
-        /// Appends the next page of results to the existing Tools collection.
-        /// Triggered by the "Load More" button in the CollectionView footer.
-        /// Appending (not replacing) keeps the scroll position intact.
-        /// </summary>
+
+        // ─────────────────────────────────────────────────────
+        // LOAD NEXT PAGE
+        // ─────────────────────────────────────────────────────
+
         private void LoadNextPage()
         {
-            if (!HasMorePages) return;
+            if (!HasMorePages)
+                return;
+
 
             _currentPage++;
 
-            var nextPage = _filteredTools
-                .Skip(_currentPage * PageSize)
-                .Take(PageSize);
 
-            foreach (var tool in nextPage)
+            var nextPage =
+                _filteredTools
+                    .Skip(
+                        _currentPage *
+                        PageSize)
+                    .Take(
+                        PageSize);
+
+
+            foreach (var tool
+                     in nextPage)
+            {
                 Tools.Add(tool);
+            }
+
 
             NotifyPageStates();
         }
 
+
+        // ─────────────────────────────────────────────────────
+        // CLEAR FILTERS
+        // ─────────────────────────────────────────────────────
+
         private void ClearFilters()
         {
-            _searchText = string.Empty;
-            _selectedStatus = string.Empty;
+            _searchText =
+                string.Empty;
 
-            // Reset to placeholder — forces user to re-select
-            _selectedCatalog = Catalogs.FirstOrDefault();
+            _selectedStatus =
+                string.Empty;
 
-            OnPropertyChanged(nameof(SearchText));
-            OnPropertyChanged(nameof(SelectedStatus));
-            OnPropertyChanged(nameof(SelectedCatalog));
-            OnPropertyChanged(nameof(NoCatalogSelected));
+
+            _selectedCatalog =
+                Catalogs
+                    .FirstOrDefault();
+
+
+            OnPropertyChanged(
+                nameof(
+                    SearchText));
+
+            OnPropertyChanged(
+                nameof(
+                    SelectedStatus));
+
+            OnPropertyChanged(
+                nameof(
+                    SelectedCatalog));
+
+            OnPropertyChanged(
+                nameof(
+                    NoCatalogSelected));
+
 
             ApplyFilters();
         }
 
-        // ── Helpers ───────────────────────────────────────────────────────────
+
+        // ─────────────────────────────────────────────────────
+        // PAGE STATE NOTIFICATIONS
+        // ─────────────────────────────────────────────────────
 
         private void NotifyPageStates()
         {
-            OnPropertyChanged(nameof(NoTools));
-            OnPropertyChanged(nameof(HasMorePages));
-            OnPropertyChanged(nameof(NoCatalogSelected));
-            ((Command)LoadMoreCommand).ChangeCanExecute();
+            OnPropertyChanged(
+                nameof(
+                    NoTools));
+
+            OnPropertyChanged(
+                nameof(
+                    HasMorePages));
+
+            OnPropertyChanged(
+                nameof(
+                    NoCatalogSelected));
+
+
+            ((Command)
+                LoadMoreCommand)
+                .ChangeCanExecute();
         }
     }
 }

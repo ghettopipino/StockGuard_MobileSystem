@@ -45,9 +45,9 @@ namespace StockGuard.ViewModels
         // ─────────────────────────────────────────────────────────
 
         public string ThemeIcon =>
-            _theme.IsDark
-                ? "🌙"
-                : "☀️";
+     _theme.IsDark
+         ? "\uf185"   // Sun
+         : "\uf186";  // Moon
 
         // ─────────────────────────────────────────────────────────
         // STATS
@@ -521,9 +521,9 @@ namespace StockGuard.ViewModels
                         "Available");
 
                 BorrowedTools =
-                    myProjectTools.Count(t =>
-                        t.Status ==
-                        "Borrowed");
+    myProjectTools.Count(t =>
+        t.Status == "Borrowed" ||
+        t.Status == "PendingReturn");
 
                 DamagedTools =
                     myProjectTools.Count(t =>
@@ -648,14 +648,11 @@ namespace StockGuard.ViewModels
                 // BORROWED TOOLS PREVIEW
                 // ───────────────────────────────────────────
 
-                _allBorrowedTools =
-                    myProjectTools
-                        .Where(t =>
-                            t.Status ==
-                            "Borrowed")
-                        .OrderByDescending(t =>
-                            t.BorrowDate)
-                        .ToList();
+                BorrowedTools =
+     allTools.Count(t =>
+         !t.IsDeleted &&
+         (t.Status == "Borrowed" ||
+          t.Status == "PendingReturn"));
 
                 _borrowedToolPage =
                     0;

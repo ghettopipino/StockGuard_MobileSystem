@@ -1,368 +1,592 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<!--
-    Worker-facing single-tool detail page.
-    Identical to the original ToolDetailsView but points to
-    WorkerToolDetailsViewModel. The ← back button is correct here
-    because this is a detail page (registered route), not a FlyoutItem.
-    GoToAsync("..") correctly pops back to WorkerDashboardView.
--->
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:StockGuard.ViewModels"
-             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
-             x:Class="StockGuard.Views.WorkerToolDetailsView"
-             x:DataType="vm:WorkerToolDetailsViewModel"
-             Shell.NavBarIsVisible="False"
-             BackgroundColor="{DynamicResource BgBase}">
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:StockGuard.ViewModels"
+    xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+    x:Class="StockGuard.Views.WorkerToolDetailsView"
+    x:DataType="vm:WorkerToolDetailsViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{DynamicResource BgBase}">
 
     <Grid>
+
         <ScrollView>
-            <VerticalStackLayout Spacing="0" Padding="0,0,0,40">
 
-                <!-- ── HEADER ──────────────────────────────── -->
-                <Grid ColumnDefinitions="Auto,*,Auto"
-                      ColumnSpacing="10"
-                      Padding="20,52,20,16"
-                      BackgroundColor="{DynamicResource BgSurface}">
+            <VerticalStackLayout
+                Spacing="0"
+                Padding="0,0,0,40">
 
-                    <!-- ← back — valid here, this is a registered detail route -->
-                    <Button Grid.Column="0"
-                            Text="←"
-                            Command="{Binding GoBackCommand}"
-                            Clicked="OnBackClicked"
-                            BackgroundColor="{DynamicResource BgElevated}"
-                            TextColor="{DynamicResource Text2}"
-                            FontSize="18" CornerRadius="8"
-                            WidthRequest="40" HeightRequest="36"
-                            Padding="0"/>
 
-                    <VerticalStackLayout Grid.Column="1"
-                                         VerticalOptions="Center" Spacing="1">
-                        <Label Text="Tool Details"
-                               FontSize="16" FontAttributes="Bold"
-                               TextColor="{DynamicResource Text1}"/>
-                        <Label Text="Scanned from QR code"
-                               FontSize="11"
-                               TextColor="{DynamicResource Text3}"/>
+                <!-- ================================================== -->
+                <!-- HEADER -->
+                <!-- ================================================== -->
+
+                <Grid
+                    ColumnDefinitions="Auto,*,Auto"
+                    ColumnSpacing="10"
+                    Padding="20,52,20,16"
+                    BackgroundColor="{DynamicResource BgSurface}">
+
+                    <!-- BACK -->
+
+                    <Button
+                        Grid.Column="0"
+                        Text="&#xf060;"
+                        FontFamily="FontAwesome"
+                        Command="{Binding GoBackCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource Text2}"
+                        FontSize="16"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        Padding="0"/>
+
+
+                    <!-- TITLE -->
+
+                    <VerticalStackLayout
+                        Grid.Column="1"
+                        VerticalOptions="Center"
+                        Spacing="1">
+
+                        <Label
+                            Text="Tool Details"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"/>
+
+                        <Label
+                            Text="Equipment information"
+                            FontSize="11"
+                            TextColor="{DynamicResource Text3}"/>
+
                     </VerticalStackLayout>
 
-                    <!--<Button Grid.Column="2"
-                            Text="{Binding ThemeIcon}"
-                            Command="{Binding ToggleThemeCommand}"
-                            BackgroundColor="{DynamicResource BgElevated}"
-                            TextColor="{DynamicResource Text2}"
-                            FontSize="16" CornerRadius="8"
-                            WidthRequest="40" HeightRequest="36"
-                            Padding="0"/>-->
 
-                    <Button Grid.Column="2"
-                            Text="🔄"
-                            Command="{Binding RefreshCommand}"
-                            BackgroundColor="{DynamicResource BgElevated}"
-                            TextColor="{DynamicResource Text2}"
-                            FontSize="16" CornerRadius="8"
-                            WidthRequest="40" HeightRequest="36"
-                            Padding="0"/>
+                    <!-- REFRESH -->
+
+                    <Button
+                        Grid.Column="2"
+                        Text="&#xf2f1;"
+                        FontFamily="FontAwesome"
+                        Command="{Binding RefreshCommand}"
+                        BackgroundColor="Transparent"
+                        TextColor="{DynamicResource Text2}"
+                        FontSize="15"
+                        WidthRequest="40"
+                        HeightRequest="40"
+                        Padding="0"/>
+
                 </Grid>
 
-                <!-- ── LOADING ─────────────────────────────── -->
-                <VerticalStackLayout IsVisible="{Binding IsLoading}"
-                                     Padding="40" Spacing="16"
-                                     HorizontalOptions="Center">
-                    <ActivityIndicator IsRunning="{Binding IsLoading}"
-                                       Color="{DynamicResource Blue}"
-                                       HorizontalOptions="Center"/>
-                    <Label Text="Loading tool details..."
-                           FontSize="13"
-                           TextColor="{DynamicResource Text3}"
-                           HorizontalOptions="Center"/>
+
+                <!-- ================================================== -->
+                <!-- LOADING -->
+                <!-- ================================================== -->
+
+                <VerticalStackLayout
+                    IsVisible="{Binding IsLoading}"
+                    Padding="40"
+                    Spacing="14"
+                    HorizontalOptions="Center">
+
+                    <ActivityIndicator
+                        IsRunning="{Binding IsLoading}"
+                        Color="{DynamicResource Blue}"
+                        HorizontalOptions="Center"/>
+
+                    <Label
+                        Text="Loading tool details..."
+                        FontSize="12"
+                        TextColor="{DynamicResource Text3}"
+                        HorizontalOptions="Center"/>
+
                 </VerticalStackLayout>
 
-                <!-- ── TOOL NOT FOUND ──────────────────────── -->
-                <Frame IsVisible="{Binding ToolNotFound}"
-                       BackgroundColor="{DynamicResource BgCard}"
-                       BorderColor="{DynamicResource BorderColor}"
-                       CornerRadius="14" Padding="24"
-                       HasShadow="False" Margin="20,20">
-                    <VerticalStackLayout Spacing="10" HorizontalOptions="Center">
-                        <Label Text="❓" FontSize="48" HorizontalOptions="Center"/>
-                        <Label Text="Tool Not Found"
-                               FontSize="16" FontAttributes="Bold"
-                               TextColor="{DynamicResource Text1}"
-                               HorizontalOptions="Center"/>
-                        <Label Text="This QR code does not match any tool in the system."
-                               FontSize="13"
-                               TextColor="{DynamicResource Text3}"
-                               HorizontalOptions="Center"
-                               HorizontalTextAlignment="Center"/>
-                        <Button Text="← Go Back"
-                                Command="{Binding GoBackCommand}"
-                                BackgroundColor="{DynamicResource Blue}"
-                                TextColor="White"
-                                CornerRadius="8" HeightRequest="44"
-                                Margin="0,8,0,0"/>
+
+                <!-- ================================================== -->
+                <!-- TOOL NOT FOUND -->
+                <!-- ================================================== -->
+
+                <Border
+                    IsVisible="{Binding ToolNotFound}"
+                    BackgroundColor="{DynamicResource BgCard}"
+                    Stroke="{DynamicResource BorderColor}"
+                    StrokeShape="RoundRectangle 14"
+                    Padding="24"
+                    Margin="20">
+
+                    <VerticalStackLayout
+                        Spacing="10"
+                        HorizontalOptions="Center">
+
+                        <Label
+                            Text="&#xf128;"
+                            FontFamily="FontAwesome"
+                            FontSize="28"
+                            TextColor="{DynamicResource Text3}"
+                            HorizontalOptions="Center"/>
+
+                        <Label
+                            Text="Tool Not Found"
+                            FontSize="16"
+                            FontAttributes="Bold"
+                            TextColor="{DynamicResource Text1}"
+                            HorizontalOptions="Center"/>
+
+                        <Label
+                            Text="This QR code does not match any tool in the system."
+                            FontSize="12"
+                            TextColor="{DynamicResource Text3}"
+                            HorizontalOptions="Center"
+                            HorizontalTextAlignment="Center"/>
+
+                        <Button
+                            Text="Go Back"
+                            Command="{Binding GoBackCommand}"
+                            BackgroundColor="{DynamicResource Blue}"
+                            TextColor="White"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="44"
+                            Margin="0,8,0,0"
+                            Padding="20,0"/>
+
                     </VerticalStackLayout>
-                </Frame>
 
-                <!-- ── TOOL DETAILS CARD ───────────────────── -->
-                <VerticalStackLayout IsVisible="{Binding IsNotLoading}"
-                                     Padding="20,16" Spacing="14">
+                </Border>
 
-                    <!-- Identity card -->
-                    <Frame BackgroundColor="{DynamicResource BgCard}"
-                           BorderColor="{DynamicResource BorderColor}"
-                           CornerRadius="16" Padding="0" HasShadow="False">
-                        <VerticalStackLayout Padding="20" Spacing="16">
 
-                            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="16">
-                                <Frame Grid.Column="0"
-                                       BackgroundColor="{DynamicResource BlueSubtle}"
-                                       CornerRadius="16"
-                                       WidthRequest="64" HeightRequest="64"
-                                       Padding="0" HasShadow="False"
-                                       BorderColor="Transparent"
-                                       VerticalOptions="Center">
-                                    <Label Text="{Binding ToolIcon}"
-                                           FontSize="32"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center"/>
-                                </Frame>
+                <!-- ================================================== -->
+                <!-- MAIN CONTENT -->
+                <!-- ================================================== -->
 
-                                <VerticalStackLayout Grid.Column="1"
-                                    VerticalOptions="Center" Spacing="6">
-                                    <Label Text="{Binding ToolName}"
-                                           FontSize="20" FontAttributes="Bold"
-                                           TextColor="{DynamicResource Text1}"/>
-                                    <Label Text="{Binding ToolIdDisplay}"
-                                           FontSize="13"
-                                           TextColor="{DynamicResource Text3}"/>
-                                    <Frame BackgroundColor="{DynamicResource BgElevated}"
-                                           BorderColor="Transparent"
-                                           CornerRadius="8" Padding="10,4"
-                                           HasShadow="False"
-                                           HorizontalOptions="Start">
-                                        <Label TextColor="{DynamicResource Text1}"
-                                               FontSize="12" FontAttributes="Bold">
-                                            <Label.FormattedText>
-                                                <FormattedString>
-                                                    <Span Text="{Binding StatusIcon}"/>
-                                                    <Span Text=" "/>
-                                                    <Span Text="{Binding StatusText}"/>
-                                                </FormattedString>
-                                            </Label.FormattedText>
-                                        </Label>
-                                    </Frame>
+                <VerticalStackLayout
+                    IsVisible="{Binding IsNotLoading}"
+                    Padding="20,16"
+                    Spacing="14">
+
+
+                    <!-- ================================================== -->
+                    <!-- TOOL IDENTITY -->
+                    <!-- ================================================== -->
+
+                    <Border
+                        BackgroundColor="{DynamicResource BgCard}"
+                        Stroke="{DynamicResource BorderColor}"
+                        StrokeShape="RoundRectangle 16"
+                        Padding="20">
+
+                        <VerticalStackLayout Spacing="16">
+
+
+                            <!-- TOOL HEADER -->
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="15">
+
+
+                                <!-- ICON -->
+
+                                <Border
+                                    Grid.Column="0"
+                                    WidthRequest="62"
+                                    HeightRequest="62"
+                                    BackgroundColor="Transparent"
+                                    Stroke="Transparent"
+                                    StrokeShape="RoundRectangle 16"
+                                    VerticalOptions="Center">
+
+                                    <Label
+                                        Text="&#xf0ad;"
+                                        FontFamily="FontAwesome"
+                                        FontSize="25"
+                                        TextColor="{DynamicResource Blue}"
+                                        HorizontalOptions="Center"
+                                        VerticalOptions="Center"/>
+
+                                </Border>
+
+
+                                <!-- IDENTITY -->
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    VerticalOptions="Center"
+                                    Spacing="6">
+
+                                    <Label
+                                        Text="{Binding ToolName}"
+                                        FontSize="20"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Text1}"
+                                        LineBreakMode="TailTruncation"/>
+
+                                    <Label
+                                        Text="{Binding ToolIdDisplay}"
+                                        FontSize="12"
+                                        TextColor="{DynamicResource Text3}"/>
+
+
+                                    <!-- STATUS -->
+
+                                    <Border
+                                        BackgroundColor="{DynamicResource BgElevated}"
+                                        Stroke="Transparent"
+                                        StrokeShape="RoundRectangle 8"
+                                        Padding="10,4"
+                                        HorizontalOptions="Start">
+
+                                        <Label
+                                            Text="{Binding StatusText}"
+                                            FontSize="11"
+                                            FontAttributes="Bold"
+                                            TextColor="{Binding StatusColor}"/>
+
+                                    </Border>
+
                                 </VerticalStackLayout>
-                            </Grid>
-
-                            <BoxView HeightRequest="1" Color="{DynamicResource BorderSoft}"/>
-
-                            <Grid ColumnDefinitions="Auto,*"
-      RowDefinitions="Auto,Auto,Auto,Auto,Auto"
-      ColumnSpacing="12"
-      RowSpacing="12">
-
-                                <!-- Worker -->
-                                <Label Grid.Row="0"
-           Grid.Column="0"
-           Text="Worker"
-           FontSize="12"
-           TextColor="{DynamicResource Text3}"
-           VerticalOptions="Center"/>
-
-                                <Label Grid.Row="0"
-           Grid.Column="1"
-           Text="{Binding AssignedWorkerName}"
-           FontSize="13"
-           FontAttributes="Bold"
-           TextColor="{DynamicResource Text1}"
-           VerticalOptions="Center"/>
-
-                                <!-- Project -->
-                                <Label Grid.Row="1"
-           Grid.Column="0"
-           Text="Project"
-           FontSize="12"
-           TextColor="{DynamicResource Text3}"
-           VerticalOptions="Center"/>
-
-                                <Label Grid.Row="1"
-           Grid.Column="1"
-           Text="{Binding ProjectName}"
-           FontSize="13"
-           FontAttributes="Bold"
-           TextColor="{DynamicResource Text1}"
-           VerticalOptions="Center"/>
-
-                                <!-- Assigned By -->
-                                <Label Grid.Row="2"
-           Grid.Column="0"
-           Text="Assigned by"
-           FontSize="12"
-           TextColor="{DynamicResource Text3}"
-           VerticalOptions="Center"/>
-
-                                <Label Grid.Row="2"
-           Grid.Column="1"
-           Text="{Binding AssignedByName}"
-           FontSize="13"
-           FontAttributes="Bold"
-           TextColor="{DynamicResource Text1}"
-           VerticalOptions="Center"/>
-
-                                <!-- Borrowed -->
-                                <Label Grid.Row="3"
-           Grid.Column="0"
-           Text="Borrowed"
-           FontSize="12"
-           TextColor="{DynamicResource Text3}"
-           VerticalOptions="Center"/>
-
-                                <Label Grid.Row="3"
-           Grid.Column="1"
-           Text="{Binding BorrowDateDisplay}"
-           FontSize="13"
-           FontAttributes="Bold"
-           TextColor="{DynamicResource Text1}"
-           VerticalOptions="Center"/>
-
-                                <!-- Condition -->
-                                <Label Grid.Row="4"
-           Grid.Column="0"
-           Text="Condition"
-           FontSize="12"
-           TextColor="{DynamicResource Text3}"
-           VerticalOptions="Center"/>
-
-                                <Label Grid.Row="4"
-           Grid.Column="1"
-           Text="{Binding ConditionText}"
-           FontSize="13"
-           FontAttributes="Bold"
-           TextColor="{DynamicResource Text1}"
-           VerticalOptions="Center"/>
 
                             </Grid>
+
+
+                            <BoxView
+                                HeightRequest="1"
+                                Color="{DynamicResource BorderSoft}"/>
+
+
+                            <!-- ================================================== -->
+                            <!-- ACCOUNTABILITY INFORMATION -->
+                            <!-- ================================================== -->
+
+                            <Grid
+                                ColumnDefinitions="100,*"
+                                RowDefinitions="Auto,Auto,Auto,Auto,Auto"
+                                ColumnSpacing="12"
+                                RowSpacing="13">
+
+
+                                <!-- WORKER -->
+
+                                <Label
+                                    Grid.Row="0"
+                                    Grid.Column="0"
+                                    Text="Worker"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Row="0"
+                                    Grid.Column="1"
+                                    Text="{Binding AssignedWorkerName}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"
+                                    LineBreakMode="TailTruncation"/>
+
+
+                                <!-- PROJECT -->
+
+                                <Label
+                                    Grid.Row="1"
+                                    Grid.Column="0"
+                                    Text="Project"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    Text="{Binding ProjectName}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"
+                                    LineBreakMode="TailTruncation"/>
+
+
+                                <!-- ASSIGNED BY -->
+
+                                <Label
+                                    Grid.Row="2"
+                                    Grid.Column="0"
+                                    Text="Assigned by"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Row="2"
+                                    Grid.Column="1"
+                                    Text="{Binding AssignedByName}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"
+                                    LineBreakMode="TailTruncation"/>
+
+
+                                <!-- BORROWED -->
+
+                                <Label
+                                    Grid.Row="3"
+                                    Grid.Column="0"
+                                    Text="Borrowed"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Row="3"
+                                    Grid.Column="1"
+                                    Text="{Binding BorrowDateDisplay}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"/>
+
+
+                                <!-- CONDITION -->
+
+                                <Label
+                                    Grid.Row="4"
+                                    Grid.Column="0"
+                                    Text="Condition"
+                                    FontSize="11"
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Row="4"
+                                    Grid.Column="1"
+                                    Text="{Binding ConditionText}"
+                                    FontSize="12"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"/>
+
+                            </Grid>
+
                         </VerticalStackLayout>
-                    </Frame>
 
-                    <!-- ── QR CODE ─────────────────────────── -->
-                    <Frame BackgroundColor="{DynamicResource BgCard}"
-                           BorderColor="{DynamicResource BorderColor}"
-                           CornerRadius="16" Padding="0" HasShadow="False"
-                           IsVisible="{Binding IsNotLoading}">
-                        <VerticalStackLayout Padding="20" Spacing="14">
-                            <Label Text="QR Code"
-                                   FontSize="14" FontAttributes="Bold"
-                                   TextColor="{DynamicResource Text1}"/>
-                            <BoxView HeightRequest="1" Color="{DynamicResource BorderSoft}"/>
-                            <Frame BackgroundColor="White"
-                                   CornerRadius="12" Padding="16"
-                                   HasShadow="False" BorderColor="#e2e8f0"
-                                   HorizontalOptions="Center">
+                    </Border>
+
+
+                    <!-- ================================================== -->
+                    <!-- QR CODE -->
+                    <!-- ================================================== -->
+
+                    <Border
+                        BackgroundColor="{DynamicResource BgCard}"
+                        Stroke="{DynamicResource BorderColor}"
+                        StrokeShape="RoundRectangle 16"
+                        Padding="20">
+
+                        <VerticalStackLayout Spacing="14">
+
+
+                            <!-- TITLE -->
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="8">
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="&#xf029;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="14"
+                                    TextColor="{DynamicResource Blue}"
+                                    VerticalOptions="Center"/>
+
+                                <Label
+                                    Grid.Column="1"
+                                    Text="QR Code"
+                                    FontSize="14"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Text1}"
+                                    VerticalOptions="Center"/>
+
+                            </Grid>
+
+
+                            <BoxView
+                                HeightRequest="1"
+                                Color="{DynamicResource BorderSoft}"/>
+
+
+                            <!-- QR -->
+
+                            <Border
+                                BackgroundColor="White"
+                                Stroke="#e2e8f0"
+                                StrokeShape="RoundRectangle 12"
+                                Padding="16"
+                                HorizontalOptions="Center">
+
                                 <zxing:BarcodeGeneratorView
-                                    WidthRequest="180" HeightRequest="180"
+                                    WidthRequest="180"
+                                    HeightRequest="180"
                                     Format="QrCode"
                                     Value="{Binding ToolIdDisplay}"
                                     ForegroundColor="Black"
                                     BackgroundColor="White"/>
-                            </Frame>
-                            <Frame BackgroundColor="{DynamicResource BlueSubtle}"
-                                   BorderColor="{DynamicResource Blue}"
-                                   CornerRadius="10" Padding="16,8"
-                                   HasShadow="False" HorizontalOptions="Center">
-                                <Label Text="{Binding ToolIdDisplay}"
-                                       FontSize="18" FontAttributes="Bold"
-                                       TextColor="{DynamicResource Blue}"
-                                       HorizontalOptions="Center"
-                                       CharacterSpacing="3"/>
-                            </Frame>
-                            <Label Text="Scan this QR to open tool details"
-                                   FontSize="11"
-                                   TextColor="{DynamicResource Text3}"
-                                   HorizontalOptions="Center"
-                                   HorizontalTextAlignment="Center"/>
+
+                            </Border>
+
+
+                            <!-- TOOL ID -->
+
+                            <Border
+                                BackgroundColor="{DynamicResource BlueSubtle}"
+                                Stroke="{DynamicResource Blue}"
+                                StrokeShape="RoundRectangle 10"
+                                Padding="16,8"
+                                HorizontalOptions="Center">
+
+                                <Label
+                                    Text="{Binding ToolIdDisplay}"
+                                    FontSize="17"
+                                    FontAttributes="Bold"
+                                    TextColor="{DynamicResource Blue}"
+                                    HorizontalOptions="Center"
+                                    CharacterSpacing="2"/>
+
+                            </Border>
+
+
+                            <Label
+                                Text="Scan this QR code to open the equipment details."
+                                FontSize="10"
+                                TextColor="{DynamicResource Text3}"
+                                HorizontalOptions="Center"
+                                HorizontalTextAlignment="Center"/>
+
                         </VerticalStackLayout>
-                    </Frame>
 
-                     <!--── ACTIONS ───────────────────────────--> 
-                    <!--<Label Text="Available Actions"
-                           FontSize="15" FontAttributes="Bold"
-                           TextColor="{DynamicResource Text1}"
-                           Margin="0,6,0,0"/>-->
+                    </Border>
 
-                    <VerticalStackLayout Padding="20,0"
-                     Spacing="10"
-                     IsVisible="{Binding IsNotLoading}">
 
+                    <!-- ================================================== -->
+                    <!-- AVAILABLE ACTIONS -->
+                    <!-- ================================================== -->
+
+                    <VerticalStackLayout
+                        Spacing="10"
+                        Margin="0,2,0,0">
+
+
+                        <!-- ============================================== -->
                         <!-- PRE-ASSIGNMENT -->
-                        <Frame IsVisible="{Binding ShowConfirmReceipt}"
-           BackgroundColor="#0f1c35"
-           BorderColor="{DynamicResource Blue}"
-           CornerRadius="12"
-           Padding="16"
-           HasShadow="False">
+                        <!-- ============================================== -->
 
-                            <VerticalStackLayout Spacing="6">
+                        <Border
+                            IsVisible="{Binding ShowConfirmReceipt}"
+                            BackgroundColor="{DynamicResource BlueSubtle}"
+                            Stroke="{DynamicResource Blue}"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="16">
 
-                                <Label Text="Pre-assigned to you"
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   TextColor="{DynamicResource Blue}"/>
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="11">
 
-                                <Label Text="This tool has been assigned to you by the Project Engineer. Confirm receipt to start using it."
-                   FontSize="12"
-                   TextColor="{DynamicResource Text2}"/>
+                                <Label
+                                    Grid.Column="0"
+                                    Text="&#xf058;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="17"
+                                    TextColor="{DynamicResource Blue}"
+                                    VerticalOptions="Start"/>
 
-                            </VerticalStackLayout>
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
 
-                        </Frame>
+                                    <Label
+                                        Text="Pre-assigned to you"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Blue}"/>
 
-                        <Button IsVisible="{Binding ShowConfirmReceipt}"
-            Text="Confirm Receipt"
-            Command="{Binding ConfirmReceiptCommand}"
-            BackgroundColor="{DynamicResource Blue}"
-            TextColor="White"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
+                                    <Label
+                                        Text="This tool has been assigned to you by the Project Engineer. Confirm receipt to start using it."
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text2}"
+                                        LineBreakMode="WordWrap"/>
 
-                        <Button IsVisible="{Binding ShowDeclineReceipt}"
-            Text="Decline"
-            Command="{Binding DeclineCommand}"
-            BackgroundColor="{DynamicResource BgElevated}"
-            TextColor="{DynamicResource Red}"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
+                                </VerticalStackLayout>
 
+                            </Grid>
 
-                        <!-- NORMAL BORROW -->
-                        <Button IsVisible="{Binding ShowBorrow}"
-            Text="Borrow Tool"
-            Command="{Binding BorrowCommand}"
-            BackgroundColor="{DynamicResource Blue}"
-            TextColor="White"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
+                        </Border>
 
 
-                        <!-- BORROWED TOOL ACTIONS -->
-                        <Button IsVisible="{Binding ShowEndDayCheckIn}"
-            Text="End Day Check-In"
-            Command="{Binding EndDayCheckInCommand}"
-            BackgroundColor="{DynamicResource BgElevated}"
-            TextColor="{DynamicResource Blue}"
-            BorderColor="{DynamicResource BorderColor}"
-            BorderWidth="1"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
+                        <Button
+                            IsVisible="{Binding ShowConfirmReceipt}"
+                            Text="Confirm Receipt"
+                            Command="{Binding ConfirmReceiptCommand}"
+                            BackgroundColor="{DynamicResource Blue}"
+                            TextColor="White"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
+
+
+                        <Button
+                            IsVisible="{Binding ShowDeclineReceipt}"
+                            Text="Decline Assignment"
+                            Command="{Binding DeclineCommand}"
+                            BackgroundColor="{DynamicResource RedBg}"
+                            TextColor="{DynamicResource Red}"
+                            BorderColor="{DynamicResource Red}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
+
+
+                        <!-- ============================================== -->
+                        <!-- AVAILABLE TOOL -->
+                        <!-- ============================================== -->
+
+                        <Button
+                            IsVisible="{Binding ShowBorrow}"
+                            Text="Borrow Tool"
+                            Command="{Binding BorrowCommand}"
+                            BackgroundColor="{DynamicResource Blue}"
+                            TextColor="White"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
+
+
+                        <!-- ============================================== -->
+                        <!-- CURRENTLY BORROWED BY THIS WORKER -->
+                        <!-- ============================================== -->
+
+                        <Button
+                            IsVisible="{Binding ShowEndDayCheckIn}"
+                            Text="End Day Check-In"
+                            Command="{Binding EndDayCheckInCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Blue}"
+                            BorderColor="{DynamicResource BorderColor}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
 
 
                         <Button
@@ -373,135 +597,271 @@
                             TextColor="{DynamicResource Blue}"
                             BorderColor="{DynamicResource BorderColor}"
                             BorderWidth="1"
-                            FontSize="14"
+                            FontSize="13"
                             FontAttributes="Bold"
-                            CornerRadius="12"
-                            HeightRequest="50"/>
-
-                        <Button IsVisible="{Binding ShowReturn}"
-            Text="Return Tool"
-            Command="{Binding ReturnCommand}"
-            BackgroundColor="{DynamicResource BgElevated}"
-            TextColor="{DynamicResource Blue}"
-            BorderColor="{DynamicResource BorderColor}"
-            BorderWidth="1"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
-
-                        <Button IsVisible="{Binding ShowReportDamage}"
-            Text="Report Damage"
-            Command="{Binding ReportDamageCommand}"
-            BackgroundColor="{DynamicResource RedBg}"
-            TextColor="{DynamicResource Red}"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
-
-                        <Button IsVisible="{Binding ShowRequestBorrow}"
-            Text="Request to Borrow"
-            Command="{Binding RequestBorrowCommand}"
-            BackgroundColor="{DynamicResource BgElevated}"
-            TextColor="{DynamicResource Blue}"
-            FontSize="14"
-            FontAttributes="Bold"
-            CornerRadius="12"
-            HeightRequest="50"/>
+                            CornerRadius="10"
+                            HeightRequest="48"/>
 
 
-                        <!-- PENDING / STATUS MESSAGES -->
-
-                        <Frame IsVisible="{Binding ShowPendingCheckIn}"
-           BackgroundColor="{DynamicResource BgElevated}"
-           BorderColor="{DynamicResource Amber}"
-           CornerRadius="12"
-           Padding="16"
-           HasShadow="False"
-           Margin="0,6,0,0">
-
-                            <VerticalStackLayout Spacing="5">
-
-                                <Label Text="End-day check-in pending"
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   TextColor="{DynamicResource Amber}"/>
-
-                                <Label Text="{Binding CheckInLocation,
-                                 StringFormat='Stored at: {0}'}"
-                   FontSize="12"
-                   TextColor="{DynamicResource Text2}"/>
-
-                                <Label Text="Waiting for Project Engineer verification."
-                   FontSize="12"
-                   TextColor="{DynamicResource Text3}"/>
-
-                            </VerticalStackLayout>
-
-                        </Frame>
-
-
-                        <Frame IsVisible="{Binding ShowPendingReturn}"
-           BackgroundColor="{DynamicResource BgElevated}"
-           BorderColor="{DynamicResource Amber}"
-           CornerRadius="12"
-           Padding="16"
-           HasShadow="False"
-           Margin="0,6,0,0">
-
-                            <VerticalStackLayout Spacing="6">
-
-                                <Label Text="Return pending verification"
-                   FontSize="13"
-                   FontAttributes="Bold"
-                   TextColor="{DynamicResource Amber}"/>
-
-                                <Label Text="Please bring the tool to the Project Engineer. You remain responsible for it until the return is physically verified."
-                   FontSize="12"
-                   TextColor="{DynamicResource Text2}"/>
-
-                            </VerticalStackLayout>
-
-                        </Frame>
-
-                    </VerticalStackLayout>
-                    
-                    
-                    <!--<Button Text="📋  View Transaction History"
-                            Command="{Binding ViewHistoryCommand}"
-                            BackgroundColor="{DynamicResource BgCard}"
-                            TextColor="{DynamicResource Text2}"
+                        <Button
+                            IsVisible="{Binding ShowReturn}"
+                            Text="Return Tool"
+                            Command="{Binding ReturnCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Blue}"
                             BorderColor="{DynamicResource BorderColor}"
                             BorderWidth="1"
-                            FontSize="13" CornerRadius="12"
-                            HeightRequest="46" Margin="0,4,0,0"/>-->
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
 
-                    <ActivityIndicator IsRunning="{Binding IsBusy}"
-                                       IsVisible="{Binding IsBusy}"
-                                       Color="{DynamicResource Blue}"
-                                       HorizontalOptions="Center"/>
 
-                    <Frame BackgroundColor="{DynamicResource RedBg}"
-                           BorderColor="{DynamicResource Red}"
-                           CornerRadius="12" Padding="16" HasShadow="False"
-                           IsVisible="{Binding Tool.IsDamaged}">
-                        <Label Text="⚠️  This tool is marked as damaged and is currently unavailable for borrowing."
-                               FontSize="12" TextColor="{DynamicResource Red}"
-                               HorizontalTextAlignment="Center"/>
-                    </Frame>
+                        <Button
+                            IsVisible="{Binding ShowReportDamage}"
+                            Text="Report Damage"
+                            Command="{Binding ReportDamageCommand}"
+                            BackgroundColor="{DynamicResource RedBg}"
+                            TextColor="{DynamicResource Red}"
+                            BorderColor="{DynamicResource Red}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
 
-                    <Frame BackgroundColor="{DynamicResource BgCard}"
-                           BorderColor="{DynamicResource Amber}"
-                           CornerRadius="12" Padding="16" HasShadow="False"
-                           IsVisible="{Binding Tool.IsUnderRepair}">
-                        <Label Text="🔨  This tool is currently under repair."
-                               FontSize="12" TextColor="{DynamicResource Amber}"
-                               HorizontalTextAlignment="Center"/>
-                    </Frame>
+
+                        <!-- ============================================== -->
+                        <!-- BORROWED BY ANOTHER WORKER -->
+                        <!-- ============================================== -->
+
+                        <Button
+                            IsVisible="{Binding ShowRequestBorrow}"
+                            Text="Request to Borrow"
+                            Command="{Binding RequestBorrowCommand}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            TextColor="{DynamicResource Blue}"
+                            BorderColor="{DynamicResource BorderColor}"
+                            BorderWidth="1"
+                            FontSize="13"
+                            FontAttributes="Bold"
+                            CornerRadius="10"
+                            HeightRequest="48"/>
+
+
+                        <!-- ============================================== -->
+                        <!-- CHECK-IN PENDING -->
+                        <!-- ============================================== -->
+
+                        <Border
+                            IsVisible="{Binding ShowPendingCheckIn}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            Stroke="{DynamicResource Amber}"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="16"
+                            Margin="0,4,0,0">
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="11">
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="&#xf017;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="16"
+                                    TextColor="{DynamicResource Amber}"
+                                    VerticalOptions="Start"/>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="End-day check-in pending"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Amber}"/>
+
+                                    <Label
+                                        Text="{Binding CheckInLocation,
+                                            StringFormat='Stored at: {0}'}"
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text2}"/>
+
+                                    <Label
+                                        Text="Waiting for Project Engineer verification."
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text3}"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                        </Border>
+
+
+                        <!-- ============================================== -->
+                        <!-- RETURN PENDING -->
+                        <!-- ============================================== -->
+
+                        <Border
+                            IsVisible="{Binding ShowPendingReturn}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            Stroke="{DynamicResource Amber}"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="16"
+                            Margin="0,4,0,0">
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="11">
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="&#xf017;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="16"
+                                    TextColor="{DynamicResource Amber}"
+                                    VerticalOptions="Start"/>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Return pending verification"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Amber}"/>
+
+                                    <Label
+                                        Text="Please bring the tool to the Project Engineer. You remain responsible for it until the return is physically verified."
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text2}"
+                                        LineBreakMode="WordWrap"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                        </Border>
+
+                    </VerticalStackLayout>
+
+
+                    <!-- ================================================== -->
+                    <!-- PROCESSING -->
+                    <!-- ================================================== -->
+
+                    <ActivityIndicator
+                        IsRunning="{Binding IsBusy}"
+                        IsVisible="{Binding IsBusy}"
+                        Color="{DynamicResource Blue}"
+                        HorizontalOptions="Center"
+                        Margin="0,6"/>
+
+
+                    <!-- ================================================== -->
+                    <!-- DAMAGED -->
+                    <!-- ================================================== -->
+
+                    <Border
+                        BackgroundColor="{DynamicResource RedBg}"
+                        Stroke="{DynamicResource Red}"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="16"
+                        IsVisible="{Binding Tool.IsDamaged}">
+
+                        <Grid
+                            ColumnDefinitions="Auto,*"
+                            ColumnSpacing="10">
+
+                            <Label
+                                Grid.Column="0"
+                                Text="&#xf071;"
+                                FontFamily="FontAwesome"
+                                FontSize="15"
+                                TextColor="{DynamicResource Red}"
+                                VerticalOptions="Start"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="This tool is marked as damaged and is currently unavailable for borrowing."
+                                FontSize="11"
+                                TextColor="{DynamicResource Red}"
+                                LineBreakMode="WordWrap"/>
+
+                        </Grid>
+
+                    </Border>
+
+
+                    <!-- ================================================== -->
+                    <!-- UNDER REPAIR -->
+                    <!-- ================================================== -->
+
+                    <Border
+                        BackgroundColor="{DynamicResource BgCard}"
+                        Stroke="{DynamicResource Amber}"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="16"
+                        IsVisible="{Binding Tool.IsUnderRepair}">
+
+                        <Grid
+                            ColumnDefinitions="Auto,*"
+                            ColumnSpacing="10">
+
+                            <Label
+                                Grid.Column="0"
+                                Text="&#xf7d9;"
+                                FontFamily="FontAwesome"
+                                FontSize="15"
+                                TextColor="{DynamicResource Amber}"
+                                VerticalOptions="Start"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="This tool is currently under repair."
+                                FontSize="11"
+                                TextColor="{DynamicResource Amber}"
+                                VerticalOptions="Center"/>
+
+                        </Grid>
+
+                    </Border>
+
+
+                    <!-- ================================================== -->
+                    <!-- FOOTER -->
+                    <!-- ================================================== -->
+
+                    <HorizontalStackLayout
+                        HorizontalOptions="Center"
+                        Spacing="6"
+                        Margin="0,18,0,0">
+
+                        <Label
+                            Text="&#xf3ed;"
+                            FontFamily="FontAwesome"
+                            FontSize="9"
+                            TextColor="{DynamicResource Text3}"
+                            VerticalOptions="Center"/>
+
+                        <Label
+                            Text="StockGuard · Tool Details"
+                            FontSize="10"
+                            TextColor="{DynamicResource Text3}"
+                            VerticalOptions="Center"/>
+
+                    </HorizontalStackLayout>
 
                 </VerticalStackLayout>
+
             </VerticalStackLayout>
+
         </ScrollView>
+
     </Grid>
+
 </ContentPage>

@@ -1,90 +1,339 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:vm="clr-namespace:StockGuard.ViewModels"
-             xmlns:models="clr-namespace:StockGuard.Models"
-             x:Class="StockGuard.Views.BulkSelectView"
-             x:DataType="vm:BulkSelectViewModel"
-             Shell.NavBarIsVisible="False"
-             BackgroundColor="{DynamicResource BgBase}">
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:vm="clr-namespace:StockGuard.ViewModels"
+    xmlns:models="clr-namespace:StockGuard.Models"
+    x:Class="StockGuard.Views.BulkSelectView"
+    x:DataType="vm:BulkSelectViewModel"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="{DynamicResource BgBase}">
 
     <Grid RowDefinitions="Auto,Auto,*,Auto">
 
-        <Grid Grid.Row="0" ColumnDefinitions="Auto,*" Padding="20,52,20,10">
-            <Button Grid.Column="0" Text="←"
-                    Command="{Binding GoBackCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{DynamicResource Text2}"
-                    FontSize="18"/>
-            <VerticalStackLayout Grid.Column="1" VerticalOptions="Center">
-                <Label Text="{Binding PageTitle}" FontSize="16" FontAttributes="Bold"
-                       TextColor="{DynamicResource Text1}"/>
-                <Label Text="{Binding PageSubtitle}" FontSize="11" TextColor="{DynamicResource Text3}"/>
+
+        <!-- ================================================== -->
+        <!-- HEADER -->
+        <!-- ================================================== -->
+
+        <Grid
+            Grid.Row="0"
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="10"
+            Padding="20,52,20,14"
+            BackgroundColor="{DynamicResource BgSurface}">
+
+            <!-- BACK -->
+            <Button
+                Grid.Column="0"
+                Text="&#xf060;"
+                FontFamily="FontAwesome"
+                Command="{Binding GoBackCommand}"
+                BackgroundColor="Transparent"
+                TextColor="{DynamicResource Text2}"
+                FontSize="16"
+                WidthRequest="40"
+                HeightRequest="40"
+                Padding="0"/>
+
+            <!-- TITLE -->
+            <VerticalStackLayout
+                Grid.Column="1"
+                VerticalOptions="Center"
+                Spacing="1">
+
+                <Label
+                    Text="{Binding PageTitle}"
+                    FontSize="16"
+                    FontAttributes="Bold"
+                    TextColor="{DynamicResource Text1}"
+                    LineBreakMode="TailTruncation"/>
+
+                <Label
+                    Text="{Binding PageSubtitle}"
+                    FontSize="11"
+                    TextColor="{DynamicResource Text3}"
+                    LineBreakMode="TailTruncation"/>
+
             </VerticalStackLayout>
+
         </Grid>
 
-        <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto" ColumnSpacing="8" Padding="20,0,20,10">
-            <Label Grid.Column="0" Text="{Binding SelectedLabel}" FontSize="13" FontAttributes="Bold"
-                   TextColor="{DynamicResource Blue}" VerticalOptions="Center"/>
-            <Button Grid.Column="1" Text="Select All"
-                    Command="{Binding SelectAllCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{DynamicResource Text2}" FontSize="12"/>
-            <Button Grid.Column="2" Text="Clear"
-                    Command="{Binding ClearAllCommand}"
-                    BackgroundColor="Transparent"
-                    TextColor="{DynamicResource Text2}" FontSize="12"/>
+
+        <!-- ================================================== -->
+        <!-- SELECTION TOOLBAR -->
+        <!-- ================================================== -->
+
+        <Grid
+            Grid.Row="1"
+            ColumnDefinitions="*,Auto,Auto"
+            ColumnSpacing="8"
+            Padding="20,14,20,12"
+            BackgroundColor="{DynamicResource BgBase}">
+
+            <!-- SELECTED COUNT -->
+            <HorizontalStackLayout
+                Grid.Column="0"
+                Spacing="6"
+                VerticalOptions="Center">
+
+                <Label
+                    Text="&#xf058;"
+                    FontFamily="FontAwesome"
+                    FontSize="10"
+                    TextColor="{DynamicResource Blue}"
+                    VerticalOptions="Center"/>
+
+                <Label
+                    Text="{Binding SelectedLabel}"
+                    FontSize="12"
+                    FontAttributes="Bold"
+                    TextColor="{DynamicResource Blue}"
+                    VerticalOptions="Center"/>
+
+            </HorizontalStackLayout>
+
+
+            <!-- SELECT ALL -->
+            <Button
+                Grid.Column="1"
+                Text="Select All"
+                Command="{Binding SelectAllCommand}"
+                BackgroundColor="Transparent"
+                TextColor="{DynamicResource Blue}"
+                FontSize="11"
+                FontAttributes="Bold"
+                HeightRequest="36"
+                Padding="10,0"/>
+
+
+            <!-- CLEAR -->
+            <Button
+                Grid.Column="2"
+                Text="Clear"
+                Command="{Binding ClearAllCommand}"
+                BackgroundColor="Transparent"
+                TextColor="{DynamicResource Red}"
+                FontSize="11"
+                FontAttributes="Bold"
+                HeightRequest="36"
+                Padding="10,0"/>
+
         </Grid>
+
+
+        <!-- ================================================== -->
+        <!-- CONTENT -->
+        <!-- ================================================== -->
 
         <Grid Grid.Row="2">
-            <ActivityIndicator IsRunning="{Binding IsBusy}"
-                               IsVisible="{Binding IsBusy}"
-                               Color="{DynamicResource Blue}"
-                               HorizontalOptions="Center"
-                               VerticalOptions="Start" Margin="0,20"/>
 
-            <Label Text="{Binding EmptyMessage}"
-                   IsVisible="{Binding NoItems}"
-                   FontSize="13" TextColor="{DynamicResource Text3}"
-                   HorizontalOptions="Center" VerticalOptions="Start" Margin="0,20"/>
+
+            <!-- ================================================== -->
+            <!-- LOADING -->
+            <!-- ================================================== -->
+
+            <VerticalStackLayout
+                IsVisible="{Binding IsBusy}"
+                Spacing="10"
+                HorizontalOptions="Center"
+                VerticalOptions="Start"
+                Margin="0,24,0,0">
+
+                <ActivityIndicator
+                    IsRunning="{Binding IsBusy}"
+                    Color="{DynamicResource Blue}"
+                    HorizontalOptions="Center"/>
+
+                <Label
+                    Text="Loading..."
+                    FontSize="11"
+                    TextColor="{DynamicResource Text3}"
+                    HorizontalOptions="Center"/>
+
+            </VerticalStackLayout>
+
+
+            <!-- ================================================== -->
+            <!-- EMPTY STATE -->
+            <!-- ================================================== -->
+
+            <Border
+                IsVisible="{Binding NoItems}"
+                BackgroundColor="{DynamicResource BgCard}"
+                Stroke="{DynamicResource BorderSoft}"
+                StrokeShape="RoundRectangle 14"
+                Padding="26"
+                Margin="20,12"
+                VerticalOptions="Start">
+
+                <VerticalStackLayout
+                    Spacing="9"
+                    HorizontalOptions="Center">
+
+                    <!-- MAN / WORKER ICON -->
+                    <Label
+                        Text="&#xf007;"
+                        FontFamily="FontAwesome"
+                        FontSize="23"
+                        TextColor="{DynamicResource Text3}"
+                        HorizontalOptions="Center"/>
+
+                    <Label
+                        Text="{Binding EmptyMessage}"
+                        FontSize="12"
+                        TextColor="{DynamicResource Text3}"
+                        HorizontalOptions="Center"
+                        HorizontalTextAlignment="Center"/>
+
+                </VerticalStackLayout>
+
+            </Border>
+
+
+            <!-- ================================================== -->
+            <!-- WORKER LIST -->
+            <!-- ================================================== -->
 
             <ScrollView>
-                <VerticalStackLayout BindableLayout.ItemsSource="{Binding Items}" Padding="20,4" Spacing="8">
+
+                <VerticalStackLayout
+                    BindableLayout.ItemsSource="{Binding Items}"
+                    Padding="20,4,20,18"
+                    Spacing="10">
+
                     <BindableLayout.ItemTemplate>
+
                         <DataTemplate x:DataType="models:SelectableItem">
-                            <Border Stroke="{Binding CardBorderColor}"
-                                    StrokeShape="RoundRectangle 10"
-                                    BackgroundColor="{Binding CardBackground}"
-                                    Padding="14">
+
+
+                            <!-- ========================================== -->
+                            <!-- WORKER CARD -->
+                            <!-- ========================================== -->
+
+                            <Border
+                                BackgroundColor="{DynamicResource BgCard}"
+                                Stroke="{Binding CardBorderColor}"
+                                StrokeThickness="1"
+                                StrokeShape="RoundRectangle 14"
+                                Padding="14">
+
                                 <Border.GestureRecognizers>
+
                                     <TapGestureRecognizer
                                         CommandParameter="{Binding .}"
-                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BulkSelectViewModel}}, Path=ToggleItemCommand}"/>
+                                        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:BulkSelectViewModel}},
+                                                          Path=ToggleItemCommand}"/>
+
                                 </Border.GestureRecognizers>
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <VerticalStackLayout Grid.Column="0">
-                                        <Label Text="{Binding Name}" FontSize="14" FontAttributes="Bold"
-                                               TextColor="{DynamicResource Text1}"/>
-                                        <Label Text="{Binding SubTitle}" FontSize="12" TextColor="{DynamicResource Text3}"/>
+
+
+                                <Grid
+                                    ColumnDefinitions="Auto,*,Auto"
+                                    ColumnSpacing="12">
+
+
+                                    <!-- ================================== -->
+                                    <!-- MAN / WORKER ICON -->
+                                    <!-- ================================== -->
+
+                                    <Border
+                                        Grid.Column="0"
+                                        WidthRequest="42"
+                                        HeightRequest="42"
+                                        BackgroundColor="Transparent"
+                                        Stroke="Transparent"
+                                        StrokeShape="RoundRectangle 10"
+                                        VerticalOptions="Center">
+
+                                        <Label
+                                            Text="&#xf007;"
+                                            FontFamily="FontAwesome"
+                                            FontSize="17"
+                                            TextColor="{DynamicResource Blue}"
+                                            HorizontalOptions="Center"
+                                            VerticalOptions="Center"/>
+
+                                    </Border>
+
+
+                                    <!-- ================================== -->
+                                    <!-- WORKER INFORMATION -->
+                                    <!-- ================================== -->
+
+                                    <VerticalStackLayout
+                                        Grid.Column="1"
+                                        Spacing="3"
+                                        VerticalOptions="Center">
+
+                                        <Label
+                                            Text="{Binding Name}"
+                                            FontSize="14"
+                                            FontAttributes="Bold"
+                                            TextColor="{DynamicResource Text1}"
+                                            LineBreakMode="TailTruncation"/>
+
+                                        <Label
+                                            Text="{Binding SubTitle}"
+                                            FontSize="11"
+                                            TextColor="{DynamicResource Text3}"
+                                            LineBreakMode="TailTruncation"/>
+
                                     </VerticalStackLayout>
-                                    <Label Grid.Column="1" Text="{Binding CheckIcon}"
-                                           FontSize="20" VerticalOptions="Center"/>
+
+
+                                    <!-- ================================== -->
+                                    <!-- SELECTION INDICATOR -->
+                                    <!-- ================================== -->
+
+                                    <Label
+                                        Grid.Column="2"
+                                        Text="{Binding CheckIcon}"
+                                        FontSize="18"
+                                        TextColor="{DynamicResource Blue}"
+                                        VerticalOptions="Center"
+                                        HorizontalOptions="End"/>
+
                                 </Grid>
+
                             </Border>
+
                         </DataTemplate>
+
                     </BindableLayout.ItemTemplate>
+
                 </VerticalStackLayout>
+
             </ScrollView>
+
         </Grid>
 
-        <Button Grid.Row="3"
-                Text="{Binding SelectedLabel, StringFormat='Confirm ({0})'}"
+
+        <!-- ================================================== -->
+        <!-- BOTTOM CONFIRM AREA -->
+        <!-- ================================================== -->
+
+        <Border
+            Grid.Row="3"
+            BackgroundColor="{DynamicResource BgSurface}"
+            Stroke="{DynamicResource BorderSoft}"
+            StrokeThickness="1"
+            Padding="20,12,20,18">
+
+            <Button
+                Text="{Binding SelectedLabel,
+                    StringFormat='Confirm ({0})'}"
                 Command="{Binding ConfirmCommand}"
                 BackgroundColor="{DynamicResource Blue}"
                 TextColor="White"
+                FontSize="13"
                 FontAttributes="Bold"
-                HeightRequest="52"
+                HeightRequest="50"
+                CornerRadius="10"
                 IsEnabled="{Binding HasSelection}"/>
+
+        </Border>
 
     </Grid>
 

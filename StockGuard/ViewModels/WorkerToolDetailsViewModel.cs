@@ -21,6 +21,7 @@ namespace StockGuard.ViewModels
         public string ToolId
         {
             get => _toolId;
+
             set
             {
                 SetProperty(ref _toolId, value);
@@ -42,6 +43,7 @@ namespace StockGuard.ViewModels
         public Tool? Tool
         {
             get => _tool;
+
             set
             {
                 SetProperty(ref _tool, value);
@@ -76,6 +78,7 @@ namespace StockGuard.ViewModels
             OnPropertyChanged(nameof(ShowRequestBorrow));
             OnPropertyChanged(nameof(ShowEndDayCheckIn));
             OnPropertyChanged(nameof(ShowPendingCheckIn));
+
             OnPropertyChanged(nameof(CheckInLocation));
             OnPropertyChanged(nameof(CheckInDateDisplay));
 
@@ -133,12 +136,13 @@ namespace StockGuard.ViewModels
                 : "— Not borrowed —";
 
         public string ConditionText =>
-            string.IsNullOrWhiteSpace(Tool?.Condition)
+            string.IsNullOrWhiteSpace(
+                Tool?.Condition)
                 ? "Good"
                 : Tool.Condition;
 
         // ─────────────────────────────────────────────────────────
-        // CURRENT USER / VISIBILITY
+        // CURRENT USER
         // ─────────────────────────────────────────────────────────
 
         private string CurrentUserKey =>
@@ -149,20 +153,24 @@ namespace StockGuard.ViewModels
             Tool != null &&
             !string.IsNullOrWhiteSpace(
                 Tool.AssignedWorkerId) &&
-            Tool.AssignedWorkerId == CurrentUserKey;
+            string.Equals(
+                Tool.AssignedWorkerId.Trim(),
+                CurrentUserKey.Trim(),
+                StringComparison.OrdinalIgnoreCase);
 
-        // Available equipment
+        // ─────────────────────────────────────────────────────────
+        // ACTION VISIBILITY
+        // ─────────────────────────────────────────────────────────
+
         public bool ShowBorrow =>
             Tool != null &&
             Tool.Status == "Available";
 
-        // Worker currently has equipment
         public bool ShowReturn =>
             Tool != null &&
             IsAssignedToMe &&
             Tool.Status == "Borrowed";
 
-        // Worker already submitted return
         public bool ShowPendingReturn =>
             Tool != null &&
             IsAssignedToMe &&
@@ -179,16 +187,6 @@ namespace StockGuard.ViewModels
             IsAssignedToMe &&
             Tool.Status == "Borrowed" &&
             Tool.IsCheckInPending;
-
-        public string CheckInLocation =>
-            string.IsNullOrWhiteSpace(Tool?.LastCheckInLocation)
-                ? "—"
-                : Tool.LastCheckInLocation;
-
-        public string CheckInDateDisplay =>
-            Tool?.LastCheckInDate.HasValue == true
-                ? Tool.LastCheckInDate.Value.ToString("MMM d, yyyy h:mm tt")
-                : "—";
 
         public bool ShowTransfer =>
             Tool != null &&
@@ -207,12 +205,30 @@ namespace StockGuard.ViewModels
 
         public bool ShowConfirmReceipt =>
             Tool != null &&
-            Tool.PreAssignedWorkerId ==
-                CurrentUserKey &&
+            string.Equals(
+                Tool.PreAssignedWorkerId?.Trim(),
+                CurrentUserKey.Trim(),
+                StringComparison.OrdinalIgnoreCase) &&
             Tool.Status == "Available";
 
         public bool ShowDeclineReceipt =>
             ShowConfirmReceipt;
+
+        // ─────────────────────────────────────────────────────────
+        // CHECK-IN DISPLAY
+        // ─────────────────────────────────────────────────────────
+
+        public string CheckInLocation =>
+            string.IsNullOrWhiteSpace(
+                Tool?.LastCheckInLocation)
+                ? "—"
+                : Tool.LastCheckInLocation;
+
+        public string CheckInDateDisplay =>
+            Tool?.LastCheckInDate.HasValue == true
+                ? Tool.LastCheckInDate.Value
+                    .ToString("MMM d, yyyy h:mm tt")
+                : "—";
 
         // ─────────────────────────────────────────────────────────
         // LOADING
@@ -223,9 +239,12 @@ namespace StockGuard.ViewModels
         public bool IsLoading
         {
             get => _isLoading;
+
             set
             {
-                SetProperty(ref _isLoading, value);
+                SetProperty(
+                    ref _isLoading,
+                    value);
 
                 OnPropertyChanged(
                     nameof(IsNotLoading));
@@ -240,6 +259,7 @@ namespace StockGuard.ViewModels
         public bool ToolNotFound
         {
             get => _toolNotFound;
+
             set =>
                 SetProperty(
                     ref _toolNotFound,
@@ -252,7 +272,6 @@ namespace StockGuard.ViewModels
 
         public ICommand BorrowCommand { get; }
         public ICommand ReturnCommand { get; }
-
         public ICommand TransferCommand { get; }
         public ICommand ReportDamageCommand { get; }
         public ICommand RequestBorrowCommand { get; }
@@ -317,7 +336,8 @@ namespace StockGuard.ViewModels
 
             EndDayCheckInCommand =
                 new Command(
-                    async () => await EndDayCheckInAsync(),
+                    async () =>
+                        await EndDayCheckInAsync(),
                     () => !IsBusy);
 
             ConfirmReceiptCommand =
@@ -400,8 +420,51 @@ namespace StockGuard.ViewModels
         }
 
         // ─────────────────────────────────────────────────────────
-        // TRANSACTION LOG
+        // ACTIVE PROJECT VALIDATION
+        //
+        // Uses the SAME project logic as WorkerDashboardViewModel.
         // ─────────────────────────────────────────────────────────
+
+        private async Task<Project?> GetCurrentWorkerProjectAsync()
+        {
+            var user =
+                _auth.CurrentUser;
+
+            if (user == null ||
+                string.IsNullOrWhiteSpace(
+                    user.UniqueKey))
+            {
+                return null;
+            }
+
+            var project =
+                await _firebase
+                    .GetProjectForWorkerAsync(
+                        user.UniqueKey);
+
+            if (project == null ||
+                string.IsNullOrWhiteSpace(
+                    project.ProjectId))
+            {
+                return null;
+            }
+
+            var workerKeys =
+                await _firebase
+                    .GetProjectWorkerKeysAsync(
+                        project.ProjectId);
+
+            bool isAssigned =
+                workerKeys.Any(key =>
+                    string.Equals(
+                        key?.Trim(),
+                        user.UniqueKey.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
+
+            return isAssigned
+                ? project
+                : null;
+        }
 
         // ─────────────────────────────────────────────────────────
         // TRANSACTION LOG
@@ -424,15 +487,11 @@ namespace StockGuard.ViewModels
             await _firebase.LogTransactionAsync(
                 new TransactionLog
                 {
-                    // ── EQUIPMENT ────────────────────────────────
-
                     ToolId =
                         Tool.ToolId,
 
                     ToolName =
                         Tool.ToolName,
-
-                    // ── RESPONSIBLE WORKER ───────────────────────
 
                     WorkerId =
                         user.UniqueKey,
@@ -440,27 +499,19 @@ namespace StockGuard.ViewModels
                     WorkerName =
                         user.FullName,
 
-                    // ── PROJECT ──────────────────────────────────
-
                     ProjectId =
-                        Tool.BorrowedProjectId ?? string.Empty,
+                        Tool.BorrowedProjectId
+                        ?? string.Empty,
 
                     ProjectName =
-                        Tool.BorrowedProjectName ?? string.Empty,
-
-                    // ── PERSON WHO PERFORMED ACTION ──────────────
-                    //
-                    // This ViewModel is worker-side, so the
-                    // currently logged-in worker performed the
-                    // action.
+                        Tool.BorrowedProjectName
+                        ?? string.Empty,
 
                     PerformedById =
                         user.UniqueKey,
 
                     PerformedByName =
                         user.FullName,
-
-                    // ── ACTIVITY ─────────────────────────────────
 
                     Action =
                         action,
@@ -469,7 +520,8 @@ namespace StockGuard.ViewModels
                         description,
 
                     Condition =
-                        string.IsNullOrWhiteSpace(condition)
+                        string.IsNullOrWhiteSpace(
+                            condition)
                             ? "Good"
                             : condition,
 
@@ -484,8 +536,11 @@ namespace StockGuard.ViewModels
 
         private async Task BorrowAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             if (Tool.Status != "Available")
                 return;
@@ -494,26 +549,48 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var condition =
-                    await Shell.Current
-                        .DisplayActionSheet(
-                            "Tool Condition",
-                            "Cancel",
-                            null,
-                            "Good",
-                            "Minor Damage",
-                            "Major Damage");
+                var user =
+                    _auth.CurrentUser;
 
-                if (string.IsNullOrWhiteSpace(condition) ||
+                if (user == null)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Your user session could not be found.",
+                        "OK");
+
+                    return;
+                }
+
+                // Worker MUST belong to an active project.
+                var activeProject =
+                    await GetCurrentWorkerProjectAsync();
+
+                if (activeProject == null)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "No Active Project",
+                        "You must be assigned to an active project before borrowing equipment.",
+                        "OK");
+
+                    return;
+                }
+
+                var condition =
+                    await Shell.Current.DisplayActionSheet(
+                        "Tool Condition",
+                        "Cancel",
+                        null,
+                        "Good",
+                        "Minor Damage",
+                        "Major Damage");
+
+                if (string.IsNullOrWhiteSpace(
+                        condition) ||
                     condition == "Cancel")
                 {
                     return;
                 }
-
-                var user = _auth.CurrentUser;
-
-                if (user == null)
-                    return;
 
                 Tool.Status =
                     "Borrowed";
@@ -523,6 +600,15 @@ namespace StockGuard.ViewModels
 
                 Tool.AssignedWorkerName =
                     user.FullName;
+
+                // IMPORTANT:
+                // Direct borrowing is now tied to the
+                // worker's active project.
+                Tool.BorrowedProjectId =
+                    activeProject.ProjectId;
+
+                Tool.BorrowedProjectName =
+                    activeProject.ProjectName;
 
                 Tool.Condition =
                     condition;
@@ -546,8 +632,9 @@ namespace StockGuard.ViewModels
 
                 await LogAsync(
                     "Borrowed",
-                    $"Equipment borrowed in " +
-                    $"{condition} condition.",
+                    $"Equipment borrowed for " +
+                    $"{activeProject.ProjectName} " +
+                    $"in {condition} condition.",
                     condition);
 
                 RefreshToolProperties();
@@ -555,11 +642,14 @@ namespace StockGuard.ViewModels
                 await Shell.Current.DisplayAlert(
                     "Tool Borrowed",
                     $"{Tool.ToolName} " +
-                    $"({Tool.ToolId}) has been borrowed.",
+                    $"({Tool.ToolId}) has been borrowed.\n\n" +
+                    $"Project: {activeProject.ProjectName}",
                     "OK");
             }
             catch (Exception ex)
             {
+                await LoadToolAsync();
+
                 await Shell.Current.DisplayAlert(
                     "Error",
                     $"Could not borrow tool.\n" +
@@ -578,8 +668,11 @@ namespace StockGuard.ViewModels
 
         private async Task ReturnAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             if (!IsAssignedToMe ||
                 Tool.Status != "Borrowed")
@@ -606,7 +699,8 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
@@ -618,13 +712,11 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Save current condition only for the
-                // transaction history.
-                //
-                // The worker does NOT determine the
-                // official return condition.
                 string currentCondition =
-                    Tool.Condition;
+                    string.IsNullOrWhiteSpace(
+                        Tool.Condition)
+                        ? "Good"
+                        : Tool.Condition;
 
                 var request =
                     new ReturnRequest
@@ -665,13 +757,13 @@ namespace StockGuard.ViewModels
                             DateTime.Now
                     };
 
-                // Create request first.
                 var requestKey =
                     await _firebase
                         .CreateReturnRequestAsync(
                             request);
 
-                if (string.IsNullOrEmpty(requestKey))
+                if (string.IsNullOrEmpty(
+                        requestKey))
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
@@ -681,8 +773,6 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Worker remains accountable until
-                // the Project Engineer approves.
                 Tool.Status =
                     "PendingReturn";
 
@@ -692,8 +782,6 @@ namespace StockGuard.ViewModels
 
                 if (!updated)
                 {
-                    // Cancel the request if the Tool
-                    // could not enter PendingReturn.
                     request.Status =
                         "Rejected";
 
@@ -706,7 +794,6 @@ namespace StockGuard.ViewModels
                             requestKey,
                             request);
 
-                    // Restore local state.
                     Tool.Status =
                         "Borrowed";
 
@@ -726,9 +813,6 @@ namespace StockGuard.ViewModels
                     "awaiting Project Engineer inspection.",
                     currentCondition);
 
-                // IMPORTANT:
-                // Tool was mutated directly.
-                // Explicitly refresh every dependent UI property.
                 RefreshToolProperties();
 
                 await Shell.Current.DisplayAlert(
@@ -741,8 +825,6 @@ namespace StockGuard.ViewModels
             }
             catch (Exception ex)
             {
-                // Reload from Firebase if something fails
-                // so the UI reflects the actual saved state.
                 await LoadToolAsync();
 
                 await Shell.Current.DisplayAlert(
@@ -763,8 +845,11 @@ namespace StockGuard.ViewModels
 
         private async Task TransferAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             if (!IsAssignedToMe ||
                 Tool.Status != "Borrowed")
@@ -782,11 +867,13 @@ namespace StockGuard.ViewModels
 
                 var workers =
                     allUsers
-                        .Where(u =>
-                            u.UniqueKey !=
-                                CurrentUserKey &&
-                            u.Role == "Worker" &&
-                            u.AccountStatus ==
+                        .Where(user =>
+                            !string.Equals(
+                                user.UniqueKey,
+                                CurrentUserKey,
+                                StringComparison.OrdinalIgnoreCase) &&
+                            user.Role == "Worker" &&
+                            user.AccountStatus ==
                                 "Approved")
                         .ToList();
 
@@ -807,18 +894,21 @@ namespace StockGuard.ViewModels
                             "Cancel",
                             null,
                             workers
-                                .Select(w => w.FullName)
+                                .Select(worker =>
+                                    worker.FullName)
                                 .ToArray());
 
-                if (string.IsNullOrWhiteSpace(selected) ||
+                if (string.IsNullOrWhiteSpace(
+                        selected) ||
                     selected == "Cancel")
                 {
                     return;
                 }
 
                 var target =
-                    workers.FirstOrDefault(w =>
-                        w.FullName == selected);
+                    workers.FirstOrDefault(worker =>
+                        worker.FullName ==
+                            selected);
 
                 if (target == null)
                     return;
@@ -830,46 +920,46 @@ namespace StockGuard.ViewModels
                     return;
 
                 var request =
-                new TransferRequest
-                {
-                    ToolId =
-                        Tool.ToolId,
+                    new TransferRequest
+                    {
+                        ToolId =
+                            Tool.ToolId,
 
-                    ToolName =
-                        Tool.ToolName,
+                        ToolName =
+                            Tool.ToolName,
 
-                    FromWorkerId =
-                        user.UniqueKey,
+                        FromWorkerId =
+                            user.UniqueKey,
 
-                    FromWorkerName =
-                        user.FullName,
+                        FromWorkerName =
+                            user.FullName,
 
-                    ToWorkerId =
-                        target.UniqueKey,
+                        ToWorkerId =
+                            target.UniqueKey,
 
-                    ToWorkerName =
-                        target.FullName,
+                        ToWorkerName =
+                            target.FullName,
 
-                    ProjectId =
-                        Tool.BorrowedProjectId ??
-                        string.Empty,
+                        ProjectId =
+                            Tool.BorrowedProjectId
+                            ?? string.Empty,
 
-                    ProjectName =
-                        Tool.BorrowedProjectName ??
-                        string.Empty,
+                        ProjectName =
+                            Tool.BorrowedProjectName
+                            ?? string.Empty,
 
-                    Condition =
-                        string.IsNullOrWhiteSpace(
-                            Tool.Condition)
-                            ? "Good"
-                            : Tool.Condition,
+                        Condition =
+                            string.IsNullOrWhiteSpace(
+                                Tool.Condition)
+                                ? "Good"
+                                : Tool.Condition,
 
-                    Status =
-                        "Pending",
+                        Status =
+                            "Pending",
 
-                    RequestDate =
-                        DateTime.Now
-                };
+                        RequestDate =
+                            DateTime.Now
+                    };
 
                 var key =
                     await _firebase
@@ -907,36 +997,38 @@ namespace StockGuard.ViewModels
         }
 
         // ─────────────────────────────────────────────────────────
-        // DAMAGE
+        // DAMAGE REPORT
         // ─────────────────────────────────────────────────────────
 
         private async Task ReportDamageAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
-            // Only the worker currently holding the equipment
-            // can report damage.
             if (!IsAssignedToMe ||
                 Tool.Status != "Borrowed")
             {
                 return;
             }
 
-            // Save these BEFORE changing the tool status.
             string projectId =
-                Tool.BorrowedProjectId ?? string.Empty;
+                Tool.BorrowedProjectId
+                ?? string.Empty;
 
             string projectName =
-                Tool.BorrowedProjectName ?? string.Empty;
+                Tool.BorrowedProjectName
+                ?? string.Empty;
 
             string projectEngineerId =
-                Tool.AssignedById ?? string.Empty;
+                Tool.AssignedById
+                ?? string.Empty;
 
             string projectEngineerName =
-                Tool.AssignedByName ?? string.Empty;
-
-            // ── DAMAGE SEVERITY ───────────────────────────────────
+                Tool.AssignedByName
+                ?? string.Empty;
 
             var severity =
                 await Shell.Current.DisplayActionSheet(
@@ -946,13 +1038,12 @@ namespace StockGuard.ViewModels
                     "Minor Damage",
                     "Major Damage");
 
-            if (string.IsNullOrWhiteSpace(severity) ||
+            if (string.IsNullOrWhiteSpace(
+                    severity) ||
                 severity == "Cancel")
             {
                 return;
             }
-
-            // ── DAMAGE DESCRIPTION ────────────────────────────────
 
             var description =
                 await Shell.Current.DisplayPromptAsync(
@@ -960,10 +1051,14 @@ namespace StockGuard.ViewModels
                     "Briefly describe what happened to the equipment:",
                     "Submit",
                     "Cancel",
-                    placeholder: "e.g. Power cable was damaged during use");
+                    placeholder:
+                        "e.g. Power cable was damaged during use");
 
-            if (string.IsNullOrWhiteSpace(description))
+            if (string.IsNullOrWhiteSpace(
+                    description))
+            {
                 return;
+            }
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
@@ -982,7 +1077,8 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
@@ -993,8 +1089,6 @@ namespace StockGuard.ViewModels
 
                     return;
                 }
-
-                // ── CREATE DAMAGE REPORT ───────────────────────────
 
                 var report =
                     new DamageReport
@@ -1037,10 +1131,12 @@ namespace StockGuard.ViewModels
                     };
 
                 var reportKey =
-                    await _firebase.SubmitDamageReportAsync(
-                        report);
+                    await _firebase
+                        .SubmitDamageReportAsync(
+                            report);
 
-                if (string.IsNullOrEmpty(reportKey))
+                if (string.IsNullOrEmpty(
+                        reportKey))
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
@@ -1050,14 +1146,6 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ── UPDATE EQUIPMENT ───────────────────────────────
-                //
-                // IMPORTANT:
-                // Do NOT clear Worker/Project/PE here.
-                //
-                // We still need to know who was responsible
-                // when the damage occurred.
-
                 Tool.Status =
                     "Damaged";
 
@@ -1065,7 +1153,8 @@ namespace StockGuard.ViewModels
                     severity;
 
                 var updated =
-                    await _firebase.UpdateToolAsync(Tool);
+                    await _firebase
+                        .UpdateToolAsync(Tool);
 
                 if (!updated)
                 {
@@ -1078,18 +1167,19 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ── TRANSACTION HISTORY ────────────────────────────
-
                 await LogAsync(
                     "Damage Reported",
-                    $"Damage reported: {severity} — {description.Trim()}",
+                    $"Damage reported: " +
+                    $"{severity} — " +
+                    $"{description.Trim()}",
                     severity);
 
                 RefreshToolProperties();
 
                 await Shell.Current.DisplayAlert(
                     "Damage Reported",
-                    $"{Tool.ToolName} ({Tool.ToolId}) has been marked as damaged.\n\n" +
+                    $"{Tool.ToolName} ({Tool.ToolId}) " +
+                    $"has been marked as damaged.\n\n" +
                     $"Project: {projectName}\n" +
                     $"Project Engineer: {projectEngineerName}\n" +
                     $"Severity: {severity}",
@@ -1099,7 +1189,8 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not submit damage report.\n{ex.Message}",
+                    $"Could not submit damage report.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -1107,30 +1198,64 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
+
         // ─────────────────────────────────────────────────────────
         // REQUEST BORROW
         // ─────────────────────────────────────────────────────────
 
         private async Task RequestBorrowAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
+
+            if (Tool.Status != "Borrowed" ||
+                IsAssignedToMe)
+            {
+                return;
+            }
 
             IsBusy = true;
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Error",
+                        "Your user session could not be found.",
+                        "OK");
+
                     return;
+                }
+
+                // Worker MUST belong to an active project.
+                var activeProject =
+                    await GetCurrentWorkerProjectAsync();
+
+                if (activeProject == null)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "No Active Project",
+                        "You must be assigned to an active project before requesting equipment.",
+                        "OK");
+
+                    return;
+                }
 
                 bool confirm =
                     await Shell.Current.DisplayAlert(
                         "Request Borrow",
                         $"Send a borrow request for " +
                         $"{Tool.ToolName} ({Tool.ToolId}) " +
-                        $"to {Tool.AssignedWorkerName}?",
+                        $"to {Tool.AssignedWorkerName}?\n\n" +
+                        $"Your Project: " +
+                        $"{activeProject.ProjectName}",
                         "Send Request",
                         "Cancel");
 
@@ -1140,24 +1265,36 @@ namespace StockGuard.ViewModels
                 var request =
                     new BorrowRequest
                     {
-                        ToolId = Tool.ToolId,
-                        ToolName = Tool.ToolName,
+                        ToolId =
+                            Tool.ToolId,
 
-                        RequesterId = user.UniqueKey,
-                        RequesterName = user.FullName,
+                        ToolName =
+                            Tool.ToolName,
 
-                        OwnerId = Tool.AssignedWorkerId,
-                        OwnerName = Tool.AssignedWorkerName,
+                        RequesterId =
+                            user.UniqueKey,
 
-                        Status = "Pending",
-                        RequestDate = DateTime.Now
+                        RequesterName =
+                            user.FullName,
+
+                        OwnerId =
+                            Tool.AssignedWorkerId,
+
+                        OwnerName =
+                            Tool.AssignedWorkerName,
+
+                        Status =
+                            "Pending",
+
+                        RequestDate =
+                            DateTime.Now
                     };
 
                 var result =
                     await _firebase
-                        .CreateBorrowRequestAsync(request);
+                        .CreateBorrowRequestAsync(
+                            request);
 
-                // Duplicate pending request
                 if (result == "DUPLICATE")
                 {
                     await Shell.Current.DisplayAlert(
@@ -1169,8 +1306,8 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Firebase error
-                if (string.IsNullOrWhiteSpace(result))
+                if (string.IsNullOrWhiteSpace(
+                        result))
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
@@ -1180,18 +1317,19 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Success
                 await Shell.Current.DisplayAlert(
                     "Request Sent",
                     $"Your borrow request was sent to " +
-                    $"{Tool.AssignedWorkerName}.",
+                    $"{Tool.AssignedWorkerName}.\n\n" +
+                    $"Project: {activeProject.ProjectName}",
                     "OK");
             }
             catch (Exception ex)
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not send request.\n{ex.Message}",
+                    $"Could not send request.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -1206,8 +1344,11 @@ namespace StockGuard.ViewModels
 
         private async Task ConfirmReceiptAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             IsBusy = true;
 
@@ -1223,7 +1364,8 @@ namespace StockGuard.ViewModels
                             "Minor Damage",
                             "Major Damage");
 
-                if (string.IsNullOrWhiteSpace(condition) ||
+                if (string.IsNullOrWhiteSpace(
+                        condition) ||
                     condition == "Cancel")
                 {
                     return;
@@ -1299,13 +1441,16 @@ namespace StockGuard.ViewModels
         }
 
         // ─────────────────────────────────────────────────────────
-        // ENDDAY CHECKIN
+        // END-DAY CHECK-IN
         // ─────────────────────────────────────────────────────────
 
         private async Task EndDayCheckInAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             if (!IsAssignedToMe ||
                 Tool.Status != "Borrowed")
@@ -1325,21 +1470,23 @@ namespace StockGuard.ViewModels
 
             string[] locations =
             {
-        "Site Storage",
-        "Tool Room",
-        "Warehouse",
-        "Worker Area",
-        "Other"
-    };
+                "Site Storage",
+                "Tool Room",
+                "Warehouse",
+                "Worker Area",
+                "Other"
+            };
 
             var selectedLocation =
-                await Shell.Current.DisplayActionSheet(
-                    "End Day Check-In",
-                    "Cancel",
-                    null,
-                    locations);
+                await Shell.Current
+                    .DisplayActionSheet(
+                        "End Day Check-In",
+                        "Cancel",
+                        null,
+                        locations);
 
-            if (string.IsNullOrWhiteSpace(selectedLocation) ||
+            if (string.IsNullOrWhiteSpace(
+                    selectedLocation) ||
                 selectedLocation == "Cancel")
             {
                 return;
@@ -1348,16 +1495,20 @@ namespace StockGuard.ViewModels
             if (selectedLocation == "Other")
             {
                 selectedLocation =
-                    await Shell.Current.DisplayPromptAsync(
-                        "Storage Location",
-                        "Enter where the equipment will be stored:",
-                        "Continue",
-                        "Cancel",
-                        placeholder:
-                            "e.g. Building A - Tool Storage");
+                    await Shell.Current
+                        .DisplayPromptAsync(
+                            "Storage Location",
+                            "Enter where the equipment will be stored:",
+                            "Continue",
+                            "Cancel",
+                            placeholder:
+                                "e.g. Building A - Tool Storage");
 
-                if (string.IsNullOrWhiteSpace(selectedLocation))
+                if (string.IsNullOrWhiteSpace(
+                        selectedLocation))
+                {
                     return;
+                }
 
                 selectedLocation =
                     selectedLocation.Trim();
@@ -1401,12 +1552,11 @@ namespace StockGuard.ViewModels
                 Tool.LastCheckInVerifiedByName =
                     string.Empty;
 
-                // IMPORTANT:
-                // Status remains Borrowed.
-                // Worker/project assignment stays unchanged.
-
+                // Status stays Borrowed.
+                // Worker and project remain unchanged.
                 var updated =
-                    await _firebase.UpdateToolAsync(Tool);
+                    await _firebase
+                        .UpdateToolAsync(Tool);
 
                 if (!updated)
                 {
@@ -1420,24 +1570,28 @@ namespace StockGuard.ViewModels
 
                 await LogAsync(
                     "End Day Check-In",
-                    $"Equipment checked in at {selectedLocation} " +
-                    $"and is awaiting PE verification.",
+                    $"Equipment checked in at " +
+                    $"{selectedLocation} and is " +
+                    $"awaiting PE verification.",
                     Tool.Condition);
 
                 RefreshToolProperties();
 
                 await Shell.Current.DisplayAlert(
                     "Check-In Submitted",
-                    $"{Tool.ToolName} ({Tool.ToolId}) has been checked in for the day.\n\n" +
+                    $"{Tool.ToolName} ({Tool.ToolId}) " +
+                    $"has been checked in for the day.\n\n" +
                     $"Location: {selectedLocation}\n" +
-                    "Status remains Borrowed until the equipment is formally returned.",
+                    "Status remains Borrowed until the " +
+                    "equipment is formally returned.",
                     "OK");
             }
             catch (Exception ex)
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not complete end-day check-in.\n{ex.Message}",
+                    $"Could not complete end-day check-in.\n" +
+                    $"{ex.Message}",
                     "OK");
             }
             finally
@@ -1452,8 +1606,11 @@ namespace StockGuard.ViewModels
 
         private async Task DeclineReceiptAsync()
         {
-            if (Tool == null || IsBusy)
+            if (Tool == null ||
+                IsBusy)
+            {
                 return;
+            }
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
@@ -1505,7 +1662,8 @@ namespace StockGuard.ViewModels
 
                 await Shell.Current.DisplayAlert(
                     "Declined",
-                    $"You declined {toolName} ({toolId}).",
+                    $"You declined " +
+                    $"{toolName} ({toolId}).",
                     "OK");
             }
             catch (Exception ex)

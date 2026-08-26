@@ -1,40 +1,155 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<Application xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:converters="clr-namespace:StockGuard.Converters"
-             x:Class="StockGuard.App">
+
+<Application
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:converters="clr-namespace:StockGuard.Converters"
+    x:Class="StockGuard.App">
+
     <Application.Resources>
+
         <ResourceDictionary>
 
-            <!-- ── Converters ─────────────────────────── -->
-            <converters:InvertBoolConverter x:Key="InvertBoolConverter"/>
-            <converters:IntToBoolConverter x:Key="IntToBoolConverter"/>
-            <converters:IntToBoolConverter x:Key="StatusColorConverter"/>
 
-            <!-- ── Dynamic Theme Colors (dark default) ── -->
-            <!-- ThemeService.Apply() replaces these at runtime -->
-            <Color x:Key="BgBase">#080f1e</Color>
-            <Color x:Key="BgSurface">#0d1526</Color>
-            <Color x:Key="BgElevated">#111d33</Color>
-            <Color x:Key="BgHover">#0f1c35</Color>
-            <Color x:Key="BgCard">#0d1526</Color>
-            <Color x:Key="InputBg">#111d33</Color>
-            <Color x:Key="InputBorder">#1e3a5f</Color>
-            <Color x:Key="Text1">#f0f4ff</Color>
-            <Color x:Key="Text2">#94a3b8</Color>
-            <Color x:Key="Text3">#475569</Color>
-            <Color x:Key="BorderColor">#1e3a5f</Color>
-            <Color x:Key="BorderSoft">#1a2e4a</Color>
-            <Color x:Key="Blue">#3b82f6</Color>
-            <Color x:Key="BlueHover">#2563eb</Color>
-            <Color x:Key="BlueLight">#60a5fa</Color>
-            <Color x:Key="BlueSubtle">#0f1c35</Color>
-            <Color x:Key="Green">#10b981</Color>
-            <Color x:Key="GreenBg">#0a2a1e</Color>
-            <Color x:Key="Red">#ef4444</Color>
-            <Color x:Key="RedBg">#2a0a0a</Color>
-            <Color x:Key="Amber">#f59e0b</Color>
+            <!-- =================================================
+                 CONVERTERS
+                 ================================================= -->
+
+            <converters:InvertBoolConverter
+                x:Key="InvertBoolConverter"/>
+
+            <converters:IntToBoolConverter
+                x:Key="IntToBoolConverter"/>
+
+
+            <!-- =================================================
+                 BACKGROUNDS
+                 Dark theme is the startup/default theme.
+                 ThemeService replaces these dynamically.
+                 ================================================= -->
+
+            <Color x:Key="BgBase">
+                #080f1e
+            </Color>
+
+            <Color x:Key="BgSurface">
+                #0d1526
+            </Color>
+
+            <Color x:Key="BgElevated">
+                #111d33
+            </Color>
+
+            <Color x:Key="BgHover">
+                #0f1c35
+            </Color>
+
+            <Color x:Key="BgCard">
+                #0d1526
+            </Color>
+
+
+            <!-- =================================================
+                 INPUTS
+                 ================================================= -->
+
+            <Color x:Key="InputBg">
+                #111d33
+            </Color>
+
+            <Color x:Key="InputBorder">
+                #1e3a5f
+            </Color>
+
+
+            <!-- =================================================
+                 TEXT
+                 ================================================= -->
+
+            <Color x:Key="Text1">
+                #f0f4ff
+            </Color>
+
+            <Color x:Key="Text2">
+                #94a3b8
+            </Color>
+
+            <Color x:Key="Text3">
+                #64748b
+            </Color>
+
+
+            <!-- =================================================
+                 BORDERS
+                 ================================================= -->
+
+            <Color x:Key="BorderColor">
+                #1e3a5f
+            </Color>
+
+            <Color x:Key="BorderSoft">
+                #1a2e4a
+            </Color>
+
+
+            <!-- =================================================
+                 BLUE
+                 ================================================= -->
+
+            <Color x:Key="Blue">
+                #3b82f6
+            </Color>
+
+            <Color x:Key="BlueHover">
+                #2563eb
+            </Color>
+
+            <Color x:Key="BlueLight">
+                #60a5fa
+            </Color>
+
+            <Color x:Key="BlueSubtle">
+                #0f1c35
+            </Color>
+
+
+            <!-- =================================================
+                 GREEN
+                 ================================================= -->
+
+            <Color x:Key="Green">
+                #10b981
+            </Color>
+
+            <Color x:Key="GreenBg">
+                #0a2a1e
+            </Color>
+
+
+            <!-- =================================================
+                 RED
+                 ================================================= -->
+
+            <Color x:Key="Red">
+                #ef4444
+            </Color>
+
+            <Color x:Key="RedBg">
+                #2a0a0a
+            </Color>
+
+
+            <!-- =================================================
+                 AMBER
+                 ================================================= -->
+
+            <Color x:Key="Amber">
+                #f59e0b
+            </Color>
+
 
         </ResourceDictionary>
+
     </Application.Resources>
+
 </Application>

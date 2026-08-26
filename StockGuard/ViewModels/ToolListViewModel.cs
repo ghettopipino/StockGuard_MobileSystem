@@ -13,9 +13,9 @@ namespace StockGuard.ViewModels
         private readonly FirebaseService _firebase;
         private readonly ThemeService _theme;
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // QUERY PROPERTIES
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private string _catalogId = string.Empty;
 
@@ -38,9 +38,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
-        // PHYSICAL INVENTORY STATS
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
+        // PHYSICAL INVENTORY
+        // ─────────────────────────────────────────────────────
 
         private int _availableCount;
 
@@ -86,18 +86,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // PROJECT ALLOCATION
-        // ─────────────────────────────────────────────────────────
-        //
-        // Allocated does NOT mean Borrowed.
-        //
-        // It represents the quantity currently required/reserved
-        // by active projects.
-        //
-        // The Project Engineer is accountable for managing this
-        // quantity for their project.
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private int _allocatedCount;
 
@@ -110,9 +101,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // LABEL
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         public string ToolCountLabel =>
             Tools.Count == 1
@@ -120,18 +111,17 @@ namespace StockGuard.ViewModels
                 : $"{Tools.Count} tools in catalog";
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // COLLECTION
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
-        public ObservableCollection<Tool>
-            Tools
-        { get; } = new();
+        public ObservableCollection<Tool> Tools { get; }
+            = new();
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // REFRESH
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private bool _isRefreshing;
 
@@ -144,9 +134,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // COMMANDS
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         public ICommand GoBackCommand { get; }
 
@@ -155,9 +145,9 @@ namespace StockGuard.ViewModels
         public ICommand ShowQrCommand { get; }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // CONSTRUCTOR
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         public ToolListViewModel(
             FirebaseService firebase,
@@ -180,14 +170,13 @@ namespace StockGuard.ViewModels
             ShowQrCommand =
                 new Command<Tool>(
                     async tool =>
-                        await ShowQrAsync(
-                            tool));
+                        await ShowQrAsync(tool));
         }
 
 
-        // ─────────────────────────────────────────────────────────
-        // LOAD TOOLS
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
+        // LOAD
+        // ─────────────────────────────────────────────────────
 
         public async Task LoadToolsAsync()
         {
@@ -202,7 +191,7 @@ namespace StockGuard.ViewModels
             try
             {
                 // ─────────────────────────────────────────────
-                // PHYSICAL TOOLS
+                // LOAD PHYSICAL TOOLS
                 // ─────────────────────────────────────────────
 
                 var tools =
@@ -212,7 +201,7 @@ namespace StockGuard.ViewModels
 
 
                 // ─────────────────────────────────────────────
-                // ACTIVE PROJECT REQUIREMENTS
+                // LOAD ACTIVE PROJECT ALLOCATIONS
                 // ─────────────────────────────────────────────
 
                 var allocations =
@@ -221,7 +210,7 @@ namespace StockGuard.ViewModels
 
 
                 // ─────────────────────────────────────────────
-                // DISPLAY PHYSICAL TOOLS
+                // DISPLAY TOOLS
                 // ─────────────────────────────────────────────
 
                 Tools.Clear();
@@ -238,7 +227,14 @@ namespace StockGuard.ViewModels
 
 
                 // ─────────────────────────────────────────────
-                // PHYSICAL STATUS COUNTS
+                // PHYSICAL AVAILABLE
+                // ─────────────────────────────────────────────
+                //
+                // This is ACTUAL physical availability.
+                //
+                // Project allocation does NOT reduce this
+                // number unless the physical tool status
+                // itself changes.
                 // ─────────────────────────────────────────────
 
                 AvailableCount =
@@ -248,9 +244,23 @@ namespace StockGuard.ViewModels
                             "Available");
 
 
-                // PendingReturn is still physically
-                // in the worker's custody until the PE
-                // approves the return.
+                // ─────────────────────────────────────────────
+                // ACTUAL BORROWED
+                // ─────────────────────────────────────────────
+                //
+                // Borrowed means:
+                //
+                // PE distributed a specific tool
+                //        ↓
+                // worker accepted it
+                //        ↓
+                // Tool.Status = Borrowed
+                //
+                // PendingReturn still counts because the
+                // worker physically has the tool until the
+                // PE approves the return.
+                // ─────────────────────────────────────────────
+
                 BorrowedCount =
                     tools.Count(t =>
                         !t.IsDeleted &&
@@ -262,6 +272,10 @@ namespace StockGuard.ViewModels
                                 "PendingReturn"
                         ));
 
+
+                // ─────────────────────────────────────────────
+                // DAMAGED
+                // ─────────────────────────────────────────────
 
                 DamagedCount =
                     tools.Count(t =>
@@ -275,6 +289,10 @@ namespace StockGuard.ViewModels
                         ));
 
 
+                // ─────────────────────────────────────────────
+                // LOST
+                // ─────────────────────────────────────────────
+
                 LostCount =
                     tools.Count(t =>
                         !t.IsDeleted &&
@@ -286,14 +304,9 @@ namespace StockGuard.ViewModels
                 // PROJECT ALLOCATION
                 // ─────────────────────────────────────────────
                 //
-                // Example:
+                // Allocation is PE/project accountability.
                 //
-                // Project A requires 5 drills.
-                // Project B requires 3 drills.
-                //
-                // AllocatedCount = 8
-                //
-                // This does NOT mean 8 drills are borrowed.
+                // It is NOT worker borrowing.
                 // ─────────────────────────────────────────────
 
                 AllocatedCount =
@@ -307,10 +320,6 @@ namespace StockGuard.ViewModels
                         .Sum(a =>
                             a.QuantityNeeded);
 
-
-                // ─────────────────────────────────────────────
-                // UPDATE LABEL
-                // ─────────────────────────────────────────────
 
                 OnPropertyChanged(
                     nameof(
@@ -330,9 +339,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // REFRESH
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private async Task RefreshAsync()
         {
@@ -349,9 +358,9 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
         // QR
-        // ─────────────────────────────────────────────────────────
+        // ─────────────────────────────────────────────────────
 
         private async Task ShowQrAsync(
             Tool tool)

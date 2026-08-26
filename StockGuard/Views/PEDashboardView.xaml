@@ -58,7 +58,6 @@
                                 HeightRequest="40"
                                 Padding="0"/>
 
-                            <!-- NOTIFICATION DOT -->
                             <Ellipse
                                 Fill="#ef4444"
                                 WidthRequest="8"
@@ -118,7 +117,7 @@
                         <!-- THEME -->
                         <Button
                             Grid.Column="3"
-                            Text="&#xf186;"
+                            Text="{Binding ThemeIcon}"
                             FontFamily="FontAwesome"
                             Command="{Binding ToggleThemeCommand}"
                             BackgroundColor="{DynamicResource BgElevated}"
@@ -217,12 +216,14 @@
                                     Text="&#xf201;"
                                     FontFamily="FontAwesome"
                                     FontSize="10"
-                                    TextColor="{DynamicResource Text3}"/>
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
 
                                 <Label
                                     Text="Live inventory"
                                     FontSize="10"
-                                    TextColor="{DynamicResource Text3}"/>
+                                    TextColor="{DynamicResource Text3}"
+                                    VerticalOptions="Center"/>
 
                             </HorizontalStackLayout>
 
@@ -262,28 +263,20 @@
                                         TextColor="{DynamicResource Text3}"/>
 
 
-                                    <!-- ICON -->
-                                    <Frame
+                                    <!-- TRANSPARENT ICON -->
+                                    <Label
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Grid.RowSpan="2"
-                                        WidthRequest="36"
-                                        HeightRequest="36"
-                                        CornerRadius="10"
-                                        Padding="0"
-                                        HasShadow="False"
-                                        BorderColor="Transparent"
-                                        BackgroundColor="{DynamicResource BlueSubtle}">
-
-                                        <Label
-                                            Text="&#xf0ad;"
-                                            FontFamily="FontAwesome"
-                                            FontSize="15"
-                                            TextColor="{DynamicResource Blue}"
-                                            HorizontalOptions="Center"
-                                            VerticalOptions="Center"/>
-
-                                    </Frame>
+                                        Text="&#xf0ad;"
+                                        FontFamily="FontAwesome"
+                                        FontSize="21"
+                                        TextColor="{DynamicResource Blue}"
+                                        WidthRequest="40"
+                                        HorizontalTextAlignment="Center"
+                                        VerticalTextAlignment="Center"
+                                        VerticalOptions="Center"
+                                        Margin="10,0,0,0"/>
 
 
                                     <Label
@@ -326,27 +319,20 @@
                                         TextColor="{DynamicResource Text3}"/>
 
 
-                                    <Frame
+                                    <!-- TRANSPARENT ICON -->
+                                    <Label
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Grid.RowSpan="2"
-                                        WidthRequest="36"
-                                        HeightRequest="36"
-                                        CornerRadius="10"
-                                        Padding="0"
-                                        HasShadow="False"
-                                        BorderColor="Transparent"
-                                        BackgroundColor="{DynamicResource GreenSubtle}">
-
-                                        <Label
-                                            Text="&#xf058;"
-                                            FontFamily="FontAwesome"
-                                            FontSize="15"
-                                            TextColor="{DynamicResource Green}"
-                                            HorizontalOptions="Center"
-                                            VerticalOptions="Center"/>
-
-                                    </Frame>
+                                        Text="&#xf058;"
+                                        FontFamily="FontAwesome"
+                                        FontSize="21"
+                                        TextColor="{DynamicResource Green}"
+                                        WidthRequest="40"
+                                        HorizontalTextAlignment="Center"
+                                        VerticalTextAlignment="Center"
+                                        VerticalOptions="Center"
+                                        Margin="10,0,0,0"/>
 
 
                                     <Label
@@ -389,27 +375,20 @@
                                         TextColor="{DynamicResource Text3}"/>
 
 
-                                    <Frame
+                                    <!-- TRANSPARENT ICON -->
+                                    <Label
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Grid.RowSpan="2"
-                                        WidthRequest="36"
-                                        HeightRequest="36"
-                                        CornerRadius="10"
-                                        Padding="0"
-                                        HasShadow="False"
-                                        BorderColor="Transparent"
-                                        BackgroundColor="{DynamicResource AmberSubtle}">
-
-                                        <Label
-                                            Text="&#xf466;"
-                                            FontFamily="FontAwesome"
-                                            FontSize="15"
-                                            TextColor="{DynamicResource Amber}"
-                                            HorizontalOptions="Center"
-                                            VerticalOptions="Center"/>
-
-                                    </Frame>
+                                        Text="&#xf466;"
+                                        FontFamily="FontAwesome"
+                                        FontSize="21"
+                                        TextColor="{DynamicResource Amber}"
+                                        WidthRequest="40"
+                                        HorizontalTextAlignment="Center"
+                                        VerticalTextAlignment="Center"
+                                        VerticalOptions="Center"
+                                        Margin="10,0,0,0"/>
 
 
                                     <Label
@@ -452,27 +431,20 @@
                                         TextColor="{DynamicResource Text3}"/>
 
 
-                                    <Frame
+                                    <!-- TRANSPARENT ICON -->
+                                    <Label
                                         Grid.Row="0"
                                         Grid.Column="1"
                                         Grid.RowSpan="2"
-                                        WidthRequest="36"
-                                        HeightRequest="36"
-                                        CornerRadius="10"
-                                        Padding="0"
-                                        HasShadow="False"
-                                        BorderColor="Transparent"
-                                        BackgroundColor="{DynamicResource RedSubtle}">
-
-                                        <Label
-                                            Text="&#xf071;"
-                                            FontFamily="FontAwesome"
-                                            FontSize="15"
-                                            TextColor="{DynamicResource Red}"
-                                            HorizontalOptions="Center"
-                                            VerticalOptions="Center"/>
-
-                                    </Frame>
+                                        Text="&#xf071;"
+                                        FontFamily="FontAwesome"
+                                        FontSize="21"
+                                        TextColor="{DynamicResource Red}"
+                                        WidthRequest="40"
+                                        HorizontalTextAlignment="Center"
+                                        VerticalTextAlignment="Center"
+                                        VerticalOptions="Center"
+                                        Margin="10,0,0,0"/>
 
 
                                     <Label
@@ -506,27 +478,21 @@
                         <!-- SECTION HEADER -->
                         <Grid
                             ColumnDefinitions="Auto,*,Auto"
-                            ColumnSpacing="8">
+                            ColumnSpacing="10">
 
-                            <Frame
+
+                            <!-- TRANSPARENT SECTION ICON -->
+                            <Label
                                 Grid.Column="0"
-                                WidthRequest="30"
-                                HeightRequest="30"
-                                CornerRadius="8"
-                                Padding="0"
-                                HasShadow="False"
-                                BorderColor="Transparent"
-                                BackgroundColor="{DynamicResource AmberSubtle}">
+                                Text="&#xf466;"
+                                FontFamily="FontAwesome"
+                                FontSize="17"
+                                TextColor="{DynamicResource Amber}"
+                                WidthRequest="28"
+                                HorizontalTextAlignment="Center"
+                                VerticalTextAlignment="Center"
+                                VerticalOptions="Center"/>
 
-                                <Label
-                                    Text="&#xf466;"
-                                    FontFamily="FontAwesome"
-                                    FontSize="12"
-                                    TextColor="{DynamicResource Amber}"
-                                    HorizontalOptions="Center"
-                                    VerticalOptions="Center"/>
-
-                            </Frame>
 
                             <Label
                                 Grid.Column="1"
@@ -560,24 +526,14 @@
                                 Spacing="8"
                                 HorizontalOptions="Center">
 
-                                <Frame
-                                    WidthRequest="42"
-                                    HeightRequest="42"
-                                    CornerRadius="21"
-                                    Padding="0"
-                                    HasShadow="False"
-                                    BorderColor="Transparent"
-                                    BackgroundColor="{DynamicResource BgElevated}">
 
-                                    <Label
-                                        Text="&#xf466;"
-                                        FontFamily="FontAwesome"
-                                        FontSize="16"
-                                        TextColor="{DynamicResource Text3}"
-                                        HorizontalOptions="Center"
-                                        VerticalOptions="Center"/>
+                                <Label
+                                    Text="&#xf466;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="22"
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
 
-                                </Frame>
 
                                 <Label
                                     Text="No borrowed equipment"
@@ -598,7 +554,10 @@
 
 
 
-                        <!-- BORROWED TOOLS -->
+                        <!-- ═══════════════════════════════════
+                             BORROWED TOOLS
+                             ═══════════════════════════════════ -->
+
                         <VerticalStackLayout
                             BindableLayout.ItemsSource="{Binding RecentTools}"
                             Spacing="8">
@@ -621,27 +580,17 @@
                                             Padding="14">
 
 
-                                            <!-- TOOL ICON -->
-                                            <Frame
+                                            <!-- TRANSPARENT TOOL ICON -->
+                                            <Label
                                                 Grid.Column="0"
-                                                BackgroundColor="{DynamicResource BlueSubtle}"
-                                                BorderColor="Transparent"
-                                                CornerRadius="10"
-                                                WidthRequest="44"
-                                                HeightRequest="44"
-                                                Padding="0"
-                                                HasShadow="False"
-                                                VerticalOptions="Center">
-
-                                                <Label
-                                                    Text="&#xf0ad;"
-                                                    FontFamily="FontAwesome"
-                                                    FontSize="15"
-                                                    TextColor="{DynamicResource Blue}"
-                                                    HorizontalOptions="Center"
-                                                    VerticalOptions="Center"/>
-
-                                            </Frame>
+                                                Text="&#xf0ad;"
+                                                FontFamily="FontAwesome"
+                                                FontSize="20"
+                                                TextColor="{DynamicResource Blue}"
+                                                WidthRequest="38"
+                                                HorizontalTextAlignment="Center"
+                                                VerticalTextAlignment="Center"
+                                                VerticalOptions="Center"/>
 
 
                                             <!-- INFORMATION -->
@@ -657,6 +606,8 @@
                                                     TextColor="{DynamicResource Text1}"
                                                     LineBreakMode="TailTruncation"/>
 
+
+                                                <!-- TOOL ID -->
                                                 <HorizontalStackLayout
                                                     Spacing="5">
 
@@ -670,11 +621,13 @@
                                                     <Label
                                                         Text="{Binding ToolId}"
                                                         FontSize="10"
-                                                        TextColor="{DynamicResource Text3}"/>
+                                                        TextColor="{DynamicResource Text3}"
+                                                        VerticalOptions="Center"/>
 
                                                 </HorizontalStackLayout>
 
 
+                                                <!-- WORKER -->
                                                 <HorizontalStackLayout
                                                     Spacing="5">
 
@@ -689,43 +642,36 @@
                                                         Text="{Binding AssignedWorkerName}"
                                                         FontSize="11"
                                                         TextColor="{DynamicResource Blue}"
-                                                        LineBreakMode="TailTruncation"/>
+                                                        LineBreakMode="TailTruncation"
+                                                        VerticalOptions="Center"/>
 
                                                 </HorizontalStackLayout>
 
                                             </VerticalStackLayout>
 
 
-                                            <!-- STATUS -->
-                                            <Frame
+
+                                            <!-- TRANSPARENT BORROWED STATUS -->
+                                            <HorizontalStackLayout
                                                 Grid.Column="2"
-                                                BackgroundColor="{DynamicResource AmberSubtle}"
-                                                BorderColor="Transparent"
-                                                CornerRadius="8"
-                                                Padding="8,4"
-                                                HasShadow="False"
+                                                Spacing="5"
                                                 VerticalOptions="Center">
 
-                                                <HorizontalStackLayout
-                                                    Spacing="4">
+                                                <Label
+                                                    Text="&#xf466;"
+                                                    FontFamily="FontAwesome"
+                                                    FontSize="9"
+                                                    TextColor="{DynamicResource Amber}"
+                                                    VerticalOptions="Center"/>
 
-                                                    <Label
-                                                        Text="&#xf466;"
-                                                        FontFamily="FontAwesome"
-                                                        FontSize="8"
-                                                        TextColor="{DynamicResource Amber}"
-                                                        VerticalOptions="Center"/>
+                                                <Label
+                                                    Text="Borrowed"
+                                                    FontSize="9"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{DynamicResource Amber}"
+                                                    VerticalOptions="Center"/>
 
-                                                    <Label
-                                                        Text="{Binding Status}"
-                                                        FontSize="9"
-                                                        FontAttributes="Bold"
-                                                        TextColor="{DynamicResource Amber}"
-                                                        VerticalOptions="Center"/>
-
-                                                </HorizontalStackLayout>
-
-                                            </Frame>
+                                            </HorizontalStackLayout>
 
                                         </Grid>
 
@@ -769,27 +715,20 @@
                         <!-- SECTION HEADER -->
                         <Grid
                             ColumnDefinitions="Auto,*,Auto"
-                            ColumnSpacing="8">
+                            ColumnSpacing="10">
 
-                            <Frame
+
+                            <Label
                                 Grid.Column="0"
-                                WidthRequest="30"
-                                HeightRequest="30"
-                                CornerRadius="8"
-                                Padding="0"
-                                HasShadow="False"
-                                BorderColor="Transparent"
-                                BackgroundColor="{DynamicResource BlueSubtle}">
+                                Text="&#xf0c0;"
+                                FontFamily="FontAwesome"
+                                FontSize="16"
+                                TextColor="{DynamicResource Blue}"
+                                WidthRequest="28"
+                                HorizontalTextAlignment="Center"
+                                VerticalTextAlignment="Center"
+                                VerticalOptions="Center"/>
 
-                                <Label
-                                    Text="&#xf0c0;"
-                                    FontFamily="FontAwesome"
-                                    FontSize="12"
-                                    TextColor="{DynamicResource Blue}"
-                                    HorizontalOptions="Center"
-                                    VerticalOptions="Center"/>
-
-                            </Frame>
 
                             <Label
                                 Grid.Column="1"
@@ -823,24 +762,12 @@
                                 HorizontalOptions="Center"
                                 Spacing="8">
 
-                                <Frame
-                                    WidthRequest="42"
-                                    HeightRequest="42"
-                                    CornerRadius="21"
-                                    Padding="0"
-                                    HasShadow="False"
-                                    BorderColor="Transparent"
-                                    BackgroundColor="{DynamicResource BgElevated}">
-
-                                    <Label
-                                        Text="&#xf0c0;"
-                                        FontFamily="FontAwesome"
-                                        FontSize="15"
-                                        TextColor="{DynamicResource Text3}"
-                                        HorizontalOptions="Center"
-                                        VerticalOptions="Center"/>
-
-                                </Frame>
+                                <Label
+                                    Text="&#xf0c0;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="21"
+                                    TextColor="{DynamicResource Text3}"
+                                    HorizontalOptions="Center"/>
 
                                 <Label
                                     Text="No worker activity yet"
@@ -854,7 +781,10 @@
 
 
 
-                        <!-- WORKER LIST -->
+                        <!-- ═══════════════════════════════════
+                             WORKER LIST
+                             ═══════════════════════════════════ -->
+
                         <Frame
                             BackgroundColor="{DynamicResource BgCard}"
                             BorderColor="{DynamicResource BorderColor}"
@@ -918,6 +848,7 @@
                                                         TextColor="{DynamicResource Text1}"
                                                         LineBreakMode="TailTruncation"/>
 
+
                                                     <HorizontalStackLayout
                                                         Spacing="5">
 
@@ -931,7 +862,8 @@
                                                         <Label
                                                             Text="{Binding ToolsLabel}"
                                                             FontSize="10"
-                                                            TextColor="{DynamicResource Text3}"/>
+                                                            TextColor="{DynamicResource Text3}"
+                                                            VerticalOptions="Center"/>
 
                                                     </HorizontalStackLayout>
 
@@ -939,27 +871,17 @@
 
 
                                                 <!-- STATUS -->
-                                                <Frame
+                                                <Label
                                                     Grid.Column="2"
-                                                    BackgroundColor="{DynamicResource BgElevated}"
-                                                    BorderColor="Transparent"
-                                                    CornerRadius="8"
-                                                    Padding="8,4"
-                                                    HasShadow="False"
-                                                    VerticalOptions="Center">
-
-                                                    <Label
-                                                        Text="{Binding Status}"
-                                                        FontSize="9"
-                                                        FontAttributes="Bold"
-                                                        TextColor="{Binding StatusColor}"/>
-
-                                                </Frame>
+                                                    Text="{Binding Status}"
+                                                    FontSize="9"
+                                                    FontAttributes="Bold"
+                                                    TextColor="{Binding StatusColor}"
+                                                    VerticalOptions="Center"/>
 
                                             </Grid>
 
 
-                                            <!-- DIVIDER -->
                                             <BoxView
                                                 HeightRequest="1"
                                                 Color="{DynamicResource BorderSoft}"
@@ -1014,7 +936,8 @@
                         <Label
                             Text="StockGuard · Equipment Management"
                             FontSize="10"
-                            TextColor="{DynamicResource Text3}"/>
+                            TextColor="{DynamicResource Text3}"
+                            VerticalOptions="Center"/>
 
                     </HorizontalStackLayout>
 
@@ -1037,8 +960,6 @@
             RowDefinitions="Auto,Auto"
             RowSpacing="5">
 
-
-            <!-- QR BUTTON -->
             <Frame
                 Grid.Row="0"
                 WidthRequest="60"

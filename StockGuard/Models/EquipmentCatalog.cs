@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Newtonsoft.Json;
 
 namespace StockGuard.Models
@@ -30,19 +26,57 @@ namespace StockGuard.Models
         [JsonProperty("isDeleted")]
         public bool IsDeleted { get; set; } = false;
 
+
+        // ─────────────────────────────────────────────────────
+        // UI HELPERS
+        // ─────────────────────────────────────────────────────
+
         [JsonIgnore]
         public string CatalogIcon => CatalogName switch
         {
-            var n when n.Contains("Drill") => "🔩",
-            var n when n.Contains("Hammer") => "🔨",
-            var n when n.Contains("Ruler") => "📏",
-            var n when n.Contains("Saw") => "🪚",
-            var n when n.Contains("Wrench") => "🔧",
-            var n when n.Contains("Level") => "📐",
-            var n when n.Contains("Tape") => "📏",
-            var n when n.Contains("Nail") => "🔩",
-            _ => "🔧"
+            var n when n.Contains(
+                "Drill",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf0ad",
+
+            var n when n.Contains(
+                "Hammer",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf6e3",
+
+            var n when n.Contains(
+                "Ruler",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf545",
+
+            var n when n.Contains(
+                "Saw",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf0ad",
+
+            var n when n.Contains(
+                "Wrench",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf0ad",
+
+            var n when n.Contains(
+                "Level",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf545",
+
+            var n when n.Contains(
+                "Tape",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf545",
+
+            var n when n.Contains(
+                "Nail",
+                StringComparison.OrdinalIgnoreCase)
+                => "\uf0ad",
+
+            _ => "\uf0ad"
         };
+
 
         [JsonIgnore]
         public string QuantityLabel =>

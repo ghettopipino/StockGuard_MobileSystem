@@ -1,126 +1,251 @@
 <?xml version="1.0" encoding="utf-8" ?>
-<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-             xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
-             x:Class="StockGuard.Views.QrScannerView"
-             Shell.NavBarIsVisible="False"
-             BackgroundColor="#000000">
+
+<ContentPage
+    xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+    xmlns:zxing="clr-namespace:ZXing.Net.Maui.Controls;assembly=ZXing.Net.Maui.Controls"
+    x:Class="StockGuard.Views.QrScannerView"
+    Shell.NavBarIsVisible="False"
+    BackgroundColor="Black">
 
     <Grid>
 
-        <!-- ── Live Camera QR Reader ── -->
+        <!-- ====================================================== -->
+        <!-- CAMERA -->
+        <!-- ====================================================== -->
+
         <zxing:CameraBarcodeReaderView
             x:Name="BarcodeReader"
             BarcodesDetected="OnBarcodesDetected"
             HorizontalOptions="Fill"
             VerticalOptions="Fill"/>
 
-        <!-- ── Dark overlay top ── -->
-        <BoxView BackgroundColor="#99000000"
-                 VerticalOptions="Start"
-                 HeightRequest="180"
-                 InputTransparent="True"/>
 
-        <!-- ── Dark overlay bottom ── -->
-        <BoxView BackgroundColor="#99000000"
-                 VerticalOptions="End"
-                 HeightRequest="220"
-                 InputTransparent="True"/>
+        <!-- ====================================================== -->
+        <!-- TOP OVERLAY -->
+        <!-- ====================================================== -->
 
-        <!-- ── Scanner frame box ── -->
-        <Grid WidthRequest="240" HeightRequest="240"
-              VerticalOptions="Center"
-              HorizontalOptions="Center"
-              InputTransparent="True">
+        <BoxView
+            BackgroundColor="#B3000000"
+            VerticalOptions="Start"
+            HeightRequest="180"
+            InputTransparent="True"/>
 
-            <BoxView BackgroundColor="#22ffffff"
-                     CornerRadius="12"
-                     HorizontalOptions="Fill"
-                     VerticalOptions="Fill"/>
 
-            <!-- Top-left corner -->
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="36" HeightRequest="4"
-                     HorizontalOptions="Start" VerticalOptions="Start"/>
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="4" HeightRequest="36"
-                     HorizontalOptions="Start" VerticalOptions="Start"/>
+        <!-- ====================================================== -->
+        <!-- BOTTOM OVERLAY -->
+        <!-- ====================================================== -->
 
-            <!-- Top-right corner -->
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="36" HeightRequest="4"
-                     HorizontalOptions="End" VerticalOptions="Start"/>
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="4" HeightRequest="36"
-                     HorizontalOptions="End" VerticalOptions="Start"/>
+        <BoxView
+            BackgroundColor="#B3000000"
+            VerticalOptions="End"
+            HeightRequest="230"
+            InputTransparent="True"/>
 
-            <!-- Bottom-left corner -->
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="36" HeightRequest="4"
-                     HorizontalOptions="Start" VerticalOptions="End"/>
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="4" HeightRequest="36"
-                     HorizontalOptions="Start" VerticalOptions="End"/>
 
-            <!-- Bottom-right corner -->
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="36" HeightRequest="4"
-                     HorizontalOptions="End" VerticalOptions="End"/>
-            <BoxView BackgroundColor="#3b82f6"
-                     WidthRequest="4" HeightRequest="36"
-                     HorizontalOptions="End" VerticalOptions="End"/>
+        <!-- ====================================================== -->
+        <!-- SCANNER FRAME -->
+        <!-- ====================================================== -->
+
+        <Grid
+            WidthRequest="250"
+            HeightRequest="250"
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            InputTransparent="True">
+
+            <!-- LIGHT TRANSPARENT SCAN AREA -->
+            <Border
+                BackgroundColor="#16FFFFFF"
+                Stroke="Transparent"
+                StrokeShape="RoundRectangle 16"/>
+
+
+            <!-- TOP LEFT -->
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="40"
+                HeightRequest="4"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"/>
+
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="4"
+                HeightRequest="40"
+                HorizontalOptions="Start"
+                VerticalOptions="Start"/>
+
+
+            <!-- TOP RIGHT -->
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="40"
+                HeightRequest="4"
+                HorizontalOptions="End"
+                VerticalOptions="Start"/>
+
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="4"
+                HeightRequest="40"
+                HorizontalOptions="End"
+                VerticalOptions="Start"/>
+
+
+            <!-- BOTTOM LEFT -->
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="40"
+                HeightRequest="4"
+                HorizontalOptions="Start"
+                VerticalOptions="End"/>
+
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="4"
+                HeightRequest="40"
+                HorizontalOptions="Start"
+                VerticalOptions="End"/>
+
+
+            <!-- BOTTOM RIGHT -->
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="40"
+                HeightRequest="4"
+                HorizontalOptions="End"
+                VerticalOptions="End"/>
+
+            <BoxView
+                BackgroundColor="#3b82f6"
+                WidthRequest="4"
+                HeightRequest="40"
+                HorizontalOptions="End"
+                VerticalOptions="End"/>
 
         </Grid>
 
-        <!-- ── Top header bar ── -->
-        <Grid ColumnDefinitions="Auto,*"
-              ColumnSpacing="12"
-              VerticalOptions="Start"
-              Padding="20,52,20,16"
-              BackgroundColor="#CC000000">
 
-            <Button Grid.Column="0"
-                    Text="✕"
-                    Clicked="OnCloseClicked"
-                    BackgroundColor="#33ffffff"
-                    TextColor="White"
+        <!-- ====================================================== -->
+        <!-- HEADER -->
+        <!-- ====================================================== -->
+
+        <Grid
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="12"
+            VerticalOptions="Start"
+            Padding="20,52,20,16"
+            BackgroundColor="#CC000000">
+
+            <!-- CLOSE -->
+            <Button
+                Grid.Column="0"
+                Text="&#xf00d;"
+                FontFamily="FontAwesome"
+                Clicked="OnCloseClicked"
+                BackgroundColor="Transparent"
+                TextColor="White"
+                FontSize="16"
+                WidthRequest="40"
+                HeightRequest="40"
+                Padding="0"/>
+
+            <!-- TITLE -->
+            <VerticalStackLayout
+                Grid.Column="1"
+                VerticalOptions="Center"
+                Spacing="2">
+
+                <Label
+                    Text="Scan Tool QR Code"
                     FontSize="16"
-                    CornerRadius="8"
-                    WidthRequest="40"
-                    HeightRequest="36"
-                    Padding="0"/>
+                    FontAttributes="Bold"
+                    TextColor="White"/>
 
-            <VerticalStackLayout Grid.Column="1"
-                                 VerticalOptions="Center"
-                                 Spacing="2">
-                <Label Text="Scan Tool QR Code"
-                       FontSize="16"
-                       FontAttributes="Bold"
-                       TextColor="White"/>
-                <Label Text="Point camera at the tool's QR label"
-                       FontSize="11"
-                       TextColor="#94a3b8"/>
+                <Label
+                    Text="Point the camera at the equipment QR label"
+                    FontSize="11"
+                    TextColor="#94a3b8"
+                    LineBreakMode="TailTruncation"/>
+
             </VerticalStackLayout>
 
         </Grid>
 
-        <!-- ── Bottom instruction bar ── -->
-        <VerticalStackLayout VerticalOptions="End"
-                             Padding="24,20"
-                             BackgroundColor="#CC000000"
-                             Spacing="6">
 
-            <Label Text="📷  Align the QR code inside the frame"
-                   FontSize="13"
-                   TextColor="White"
-                   HorizontalOptions="Center"
-                   HorizontalTextAlignment="Center"/>
+        <!-- ====================================================== -->
+        <!-- CENTER HELPER -->
+        <!-- ====================================================== -->
 
-            <Label Text="The scanner detects automatically — no button needed"
-                   FontSize="11"
-                   TextColor="#94a3b8"
-                   HorizontalOptions="Center"
-                   HorizontalTextAlignment="Center"/>
+        <Border
+            VerticalOptions="Center"
+            HorizontalOptions="Center"
+            Margin="0,310,0,0"
+            BackgroundColor="#B3000000"
+            Stroke="Transparent"
+            StrokeShape="RoundRectangle 12"
+            Padding="12,7"
+            InputTransparent="True">
+
+            <HorizontalStackLayout
+                Spacing="7"
+                HorizontalOptions="Center">
+
+                <Label
+                    Text="&#xf029;"
+                    FontFamily="FontAwesome"
+                    FontSize="11"
+                    TextColor="#60a5fa"
+                    VerticalOptions="Center"/>
+
+                <Label
+                    Text="Keep the QR code inside the frame"
+                    FontSize="11"
+                    TextColor="White"
+                    VerticalOptions="Center"/>
+
+            </HorizontalStackLayout>
+
+        </Border>
+
+
+        <!-- ====================================================== -->
+        <!-- BOTTOM INSTRUCTIONS -->
+        <!-- ====================================================== -->
+
+        <VerticalStackLayout
+            VerticalOptions="End"
+            Padding="24,20,24,30"
+            BackgroundColor="#CC000000"
+            Spacing="8">
+
+            <HorizontalStackLayout
+                HorizontalOptions="Center"
+                Spacing="8">
+
+                <Label
+                    Text="&#xf030;"
+                    FontFamily="FontAwesome"
+                    FontSize="13"
+                    TextColor="#60a5fa"
+                    VerticalOptions="Center"/>
+
+                <Label
+                    Text="Align the QR code inside the frame"
+                    FontSize="13"
+                    FontAttributes="Bold"
+                    TextColor="White"
+                    VerticalOptions="Center"/>
+
+            </HorizontalStackLayout>
+
+            <Label
+                Text="Scanning starts automatically. No button is required."
+                FontSize="11"
+                TextColor="#94a3b8"
+                HorizontalOptions="Center"
+                HorizontalTextAlignment="Center"/>
 
         </VerticalStackLayout>
 
