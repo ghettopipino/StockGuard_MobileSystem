@@ -202,7 +202,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="🔧" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding TotalTools}"
@@ -219,7 +219,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="✅" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding AvailableTools}"
@@ -236,7 +236,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="⚠️" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding DamagedTools}"
@@ -253,7 +253,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="❌" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding LostTools}"
@@ -282,7 +282,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="📋" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding TotalTransactions}"
@@ -299,7 +299,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="📦" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding TotalBorrows}"
@@ -316,7 +316,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="↩️" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding TotalReturns}"
@@ -333,7 +333,7 @@
                                    BackgroundColor="{DynamicResource BgCard}"
                                    BorderColor="{DynamicResource BorderColor}"
                                    CornerRadius="14" Padding="0" HasShadow="False">
-                                <VerticalStackLayout Padding="14,16" Spacing="4"
+                                <VerticalStackLayout Padding="0,16" Spacing="4"
                                     HorizontalOptions="Center">
                                     <Label Text="🔄" FontSize="20" HorizontalOptions="Center"/>
                                     <Label Text="{Binding TotalTransfers}"

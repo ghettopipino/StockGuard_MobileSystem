@@ -388,22 +388,77 @@ namespace StockGuard.Services
         // ─────────────────────────────────────────────────────────
         // BORROW REQUESTS
         // ─────────────────────────────────────────────────────────
-
-        public async Task<string>
-            CreateBorrowRequestAsync(
-                BorrowRequest request)
+        public async Task<string> CreateBorrowRequestAsync(
+    BorrowRequest request)
         {
             try
             {
+                // ─────────────────────────────────────────────
+                // CHECK EXISTING REQUESTS
+                // ─────────────────────────────────────────────
+
+                var existingRequests =
+                    await _client
+                        .Child("borrowRequests")
+                        .OnceAsync<BorrowRequest>();
+
+                var duplicate =
+                    existingRequests.Any(x =>
+                        x.Object != null &&
+
+                        string.Equals(
+                            x.Object.ToolId?.Trim(),
+                            request.ToolId?.Trim(),
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        string.Equals(
+                            x.Object.RequesterId?.Trim(),
+                            request.RequesterId?.Trim(),
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        string.Equals(
+                            x.Object.Status?.Trim(),
+                            "Pending",
+                            StringComparison.OrdinalIgnoreCase));
+
+                // Already has a pending request
+                if (duplicate)
+                {
+                    System.Diagnostics.Debug.WriteLine(
+                        $"Duplicate borrow request blocked: " +
+                        $"{request.RequesterId} / {request.ToolId}");
+
+                    return "DUPLICATE";
+                }
+
+                // ─────────────────────────────────────────────
+                // CREATE NEW REQUEST
+                // ─────────────────────────────────────────────
+
                 var result =
                     await _client
                         .Child("borrowRequests")
                         .PostAsync(request);
 
-                return result.Key;
+                var key = result.Key;
+
+                if (string.IsNullOrWhiteSpace(key))
+                    return string.Empty;
+
+                request.RequestId = key;
+
+                await _client
+                    .Child("borrowRequests")
+                    .Child(key)
+                    .PutAsync(request);
+
+                return key;
             }
-            catch
+            catch (Exception ex)
             {
+                System.Diagnostics.Debug.WriteLine(
+                    $"CreateBorrowRequestAsync error: {ex.Message}");
+
                 return string.Empty;
             }
         }
@@ -459,7 +514,7 @@ namespace StockGuard.Services
         }
 
         public async Task<List<BorrowRequestResult>>
-            GetAllBorrowRequestsRawAsync()
+    GetAllBorrowRequestsRawAsync()
         {
             try
             {
@@ -470,30 +525,49 @@ namespace StockGuard.Services
 
                 if (result == null)
                 {
-                    return new List<
-                        BorrowRequestResult>();
+                    return new List<BorrowRequestResult>();
                 }
 
-                return result
-                    .Where(r =>
-                        r.Object != null)
-                    .Select(r =>
+                var requests =
+                    new List<BorrowRequestResult>();
+
+                foreach (var item in result)
+                {
+                    if (item.Object == null)
+                        continue;
+
+                    var request =
+                        item.Object;
+
+                    if (string.IsNullOrWhiteSpace(
+                            request.RequestId))
+                    {
+                        request.RequestId =
+                            item.Key;
+                    }
+
+                    requests.Add(
                         new BorrowRequestResult
                         {
                             Key =
-                                r.Key,
+                                item.Key,
 
                             Request =
-                                r.Object
-                        })
+                                request
+                        });
+                }
+
+                return requests
                     .OrderByDescending(r =>
                         r.Request.RequestDate)
                     .ToList();
             }
-            catch
+            catch (Exception ex)
             {
-                return new List<
-                    BorrowRequestResult>();
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllBorrowRequestsRawAsync error: {ex.Message}");
+
+                return new List<BorrowRequestResult>();
             }
         }
 

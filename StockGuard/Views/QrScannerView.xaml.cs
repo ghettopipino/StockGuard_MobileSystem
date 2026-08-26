@@ -304,17 +304,42 @@ public partial class QrScannerView : ContentPage
     // ─────────────────────────────────────────────────────────
 
     private async Task HandleDistributeScan(
-        string toolId)
+    string toolId)
     {
         try
         {
-            // Prevent the same QR from being used twice
-            // during the current scan session.
-            if (_distributedToolIds.Contains(
-                    toolId))
+            // ─────────────────────────────────────────────
+            // NORMALIZE SCANNED TOOL ID
+            // ─────────────────────────────────────────────
+
+            toolId = toolId?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(toolId))
             {
                 await DisplayAlert(
-                    "Already Distributed",
+                    "Invalid QR",
+                    "Could not read a valid Tool ID.",
+                    "OK");
+
+                ResumeScanning();
+                return;
+            }
+
+            // ─────────────────────────────────────────────
+            // SESSION DUPLICATE CHECK
+            // ─────────────────────────────────────────────
+
+            bool alreadyScanned =
+                _distributedToolIds.Any(id =>
+                    string.Equals(
+                        id?.Trim(),
+                        toolId,
+                        StringComparison.OrdinalIgnoreCase));
+
+            if (alreadyScanned)
+            {
+                await DisplayAlert(
+                    "Already Scanned",
                     $"Equipment {toolId} was already " +
                     "distributed during this session.",
                     "OK");
@@ -322,6 +347,10 @@ public partial class QrScannerView : ContentPage
                 ResumeScanning();
                 return;
             }
+
+            // ─────────────────────────────────────────────
+            // FIND TOOL
+            // ─────────────────────────────────────────────
 
             var allTools =
                 await _firebase
@@ -331,38 +360,40 @@ public partial class QrScannerView : ContentPage
             var tool =
                 allTools.FirstOrDefault(t =>
                     string.Equals(
-                        t.ToolId,
+                        t.ToolId?.Trim(),
                         toolId,
-                        StringComparison
-                            .OrdinalIgnoreCase));
+                        StringComparison.OrdinalIgnoreCase));
 
             if (tool == null)
             {
                 await DisplayAlert(
                     "Not Found",
-                    $"No tool found with ID " +
-                    $"{toolId}.",
+                    $"No tool found with ID {toolId}.",
                     "OK");
 
                 ResumeScanning();
                 return;
             }
 
+            // Use the actual ToolId stored in Firebase
+            // from this point onward.
+            toolId = tool.ToolId;
+
             // ─────────────────────────────────────────────
             // CATALOG VALIDATION
             // ─────────────────────────────────────────────
 
-            if (!string.IsNullOrWhiteSpace(
-                    CatalogId) &&
-                tool.CatalogId !=
-                    CatalogId)
+            if (!string.IsNullOrWhiteSpace(CatalogId) &&
+                !string.Equals(
+                    tool.CatalogId?.Trim(),
+                    CatalogId?.Trim(),
+                    StringComparison.OrdinalIgnoreCase))
             {
                 await DisplayAlert(
                     "Wrong Equipment",
-                    $"{tool.ToolName} " +
-                    $"({tool.ToolId}) does not match " +
-                    "the equipment category currently " +
-                    "being distributed.",
+                    $"{tool.ToolName} ({tool.ToolId}) " +
+                    "does not match the equipment category " +
+                    "currently being distributed.",
                     "OK");
 
                 ResumeScanning();
@@ -373,14 +404,23 @@ public partial class QrScannerView : ContentPage
             // TOOL STATUS
             // ─────────────────────────────────────────────
 
-            if (tool.Status !=
-                "Available")
+            if (!string.Equals(
+                    tool.Status?.Trim(),
+                    "Available",
+                    StringComparison.OrdinalIgnoreCase))
             {
+                var assignedMessage =
+                    !string.IsNullOrWhiteSpace(
+                        tool.AssignedWorkerName)
+                        ? $"\n\nCurrently assigned to: " +
+                          $"{tool.AssignedWorkerName}"
+                        : string.Empty;
+
                 await DisplayAlert(
-                    "Not Available",
-                    $"{tool.ToolName} " +
-                    $"({tool.ToolId}) is currently " +
-                    $"{tool.Status}.",
+                    "Equipment Not Available",
+                    $"{tool.ToolName} ({tool.ToolId}) " +
+                    $"is currently {tool.Status}." +
+                    assignedMessage,
                     "OK");
 
                 ResumeScanning();
@@ -397,8 +437,10 @@ public partial class QrScannerView : ContentPage
 
             var project =
                 projects.FirstOrDefault(p =>
-                    p.ProjectId ==
-                    ProjectId);
+                    string.Equals(
+                        p.ProjectId?.Trim(),
+                        ProjectId?.Trim(),
+                        StringComparison.OrdinalIgnoreCase));
 
             if (project == null)
             {
@@ -427,18 +469,26 @@ public partial class QrScannerView : ContentPage
             var workers =
                 allUsers
                     .Where(u =>
-                        u.Role ==
-                            "Worker" &&
-                        u.AccountStatus ==
-                            "Approved" &&
-                        workerKeys.Contains(
-                            u.UniqueKey))
+                        string.Equals(
+                            u.Role,
+                            "Worker",
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        string.Equals(
+                            u.AccountStatus,
+                            "Approved",
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        workerKeys.Any(key =>
+                            string.Equals(
+                                key?.Trim(),
+                                u.UniqueKey?.Trim(),
+                                StringComparison.OrdinalIgnoreCase)))
                     .OrderBy(u =>
                         u.FullName)
                     .ToList();
 
-            if (workers.Count ==
-                0)
+            if (workers.Count == 0)
             {
                 await DisplayAlert(
                     "No Workers",
@@ -455,8 +505,7 @@ public partial class QrScannerView : ContentPage
 
             var workerNames =
                 workers
-                    .Select(w =>
-                        w.FullName)
+                    .Select(w => w.FullName)
                     .ToArray();
 
             var selectedWorkerName =
@@ -469,8 +518,7 @@ public partial class QrScannerView : ContentPage
 
             if (string.IsNullOrWhiteSpace(
                     selectedWorkerName) ||
-                selectedWorkerName ==
-                    "Cancel")
+                selectedWorkerName == "Cancel")
             {
                 ResumeScanning();
                 return;
@@ -478,8 +526,10 @@ public partial class QrScannerView : ContentPage
 
             var worker =
                 workers.FirstOrDefault(w =>
-                    w.FullName ==
-                    selectedWorkerName);
+                    string.Equals(
+                        w.FullName,
+                        selectedWorkerName,
+                        StringComparison.OrdinalIgnoreCase));
 
             if (worker == null)
             {
@@ -488,7 +538,7 @@ public partial class QrScannerView : ContentPage
             }
 
             // ─────────────────────────────────────────────
-            // CURRENT PE
+            // CURRENT PROJECT ENGINEER
             // ─────────────────────────────────────────────
 
             var currentUser =
@@ -509,7 +559,9 @@ public partial class QrScannerView : ContentPage
             // CREATE PRE-ASSIGNMENT
             // ─────────────────────────────────────────────
             //
-            // Tool remains Available until worker accepts.
+            // IMPORTANT:
+            // The tool remains Available until the
+            // selected worker accepts the assignment.
 
             var assignment =
                 new PreAssignment
@@ -553,21 +605,31 @@ public partial class QrScannerView : ContentPage
             if (!success)
             {
                 await DisplayAlert(
-                    "Could Not Distribute",
-                    $"{tool.ToolName} " +
-                    $"({tool.ToolId}) could not be " +
-                    "distributed.\n\n" +
-                    "It may already have a pending " +
-                    "assignment.",
+                    "Already Pending",
+                    $"{tool.ToolName} ({tool.ToolId}) " +
+                    "already has a pending assignment.\n\n" +
+                    "The existing assignment must be " +
+                    "accepted or declined before this " +
+                    "equipment can be distributed again.",
                     "OK");
 
                 ResumeScanning();
                 return;
             }
 
-            // Mark this QR as used in this session.
-            _distributedToolIds.Add(
-                tool.ToolId);
+            // ─────────────────────────────────────────────
+            // MARK SUCCESSFUL SCAN
+            // ─────────────────────────────────────────────
+
+            if (!_distributedToolIds.Any(id =>
+                    string.Equals(
+                        id?.Trim(),
+                        tool.ToolId?.Trim(),
+                        StringComparison.OrdinalIgnoreCase)))
+            {
+                _distributedToolIds.Add(
+                    tool.ToolId);
+            }
 
             _distributedCount++;
 
@@ -578,8 +640,7 @@ public partial class QrScannerView : ContentPage
             bool scanAnother =
                 await DisplayAlert(
                     "Distribution Sent",
-                    $"{tool.ToolName} " +
-                    $"({tool.ToolId}) → " +
+                    $"{tool.ToolName} ({tool.ToolId}) → " +
                     $"{worker.FullName}\n\n" +
                     $"Distributed this session: " +
                     $"{_distributedCount}\n\n" +
@@ -599,8 +660,7 @@ public partial class QrScannerView : ContentPage
         catch (Exception ex)
         {
             System.Diagnostics.Debug.WriteLine(
-                $"HandleDistributeScan error: " +
-                $"{ex.Message}");
+                $"HandleDistributeScan error: {ex.Message}");
 
             await DisplayAlert(
                 "Error",

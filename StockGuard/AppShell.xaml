@@ -473,10 +473,10 @@
 
 
 
-                    <!-- ============================================
+                     <!--============================================
                          ANALYTICS
                          Currently disabled
-                    =============================================
+                    ==========--><!--===================================-->
 
                     <Button
                         x:Name="BtnAnalytics"
@@ -484,7 +484,7 @@
                         Clicked="OnAnalyticsClicked"
                         Style="{StaticResource FlyoutItemStyle}"/>
 
-                    -->
+                    
 
 
                 </VerticalStackLayout>

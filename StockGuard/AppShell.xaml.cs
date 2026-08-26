@@ -55,7 +55,8 @@ public partial class AppShell : Shell
             BtnWorkers,
             BtnPause,
             BtnDamage,
-            BtnTransactions
+            BtnTransactions,
+            BtnAnalytics,
         };
 
         // Load current notification counts
@@ -319,6 +320,19 @@ public partial class AppShell : Shell
         await NavigateTo(
             "//TransactionHistoryView",
             BtnTransactions);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // PROJECT ANALYTICS
+    // ─────────────────────────────────────────────────────────────
+
+    private async void OnAnalyticsClicked(
+        object sender,
+        EventArgs e)
+    {
+        await NavigateTo(
+            "//ProjectAnalyticsView",
+            BtnAnalytics);
     }
 
     // ─────────────────────────────────────────────────────────────

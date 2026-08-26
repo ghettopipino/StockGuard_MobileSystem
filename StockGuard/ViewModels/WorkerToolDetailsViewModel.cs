@@ -1120,8 +1120,7 @@ namespace StockGuard.ViewModels
 
             try
             {
-                var user =
-                    _auth.CurrentUser;
+                var user = _auth.CurrentUser;
 
                 if (user == null)
                     return;
@@ -1141,37 +1140,37 @@ namespace StockGuard.ViewModels
                 var request =
                     new BorrowRequest
                     {
-                        ToolId =
-                            Tool.ToolId,
+                        ToolId = Tool.ToolId,
+                        ToolName = Tool.ToolName,
 
-                        ToolName =
-                            Tool.ToolName,
+                        RequesterId = user.UniqueKey,
+                        RequesterName = user.FullName,
 
-                        RequesterId =
-                            user.UniqueKey,
+                        OwnerId = Tool.AssignedWorkerId,
+                        OwnerName = Tool.AssignedWorkerName,
 
-                        RequesterName =
-                            user.FullName,
-
-                        OwnerId =
-                            Tool.AssignedWorkerId,
-
-                        OwnerName =
-                            Tool.AssignedWorkerName,
-
-                        Status =
-                            "Pending",
-
-                        RequestDate =
-                            DateTime.Now
+                        Status = "Pending",
+                        RequestDate = DateTime.Now
                     };
 
-                var key =
+                var result =
                     await _firebase
-                        .CreateBorrowRequestAsync(
-                            request);
+                        .CreateBorrowRequestAsync(request);
 
-                if (string.IsNullOrEmpty(key))
+                // Duplicate pending request
+                if (result == "DUPLICATE")
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Request Already Pending",
+                        $"You already have a pending request for " +
+                        $"{Tool.ToolName} ({Tool.ToolId}).",
+                        "OK");
+
+                    return;
+                }
+
+                // Firebase error
+                if (string.IsNullOrWhiteSpace(result))
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
@@ -1181,6 +1180,7 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
+                // Success
                 await Shell.Current.DisplayAlert(
                     "Request Sent",
                     $"Your borrow request was sent to " +
@@ -1191,8 +1191,7 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not send request.\n" +
-                    $"{ex.Message}",
+                    $"Could not send request.\n{ex.Message}",
                     "OK");
             }
             finally

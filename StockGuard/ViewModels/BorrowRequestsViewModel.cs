@@ -182,7 +182,23 @@ namespace StockGuard.ViewModels
                 }
 
                 var workerId =
-                    currentUser.UniqueKey;
+     currentUser.UniqueKey;
+
+                // ── TEMP DEBUG ─────────────────────────────────────
+                System.Diagnostics.Debug.WriteLine(
+                    "==========================================");
+
+                System.Diagnostics.Debug.WriteLine(
+                    "[BORROW DEBUG] LOAD REQUESTS");
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[BORROW DEBUG] Logged user: {currentUser.FullName}");
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[BORROW DEBUG] Logged workerId: '{workerId}'");
+
+                System.Diagnostics.Debug.WriteLine(
+                    "==========================================");
 
                 var borrowTask =
                     _firebase
@@ -197,12 +213,56 @@ namespace StockGuard.ViewModels
                     transferTask);
 
                 var allBorrowRequests =
-                    borrowTask.Result ??
-                    new List<BorrowRequestResult>();
+     borrowTask.Result ??
+     new List<BorrowRequestResult>();
 
                 var allTransferRequests =
                     transferTask.Result ??
                     new List<TransferRequestResult>();
+
+                // ── TEMP DEBUG ─────────────────────────────────────
+
+                System.Diagnostics.Debug.WriteLine(
+                    $"[BORROW DEBUG] Borrow requests loaded: " +
+                    $"{allBorrowRequests.Count}");
+
+                foreach (var result in allBorrowRequests)
+                {
+                    var request = result.Request;
+
+                    System.Diagnostics.Debug.WriteLine(
+                        "[BORROW DEBUG] --------------------------");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Firebase Key: '{result.Key}'");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Tool: '{request.ToolName}' " +
+                        $"({request.ToolId})");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Requester: " +
+                        $"'{request.RequesterName}' " +
+                        $"ID='{request.RequesterId}'");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Owner: " +
+                        $"'{request.OwnerName}' " +
+                        $"ID='{request.OwnerId}'");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Status: '{request.Status}'");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Owner matches current worker: " +
+                        $"{request.OwnerId == workerId}");
+
+                    System.Diagnostics.Debug.WriteLine(
+                        $"[BORROW DEBUG] Is pending: " +
+                        $"{request.Status == "Pending"}");
+                }
+
+               
 
                 // ─────────────────────────────────────────────
                 // INCOMING
@@ -220,6 +280,9 @@ namespace StockGuard.ViewModels
                         .OrderByDescending(r =>
                             r.Request.RequestDate)
                         .ToList();
+                System.Diagnostics.Debug.WriteLine(
+                $"[BORROW DEBUG] Incoming borrow cards found: " +
+                $"{incomingBorrow.Count}");
 
                 foreach (var item in incomingBorrow)
                 {
