@@ -1,21 +1,32 @@
 ﻿namespace StockGuard.Models
 {
     /// <summary>
-    /// Represents one row in the Worker Performance section
-    /// of ProjectAnalyticsView. Mirrors the anonymous type
-    /// produced by the web AnalyticsController:
-    ///   { Worker, Borrows, Damages }
+    /// Represents one worker in the Worker Performance
+    /// section of ProjectAnalyticsView.
     /// </summary>
     public class WorkerStatItem
     {
+        // ── WORKER ──────────────────────────────────────────
+
         public string WorkerId { get; set; } = string.Empty;
+
         public string WorkerName { get; set; } = string.Empty;
+
+
+        // ── PERFORMANCE ─────────────────────────────────────
+
+        // Number of equipment originally borrowed/accepted
         public int Borrows { get; set; }
+
+        // Number of equipment received through transfer
+        public int TransfersReceived { get; set; }
+
+        // Number of damage reports involving this worker
         public int Damages { get; set; }
 
-        // ── Computed display properties ───────────────────────────────────────
 
-        /// <summary>First two letters of the worker's name, used as avatar text.</summary>
+        // ── DISPLAY HELPERS ─────────────────────────────────
+
         public string WorkerInitials =>
             string.IsNullOrWhiteSpace(WorkerName)
                 ? "?"
@@ -23,7 +34,17 @@
                     ? WorkerName[..2].ToUpper()
                     : WorkerName.ToUpper();
 
-        /// <summary>Drives the red damage badge visibility in the XAML.</summary>
-        public bool HasDamages => Damages > 0;
+
+        public bool HasDamages =>
+            Damages > 0;
+
+        public bool HasTransfers =>
+            TransfersReceived > 0;
+
+
+        // Total equipment-handling activity.
+        // Useful for determining the Most Active Worker.
+        public int TotalActivity =>
+            Borrows + TransfersReceived;
     }
 }

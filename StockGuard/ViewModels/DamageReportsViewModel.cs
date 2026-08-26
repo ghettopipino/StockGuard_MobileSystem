@@ -518,7 +518,6 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // ── TRANSACTION ────────────────────────────
 
                 // ── TRANSACTION ────────────────────────────
 
