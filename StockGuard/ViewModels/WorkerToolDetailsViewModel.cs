@@ -26,7 +26,7 @@ namespace StockGuard.ViewModels
             {
                 SetProperty(ref _toolId, value);
 
-                if (!string.IsNullOrEmpty(value))
+                if (!string.IsNullOrWhiteSpace(value))
                 {
                     MainThread.BeginInvokeOnMainThread(
                         async () => await LoadToolAsync());
@@ -47,7 +47,6 @@ namespace StockGuard.ViewModels
             set
             {
                 SetProperty(ref _tool, value);
-
                 RefreshToolProperties();
             }
         }
@@ -74,7 +73,7 @@ namespace StockGuard.ViewModels
             OnPropertyChanged(nameof(ShowReturn));
             OnPropertyChanged(nameof(ShowPendingReturn));
             OnPropertyChanged(nameof(ShowTransfer));
-            OnPropertyChanged(nameof(ShowReportDamage));
+
             OnPropertyChanged(nameof(ShowRequestBorrow));
             OnPropertyChanged(nameof(ShowEndDayCheckIn));
             OnPropertyChanged(nameof(ShowPendingCheckIn));
@@ -193,10 +192,6 @@ namespace StockGuard.ViewModels
             IsAssignedToMe &&
             Tool.Status == "Borrowed";
 
-        public bool ShowReportDamage =>
-            Tool != null &&
-            IsAssignedToMe &&
-            Tool.Status == "Borrowed";
 
         public bool ShowRequestBorrow =>
             Tool != null &&
@@ -273,7 +268,7 @@ namespace StockGuard.ViewModels
         public ICommand BorrowCommand { get; }
         public ICommand ReturnCommand { get; }
         public ICommand TransferCommand { get; }
-        public ICommand ReportDamageCommand { get; }
+
         public ICommand RequestBorrowCommand { get; }
 
         public ICommand ConfirmReceiptCommand { get; }
@@ -322,12 +317,7 @@ namespace StockGuard.ViewModels
                         await TransferAsync(),
                     () => !IsBusy);
 
-            ReportDamageCommand =
-                new Command(
-                    async () =>
-                        await ReportDamageAsync(),
-                    () => !IsBusy);
-
+          
             RequestBorrowCommand =
                 new Command(
                     async () =>
@@ -383,7 +373,7 @@ namespace StockGuard.ViewModels
 
         private async Task LoadToolAsync()
         {
-            if (string.IsNullOrEmpty(ToolId))
+            if (string.IsNullOrWhiteSpace(ToolId))
                 return;
 
             IsLoading = true;
@@ -421,11 +411,10 @@ namespace StockGuard.ViewModels
 
         // ─────────────────────────────────────────────────────────
         // ACTIVE PROJECT VALIDATION
-        //
-        // Uses the SAME project logic as WorkerDashboardViewModel.
         // ─────────────────────────────────────────────────────────
 
-        private async Task<Project?> GetCurrentWorkerProjectAsync()
+        private async Task<Project?>
+            GetCurrentWorkerProjectAsync()
         {
             var user =
                 _auth.CurrentUser;
@@ -531,7 +520,34 @@ namespace StockGuard.ViewModels
         }
 
         // ─────────────────────────────────────────────────────────
+        // WORKER DAMAGE INFORMATION
+        //
+        // Worker cannot evaluate damage.
+        // PE evaluates condition during:
+        //
+        // 1. Return inspection
+        // 2. End-day check-in verification
+        // ─────────────────────────────────────────────────────────
+
+        private async Task
+            ShowDamageEvaluationInfoAsync()
+        {
+            await Shell.Current.DisplayAlert(
+                "Project Engineer Inspection Required",
+                "Equipment damage must be evaluated by " +
+                "the Project Engineer.\n\n" +
+                "Submit a Return or End-Day Check-In " +
+                "so the equipment can be physically inspected.",
+                "OK");
+        }
+
+        // ─────────────────────────────────────────────────────────
         // BORROW
+        //
+        // Worker DOES NOT choose Minor / Major.
+        //
+        // Existing equipment condition is preserved.
+        // Damage classification belongs to PE.
         // ─────────────────────────────────────────────────────────
 
         private async Task BorrowAsync()
@@ -562,7 +578,6 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Worker MUST belong to an active project.
                 var activeProject =
                     await GetCurrentWorkerProjectAsync();
 
@@ -570,27 +585,30 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "No Active Project",
-                        "You must be assigned to an active project before borrowing equipment.",
+                        "You must be assigned to an active " +
+                        "project before borrowing equipment.",
                         "OK");
 
                     return;
                 }
 
-                var condition =
-                    await Shell.Current.DisplayActionSheet(
-                        "Tool Condition",
-                        "Cancel",
-                        null,
-                        "Good",
-                        "Minor Damage",
-                        "Major Damage");
+                bool confirm =
+                    await Shell.Current.DisplayAlert(
+                        "Borrow Equipment",
+                        $"Borrow {Tool.ToolName} " +
+                        $"({Tool.ToolId})?\n\n" +
+                        $"Project: {activeProject.ProjectName}",
+                        "Borrow",
+                        "Cancel");
 
-                if (string.IsNullOrWhiteSpace(
-                        condition) ||
-                    condition == "Cancel")
-                {
+                if (!confirm)
                     return;
-                }
+
+                string existingCondition =
+                    string.IsNullOrWhiteSpace(
+                        Tool.Condition)
+                        ? "Good"
+                        : Tool.Condition;
 
                 Tool.Status =
                     "Borrowed";
@@ -601,17 +619,16 @@ namespace StockGuard.ViewModels
                 Tool.AssignedWorkerName =
                     user.FullName;
 
-                // IMPORTANT:
-                // Direct borrowing is now tied to the
-                // worker's active project.
                 Tool.BorrowedProjectId =
                     activeProject.ProjectId;
 
                 Tool.BorrowedProjectName =
                     activeProject.ProjectName;
 
+                // Worker does NOT evaluate condition.
+                // Preserve existing PE/system condition.
                 Tool.Condition =
-                    condition;
+                    existingCondition;
 
                 Tool.BorrowDate =
                     DateTime.Now;
@@ -624,7 +641,7 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Could not borrow tool.",
+                        "Could not borrow equipment.",
                         "OK");
 
                     return;
@@ -633,14 +650,13 @@ namespace StockGuard.ViewModels
                 await LogAsync(
                     "Borrowed",
                     $"Equipment borrowed for " +
-                    $"{activeProject.ProjectName} " +
-                    $"in {condition} condition.",
-                    condition);
+                    $"{activeProject.ProjectName}.",
+                    existingCondition);
 
                 RefreshToolProperties();
 
                 await Shell.Current.DisplayAlert(
-                    "Tool Borrowed",
+                    "Equipment Borrowed",
                     $"{Tool.ToolName} " +
                     $"({Tool.ToolId}) has been borrowed.\n\n" +
                     $"Project: {activeProject.ProjectName}",
@@ -652,7 +668,7 @@ namespace StockGuard.ViewModels
 
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    $"Could not borrow tool.\n" +
+                    $"Could not borrow equipment.\n" +
                     $"{ex.Message}",
                     "OK");
             }
@@ -664,6 +680,15 @@ namespace StockGuard.ViewModels
 
         // ─────────────────────────────────────────────────────────
         // RETURN
+        //
+        // Worker only SUBMITS return.
+        //
+        // Worker does NOT:
+        // - choose Good / Damaged
+        // - choose Minor / Major
+        // - create DamageReport
+        //
+        // PE performs physical inspection.
         // ─────────────────────────────────────────────────────────
 
         private async Task ReturnAsync()
@@ -682,13 +707,13 @@ namespace StockGuard.ViewModels
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
-                    "Return Tool",
+                    "Return Equipment",
                     $"Return {Tool.ToolName} " +
                     $"({Tool.ToolId})?\n\n" +
                     "Please bring the equipment to the " +
-                    "Project Engineer for inspection. " +
-                    "You remain responsible for it until " +
-                    "the return is approved.",
+                    "Project Engineer for physical inspection.\n\n" +
+                    "You remain responsible for the equipment " +
+                    "until the return is approved.",
                     "Submit Return",
                     "Cancel");
 
@@ -741,9 +766,11 @@ namespace StockGuard.ViewModels
                             Tool.BorrowedProjectName
                             ?? string.Empty,
 
+                        // Worker does NOT report condition.
                         ReportedCondition =
                             string.Empty,
 
+                        // PE fills this after inspection.
                         VerifiedCondition =
                             string.Empty,
 
@@ -762,7 +789,7 @@ namespace StockGuard.ViewModels
                         .CreateReturnRequestAsync(
                             request);
 
-                if (string.IsNullOrEmpty(
+                if (string.IsNullOrWhiteSpace(
                         requestKey))
                 {
                     await Shell.Current.DisplayAlert(
@@ -782,12 +809,16 @@ namespace StockGuard.ViewModels
 
                 if (!updated)
                 {
+                    // Prevent orphan Pending Return request.
                     request.Status =
                         "Rejected";
 
                     request.Notes =
                         "Return request cancelled because " +
                         "the equipment status could not be updated.";
+
+                    request.ReviewedDate =
+                        DateTime.Now;
 
                     await _firebase
                         .UpdateReturnRequestAsync(
@@ -810,7 +841,7 @@ namespace StockGuard.ViewModels
                 await LogAsync(
                     "Return Requested",
                     "Equipment submitted for return and " +
-                    "awaiting Project Engineer inspection.",
+                    "awaiting Project Engineer physical inspection.",
                     currentCondition);
 
                 RefreshToolProperties();
@@ -818,9 +849,9 @@ namespace StockGuard.ViewModels
                 await Shell.Current.DisplayAlert(
                     "Return Submitted",
                     $"{Tool.ToolName} ({Tool.ToolId}) " +
-                    $"is pending return inspection.\n\n" +
-                    "Please bring the equipment to the " +
-                    "Project Engineer.",
+                    $"is awaiting Project Engineer inspection.\n\n" +
+                    "Please bring the physical equipment " +
+                    "to the Project Engineer.",
                     "OK");
             }
             catch (Exception ex)
@@ -948,6 +979,8 @@ namespace StockGuard.ViewModels
                             Tool.BorrowedProjectName
                             ?? string.Empty,
 
+                        // Preserve existing condition.
+                        // Worker does not re-classify damage.
                         Condition =
                             string.IsNullOrWhiteSpace(
                                 Tool.Condition)
@@ -997,209 +1030,6 @@ namespace StockGuard.ViewModels
         }
 
         // ─────────────────────────────────────────────────────────
-        // DAMAGE REPORT
-        // ─────────────────────────────────────────────────────────
-
-        private async Task ReportDamageAsync()
-        {
-            if (Tool == null ||
-                IsBusy)
-            {
-                return;
-            }
-
-            if (!IsAssignedToMe ||
-                Tool.Status != "Borrowed")
-            {
-                return;
-            }
-
-            string projectId =
-                Tool.BorrowedProjectId
-                ?? string.Empty;
-
-            string projectName =
-                Tool.BorrowedProjectName
-                ?? string.Empty;
-
-            string projectEngineerId =
-                Tool.AssignedById
-                ?? string.Empty;
-
-            string projectEngineerName =
-                Tool.AssignedByName
-                ?? string.Empty;
-
-            var severity =
-                await Shell.Current.DisplayActionSheet(
-                    "Damage Severity",
-                    "Cancel",
-                    null,
-                    "Minor Damage",
-                    "Major Damage");
-
-            if (string.IsNullOrWhiteSpace(
-                    severity) ||
-                severity == "Cancel")
-            {
-                return;
-            }
-
-            var description =
-                await Shell.Current.DisplayPromptAsync(
-                    "Damage Description",
-                    "Briefly describe what happened to the equipment:",
-                    "Submit",
-                    "Cancel",
-                    placeholder:
-                        "e.g. Power cable was damaged during use");
-
-            if (string.IsNullOrWhiteSpace(
-                    description))
-            {
-                return;
-            }
-
-            bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Submit Damage Report",
-                    $"{Tool.ToolName} ({Tool.ToolId})\n\n" +
-                    $"Project: {projectName}\n" +
-                    $"Severity: {severity}\n\n" +
-                    "Submit this damage report?",
-                    "Submit",
-                    "Cancel");
-
-            if (!confirm)
-                return;
-
-            IsBusy = true;
-
-            try
-            {
-                var user =
-                    _auth.CurrentUser;
-
-                if (user == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Your user session could not be found.",
-                        "OK");
-
-                    return;
-                }
-
-                var report =
-                    new DamageReport
-                    {
-                        ToolId =
-                            Tool.ToolId,
-
-                        ToolName =
-                            Tool.ToolName,
-
-                        WorkerId =
-                            user.UniqueKey,
-
-                        WorkerName =
-                            user.FullName,
-
-                        ProjectId =
-                            projectId,
-
-                        ProjectName =
-                            projectName,
-
-                        ProjectEngineerId =
-                            projectEngineerId,
-
-                        ProjectEngineerName =
-                            projectEngineerName,
-
-                        Description =
-                            description.Trim(),
-
-                        Severity =
-                            severity,
-
-                        Status =
-                            "Pending",
-
-                        ReportDate =
-                            DateTime.Now
-                    };
-
-                var reportKey =
-                    await _firebase
-                        .SubmitDamageReportAsync(
-                            report);
-
-                if (string.IsNullOrEmpty(
-                        reportKey))
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not submit the damage report.",
-                        "OK");
-
-                    return;
-                }
-
-                Tool.Status =
-                    "Damaged";
-
-                Tool.Condition =
-                    severity;
-
-                var updated =
-                    await _firebase
-                        .UpdateToolAsync(Tool);
-
-                if (!updated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "The damage report was submitted, but the " +
-                        "equipment status could not be updated.",
-                        "OK");
-
-                    return;
-                }
-
-                await LogAsync(
-                    "Damage Reported",
-                    $"Damage reported: " +
-                    $"{severity} — " +
-                    $"{description.Trim()}",
-                    severity);
-
-                RefreshToolProperties();
-
-                await Shell.Current.DisplayAlert(
-                    "Damage Reported",
-                    $"{Tool.ToolName} ({Tool.ToolId}) " +
-                    $"has been marked as damaged.\n\n" +
-                    $"Project: {projectName}\n" +
-                    $"Project Engineer: {projectEngineerName}\n" +
-                    $"Severity: {severity}",
-                    "OK");
-            }
-            catch (Exception ex)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Error",
-                    $"Could not submit damage report.\n" +
-                    $"{ex.Message}",
-                    "OK");
-            }
-            finally
-            {
-                IsBusy = false;
-            }
-        }
-
-        // ─────────────────────────────────────────────────────────
         // REQUEST BORROW
         // ─────────────────────────────────────────────────────────
 
@@ -1234,7 +1064,6 @@ namespace StockGuard.ViewModels
                     return;
                 }
 
-                // Worker MUST belong to an active project.
                 var activeProject =
                     await GetCurrentWorkerProjectAsync();
 
@@ -1242,7 +1071,8 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "No Active Project",
-                        "You must be assigned to an active project before requesting equipment.",
+                        "You must be assigned to an active " +
+                        "project before requesting equipment.",
                         "OK");
 
                     return;
@@ -1340,6 +1170,10 @@ namespace StockGuard.ViewModels
 
         // ─────────────────────────────────────────────────────────
         // CONFIRM RECEIPT
+        //
+        // Worker confirms POSSESSION only.
+        //
+        // Worker does NOT decide Minor / Major.
         // ─────────────────────────────────────────────────────────
 
         private async Task ConfirmReceiptAsync()
@@ -1350,32 +1184,52 @@ namespace StockGuard.ViewModels
                 return;
             }
 
+            var user =
+                _auth.CurrentUser;
+
+            if (user == null)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    "Your user session could not be found.",
+                    "OK");
+
+                return;
+            }
+
+            if (!ShowConfirmReceipt)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Invalid Assignment",
+                    "This equipment is no longer waiting " +
+                    "for your confirmation.",
+                    "OK");
+
+                await LoadToolAsync();
+
+                return;
+            }
+
+            bool confirm =
+                await Shell.Current.DisplayAlert(
+                    "Confirm Receipt",
+                    $"Confirm that you physically received " +
+                    $"{Tool.ToolName} ({Tool.ToolId})?",
+                    "Confirm",
+                    "Cancel");
+
+            if (!confirm)
+                return;
+
             IsBusy = true;
 
             try
             {
-                var condition =
-                    await Shell.Current
-                        .DisplayActionSheet(
-                            "Tool Condition",
-                            "Cancel",
-                            null,
-                            "Good",
-                            "Minor Damage",
-                            "Major Damage");
-
-                if (string.IsNullOrWhiteSpace(
-                        condition) ||
-                    condition == "Cancel")
-                {
-                    return;
-                }
-
-                var user =
-                    _auth.CurrentUser;
-
-                if (user == null)
-                    return;
+                string existingCondition =
+                    string.IsNullOrWhiteSpace(
+                        Tool.Condition)
+                        ? "Good"
+                        : Tool.Condition;
 
                 Tool.Status =
                     "Borrowed";
@@ -1386,8 +1240,10 @@ namespace StockGuard.ViewModels
                 Tool.AssignedWorkerName =
                     user.FullName;
 
+                // Worker confirms receipt only.
+                // Do not classify condition here.
                 Tool.Condition =
-                    condition;
+                    existingCondition;
 
                 Tool.BorrowDate =
                     DateTime.Now;
@@ -1414,9 +1270,9 @@ namespace StockGuard.ViewModels
 
                 await LogAsync(
                     "Borrowed",
-                    $"Confirmed receipt in " +
-                    $"{condition} condition.",
-                    condition);
+                    "Worker physically confirmed receipt " +
+                    "of the assigned equipment.",
+                    existingCondition);
 
                 RefreshToolProperties();
 
@@ -1442,6 +1298,20 @@ namespace StockGuard.ViewModels
 
         // ─────────────────────────────────────────────────────────
         // END-DAY CHECK-IN
+        //
+        // Worker reports LOCATION only.
+        //
+        // Worker does NOT evaluate condition.
+        //
+        // PE later chooses:
+        //
+        // Good
+        //
+        // OR
+        //
+        // Damaged
+        //   └─ Minor Damage
+        //   └─ Major Damage
         // ─────────────────────────────────────────────────────────
 
         private async Task EndDayCheckInAsync()
@@ -1462,7 +1332,9 @@ namespace StockGuard.ViewModels
             {
                 await Shell.Current.DisplayAlert(
                     "Check-In Pending",
-                    "This equipment already has an end-day check-in waiting for verification.",
+                    "This equipment already has an " +
+                    "end-day check-in waiting for " +
+                    "Project Engineer verification.",
                     "OK");
 
                 return;
@@ -1498,7 +1370,8 @@ namespace StockGuard.ViewModels
                     await Shell.Current
                         .DisplayPromptAsync(
                             "Storage Location",
-                            "Enter where the equipment will be stored:",
+                            "Enter where the equipment " +
+                            "will be stored:",
                             "Continue",
                             "Cancel",
                             placeholder:
@@ -1516,11 +1389,12 @@ namespace StockGuard.ViewModels
 
             bool confirm =
                 await Shell.Current.DisplayAlert(
-                    "Confirm End Day",
+                    "Confirm End-Day Check-In",
                     $"{Tool.ToolName} ({Tool.ToolId})\n\n" +
-                    $"Store at: {selectedLocation}\n\n" +
-                    "The equipment will remain assigned to you. " +
-                    "The Project Engineer must verify the check-in.",
+                    $"Reported Location: {selectedLocation}\n\n" +
+                    "The equipment will remain assigned to you.\n\n" +
+                    "The Project Engineer will physically " +
+                    "verify the equipment and evaluate its condition.",
                     "Check In",
                     "Cancel");
 
@@ -1552,8 +1426,14 @@ namespace StockGuard.ViewModels
                 Tool.LastCheckInVerifiedByName =
                     string.Empty;
 
-                // Status stays Borrowed.
-                // Worker and project remain unchanged.
+                // IMPORTANT:
+                //
+                // Status remains Borrowed.
+                // Worker remains responsible.
+                // Project remains unchanged.
+                //
+                // Worker does NOT modify condition.
+
                 var updated =
                     await _firebase
                         .UpdateToolAsync(Tool);
@@ -1570,9 +1450,9 @@ namespace StockGuard.ViewModels
 
                 await LogAsync(
                     "End Day Check-In",
-                    $"Equipment checked in at " +
-                    $"{selectedLocation} and is " +
-                    $"awaiting PE verification.",
+                    $"Equipment reported at " +
+                    $"{selectedLocation} and is awaiting " +
+                    $"Project Engineer physical verification.",
                     Tool.Condition);
 
                 RefreshToolProperties();
@@ -1580,10 +1460,10 @@ namespace StockGuard.ViewModels
                 await Shell.Current.DisplayAlert(
                     "Check-In Submitted",
                     $"{Tool.ToolName} ({Tool.ToolId}) " +
-                    $"has been checked in for the day.\n\n" +
-                    $"Location: {selectedLocation}\n" +
-                    "Status remains Borrowed until the " +
-                    "equipment is formally returned.",
+                    $"has been submitted for end-day verification.\n\n" +
+                    $"Location: {selectedLocation}\n\n" +
+                    "The equipment remains assigned to you " +
+                    "until further action is taken.",
                     "OK");
             }
             catch (Exception ex)

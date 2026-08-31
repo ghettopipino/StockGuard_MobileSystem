@@ -617,19 +617,7 @@
                             HeightRequest="48"/>
 
 
-                        <Button
-                            IsVisible="{Binding ShowReportDamage}"
-                            Text="Report Damage"
-                            Command="{Binding ReportDamageCommand}"
-                            BackgroundColor="{DynamicResource RedBg}"
-                            TextColor="{DynamicResource Red}"
-                            BorderColor="{DynamicResource Red}"
-                            BorderWidth="1"
-                            FontSize="13"
-                            FontAttributes="Bold"
-                            CornerRadius="10"
-                            HeightRequest="48"/>
-
+                       
 
                         <!-- ============================================== -->
                         <!-- BORROWED BY ANOTHER WORKER -->

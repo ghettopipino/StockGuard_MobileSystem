@@ -966,11 +966,15 @@
                                                 Spacing="3">
 
                                                 <Label
-                                                    Text="{Binding Request.ToolName}"
+                                                    Text="{Binding Request.ToolId}"
                                                     FontSize="13"
                                                     FontAttributes="Bold"
                                                     TextColor="{DynamicResource Text1}"/>
 
+                                                <Label
+                                                    Text="{Binding Request.ToolName}"
+                                                    FontSize="10"
+                                                    TextColor="{DynamicResource Text2}"/>
                                                 <Label
                                                     Text="{Binding Request.WorkerName}"
                                                     FontSize="10"

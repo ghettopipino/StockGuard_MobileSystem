@@ -180,7 +180,7 @@
 
 
     <!-- PROJECT ANALYTICS -->
-    <FlyoutItem
+    <!--<FlyoutItem
         Route="ProjectAnalyticsView"
         FlyoutItemIsVisible="False">
 
@@ -188,7 +188,7 @@
             Route="ProjectAnalyticsView"
             ContentTemplate="{DataTemplate views:ProjectAnalyticsView}"/>
 
-    </FlyoutItem>
+    </FlyoutItem>-->
 
 
 
@@ -478,11 +478,11 @@
                          Currently disabled
                     ==========--><!--===================================-->
 
-                    <Button
+                    <!--<Button
                         x:Name="BtnAnalytics"
                         Text="Analytics"
                         Clicked="OnAnalyticsClicked"
-                        Style="{StaticResource FlyoutItemStyle}"/>
+                        Style="{StaticResource FlyoutItemStyle}"/>-->
 
                     
 
