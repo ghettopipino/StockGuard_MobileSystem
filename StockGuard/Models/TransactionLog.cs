@@ -119,6 +119,12 @@ namespace StockGuard.Models
             "End Day Check-In Verified" =>
                 "✓",
 
+            "End Day Check-In Rejected" =>
+                "×",
+
+            "Damage Found During Check-In" =>
+                "⚠",
+
             "Return Requested" =>
                 "↩",
 
@@ -146,8 +152,17 @@ namespace StockGuard.Models
             "Repaired" =>
                 "✓",
 
-            "Lost" =>
+            "Missing Reported" =>
                 "!",
+
+            "Lost Declared" =>
+                "!",
+
+            "Equipment Found" =>
+                "✓",
+
+            "Missing Report Resolved" =>
+                "✓",
 
             "Transferred" =>
                 "↔",
@@ -158,7 +173,6 @@ namespace StockGuard.Models
             _ =>
                 "•"
         };
-
 
         // ─────────────────────────────────────────────────────────
         // DATE

@@ -48,6 +48,7 @@
                             HeightRequest="40"
                             Padding="0"/>
 
+
                         <!-- TITLE -->
                         <VerticalStackLayout
                             Grid.Column="1"
@@ -67,6 +68,7 @@
 
                         </VerticalStackLayout>
 
+
                         <!-- REFRESH -->
                         <Button
                             Grid.Column="2"
@@ -84,6 +86,7 @@
                     </Grid>
 
 
+
                     <!-- ═══════════════════════════════════════
                          PAGE INTRO
                          ═══════════════════════════════════════ -->
@@ -99,11 +102,12 @@
                             TextColor="{DynamicResource Text1}"/>
 
                         <Label
-                            Text="View physical stock, borrowed equipment, and project allocation."
+                            Text="View physical equipment stock and current status."
                             FontSize="11"
                             TextColor="{DynamicResource Text3}"/>
 
                     </VerticalStackLayout>
+
 
 
                     <!-- ═══════════════════════════════════════
@@ -148,6 +152,7 @@
                         <Grid
                             ColumnDefinitions="*,*,*"
                             ColumnSpacing="8">
+
 
                             <!-- CATALOGS -->
                             <Border
@@ -264,6 +269,7 @@
                     </VerticalStackLayout>
 
 
+
                     <!-- ═══════════════════════════════════════
                          SEARCH + ADD
                          ═══════════════════════════════════════ -->
@@ -307,6 +313,7 @@
 
                         </Border>
 
+
                         <Button
                             Grid.Column="1"
                             Text="Add"
@@ -322,6 +329,7 @@
                     </Grid>
 
 
+
                     <!-- ═══════════════════════════════════════
                          LOADING
                          ═══════════════════════════════════════ -->
@@ -334,6 +342,7 @@
                         Margin="0,18,0,0"/>
 
 
+
                     <!-- ═══════════════════════════════════════
                          CATALOG SECTION
                          ═══════════════════════════════════════ -->
@@ -342,6 +351,8 @@
                         Padding="20,24,20,0"
                         Spacing="10">
 
+
+                        <!-- SECTION HEADER -->
                         <Grid
                             ColumnDefinitions="Auto,*,Auto"
                             ColumnSpacing="10">
@@ -372,14 +383,20 @@
 
                                 <Label.FormattedText>
                                     <FormattedString>
-                                        <Span Text="{Binding TotalCatalogs}"/>
-                                        <Span Text=" total"/>
+
+                                        <Span
+                                            Text="{Binding TotalCatalogs}"/>
+
+                                        <Span
+                                            Text=" total"/>
+
                                     </FormattedString>
                                 </Label.FormattedText>
 
                             </Label>
 
                         </Grid>
+
 
 
                         <!-- EMPTY STATE -->
@@ -419,6 +436,7 @@
                         </Border>
 
 
+
                         <!-- ═══════════════════════════════════
                              CATALOG LIST
                              ═══════════════════════════════════ -->
@@ -449,7 +467,7 @@
                                                 Padding="14">
 
 
-                                                <!-- TRANSPARENT ICON -->
+                                                <!-- ICON -->
                                                 <Label
                                                     Grid.Column="0"
                                                     Text="&#xf0ad;"
@@ -462,6 +480,7 @@
                                                     VerticalOptions="Center"/>
 
 
+                                                <!-- NAME + META -->
                                                 <VerticalStackLayout
                                                     Grid.Column="1"
                                                     Spacing="4">
@@ -472,6 +491,7 @@
                                                         FontAttributes="Bold"
                                                         TextColor="{DynamicResource Text1}"
                                                         LineBreakMode="TailTruncation"/>
+
 
                                                     <HorizontalStackLayout
                                                         Spacing="6">
@@ -491,12 +511,18 @@
                                                             TextColor="{DynamicResource Text3}">
 
                                                             <Label.FormattedText>
+
                                                                 <FormattedString>
-                                                                    <Span Text="Prefix: "/>
+
+                                                                    <Span
+                                                                        Text="Prefix: "/>
+
                                                                     <Span
                                                                         Text="{Binding Prefix}"
                                                                         FontAttributes="Bold"/>
+
                                                                 </FormattedString>
+
                                                             </Label.FormattedText>
 
                                                         </Label>
@@ -508,15 +534,17 @@
                                             </Grid>
 
 
+
                                             <BoxView
                                                 HeightRequest="1"
                                                 Color="{DynamicResource BorderSoft}"/>
 
 
+
                                             <!-- STATUS COUNTS -->
                                             <Grid
-                                                ColumnDefinitions="*,*,*"
-                                                ColumnSpacing="8"
+                                                ColumnDefinitions="*,*,*,*"
+                                                ColumnSpacing="6"
                                                 Padding="14,12">
 
 
@@ -529,7 +557,7 @@
                                                     <Label
                                                         Text="&#xf058;"
                                                         FontFamily="FontAwesome"
-                                                        FontSize="14"
+                                                        FontSize="13"
                                                         TextColor="{DynamicResource Green}"
                                                         HorizontalOptions="Center"/>
 
@@ -542,11 +570,12 @@
 
                                                     <Label
                                                         Text="Available"
-                                                        FontSize="9"
+                                                        FontSize="8"
                                                         TextColor="{DynamicResource Text3}"
                                                         HorizontalOptions="Center"/>
 
                                                 </VerticalStackLayout>
+
 
 
                                                 <!-- BORROWED -->
@@ -558,7 +587,7 @@
                                                     <Label
                                                         Text="&#xf466;"
                                                         FontFamily="FontAwesome"
-                                                        FontSize="14"
+                                                        FontSize="13"
                                                         TextColor="{DynamicResource Amber}"
                                                         HorizontalOptions="Center"/>
 
@@ -571,11 +600,12 @@
 
                                                     <Label
                                                         Text="Borrowed"
-                                                        FontSize="9"
+                                                        FontSize="8"
                                                         TextColor="{DynamicResource Text3}"
                                                         HorizontalOptions="Center"/>
 
                                                 </VerticalStackLayout>
+
 
 
                                                 <!-- DAMAGED -->
@@ -587,7 +617,7 @@
                                                     <Label
                                                         Text="&#xf071;"
                                                         FontFamily="FontAwesome"
-                                                        FontSize="14"
+                                                        FontSize="13"
                                                         TextColor="{DynamicResource Red}"
                                                         HorizontalOptions="Center"/>
 
@@ -600,7 +630,37 @@
 
                                                     <Label
                                                         Text="Damaged"
-                                                        FontSize="9"
+                                                        FontSize="8"
+                                                        TextColor="{DynamicResource Text3}"
+                                                        HorizontalOptions="Center"/>
+
+                                                </VerticalStackLayout>
+
+
+
+                                                <!-- LOST -->
+                                                <VerticalStackLayout
+                                                    Grid.Column="3"
+                                                    Spacing="3"
+                                                    HorizontalOptions="Center">
+
+                                                    <Label
+                                                        Text="&#xf128;"
+                                                        FontFamily="FontAwesome"
+                                                        FontSize="13"
+                                                        TextColor="{DynamicResource Text3}"
+                                                        HorizontalOptions="Center"/>
+
+                                                    <Label
+                                                        Text="{Binding LostTools}"
+                                                        FontSize="18"
+                                                        FontAttributes="Bold"
+                                                        TextColor="{DynamicResource Text2}"
+                                                        HorizontalOptions="Center"/>
+
+                                                    <Label
+                                                        Text="Lost"
+                                                        FontSize="8"
                                                         TextColor="{DynamicResource Text3}"
                                                         HorizontalOptions="Center"/>
 
@@ -609,49 +669,11 @@
                                             </Grid>
 
 
-                                            <!-- PROJECT ALLOCATION -->
-                                            <Border
-                                                Stroke="{DynamicResource BorderSoft}"
-                                                StrokeShape="RoundRectangle 10"
-                                                BackgroundColor="Transparent"
-                                                Padding="10"
-                                                Margin="14,0,14,12">
-
-                                                <Grid
-                                                    ColumnDefinitions="Auto,*,Auto"
-                                                    ColumnSpacing="8">
-
-                                                    <Label
-                                                        Grid.Column="0"
-                                                        Text="&#xf1ad;"
-                                                        FontFamily="FontAwesome"
-                                                        FontSize="12"
-                                                        TextColor="{DynamicResource Blue}"
-                                                        VerticalOptions="Center"/>
-
-                                                    <Label
-                                                        Grid.Column="1"
-                                                        Text="Allocated to active projects"
-                                                        FontSize="10"
-                                                        TextColor="{DynamicResource Text3}"
-                                                        VerticalOptions="Center"/>
-
-                                                    <Label
-                                                        Grid.Column="2"
-                                                        Text="{Binding AllocatedTools}"
-                                                        FontSize="12"
-                                                        FontAttributes="Bold"
-                                                        TextColor="{DynamicResource Blue}"
-                                                        VerticalOptions="Center"/>
-
-                                                </Grid>
-
-                                            </Border>
-
 
                                             <BoxView
                                                 HeightRequest="1"
                                                 Color="{DynamicResource BorderSoft}"/>
+
 
 
                                             <!-- ACTIONS -->
@@ -660,6 +682,8 @@
                                                 ColumnSpacing="0"
                                                 HeightRequest="48">
 
+
+                                                <!-- VIEW TOOLS -->
                                                 <Button
                                                     Grid.Column="0"
                                                     Text="View Tools"
@@ -672,6 +696,8 @@
                                                     FontAttributes="Bold"
                                                     CornerRadius="0"/>
 
+
+                                                <!-- ADD TOOLS -->
                                                 <Button
                                                     Grid.Column="1"
                                                     Text="Add Tools"
@@ -684,6 +710,8 @@
                                                     FontAttributes="Bold"
                                                     CornerRadius="0"/>
 
+
+                                                <!-- DELETE -->
                                                 <Button
                                                     Grid.Column="2"
                                                     Text="Delete"
@@ -712,7 +740,11 @@
                     </VerticalStackLayout>
 
 
-                    <!-- FOOTER -->
+
+                    <!-- ═══════════════════════════════════════
+                         FOOTER
+                         ═══════════════════════════════════════ -->
+
                     <HorizontalStackLayout
                         HorizontalOptions="Center"
                         Spacing="6"

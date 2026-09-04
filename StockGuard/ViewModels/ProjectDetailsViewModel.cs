@@ -15,26 +15,34 @@ namespace StockGuard.ViewModels
 
         private bool _isLoading;
 
+
         // ─────────────────────────────────────────────────────────
-        // QUERY PROPERTY
+        // QUERY
         // ─────────────────────────────────────────────────────────
 
-        private string _projectId = string.Empty;
+        private string _projectId =
+            string.Empty;
 
         public string ProjectId
         {
             get => _projectId;
+
             set
             {
-                SetProperty(ref _projectId, value);
+                SetProperty(
+                    ref _projectId,
+                    value);
 
-                if (!string.IsNullOrEmpty(value))
+                if (!string.IsNullOrWhiteSpace(
+                        value))
                 {
                     MainThread.BeginInvokeOnMainThread(
-                        async () => await LoadAsync());
+                        async () =>
+                            await LoadAsync());
                 }
             }
         }
+
 
         // ─────────────────────────────────────────────────────────
         // PROJECT
@@ -45,20 +53,39 @@ namespace StockGuard.ViewModels
         public Project? Project
         {
             get => _project;
+
             set
             {
-                SetProperty(ref _project, value);
+                SetProperty(
+                    ref _project,
+                    value);
 
-                OnPropertyChanged(nameof(ProjectName));
-                OnPropertyChanged(nameof(Location));
-                OnPropertyChanged(nameof(Status));
-                OnPropertyChanged(nameof(StatusIcon));
-                OnPropertyChanged(nameof(StatusColor));
-                OnPropertyChanged(nameof(StartDateLabel));
-                OnPropertyChanged(nameof(DurationLabel));
-                OnPropertyChanged(nameof(IsActive));
+                OnPropertyChanged(
+                    nameof(ProjectName));
+
+                OnPropertyChanged(
+                    nameof(Location));
+
+                OnPropertyChanged(
+                    nameof(Status));
+
+                OnPropertyChanged(
+                    nameof(StatusIcon));
+
+                OnPropertyChanged(
+                    nameof(StatusColor));
+
+                OnPropertyChanged(
+                    nameof(StartDateLabel));
+
+                OnPropertyChanged(
+                    nameof(DurationLabel));
+
+                OnPropertyChanged(
+                    nameof(IsActive));
             }
         }
+
 
         public string ProjectName =>
             Project?.ProjectName ??
@@ -89,30 +116,33 @@ namespace StockGuard.ViewModels
             string.Empty;
 
         public bool IsActive =>
-            Project?.IsActive ?? false;
+            Project?.IsActive ??
+            false;
+
 
         // ─────────────────────────────────────────────────────────
         // THEME
         // ─────────────────────────────────────────────────────────
 
         public string ThemeIcon =>
-            _theme.IsDark ? "🌙" : "☀️";
+            _theme.IsDark
+                ? "🌙"
+                : "☀️";
+
 
         // ─────────────────────────────────────────────────────────
-        // WORKERS
+        // COLLECTIONS
         // ─────────────────────────────────────────────────────────
 
         public ObservableCollection<User>
             AssignedWorkers
         { get; } = new();
 
-        // ─────────────────────────────────────────────────────────
-        // EQUIPMENT SUMMARY
-        // ─────────────────────────────────────────────────────────
 
         public ObservableCollection<CatalogStockSummary>
             EquipmentSummary
         { get; } = new();
+
 
         // ─────────────────────────────────────────────────────────
         // STATS
@@ -123,33 +153,39 @@ namespace StockGuard.ViewModels
         public int WorkerCount
         {
             get => _workerCount;
+
             private set =>
                 SetProperty(
                     ref _workerCount,
                     value);
         }
 
+
         private int _toolCount;
 
         public int ToolCount
         {
             get => _toolCount;
+
             private set =>
                 SetProperty(
                     ref _toolCount,
                     value);
         }
 
+
         private int _borrowedCount;
 
         public int BorrowedCount
         {
             get => _borrowedCount;
+
             private set =>
                 SetProperty(
                     ref _borrowedCount,
                     value);
         }
+
 
         // ─────────────────────────────────────────────────────────
         // EMPTY STATES
@@ -160,46 +196,65 @@ namespace StockGuard.ViewModels
         public bool HasWorkers
         {
             get => _hasWorkers;
+
             private set
             {
-                SetProperty(ref _hasWorkers, value);
-                OnPropertyChanged(nameof(NoWorkers));
+                SetProperty(
+                    ref _hasWorkers,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(NoWorkers));
             }
         }
 
         public bool NoWorkers =>
             !HasWorkers;
 
+
         private bool _hasEquipment;
 
         public bool HasEquipment
         {
             get => _hasEquipment;
+
             private set
             {
-                SetProperty(ref _hasEquipment, value);
-                OnPropertyChanged(nameof(NoEquipment));
+                SetProperty(
+                    ref _hasEquipment,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(NoEquipment));
             }
         }
 
         public bool NoEquipment =>
             !HasEquipment;
 
+
         // ─────────────────────────────────────────────────────────
         // COMMANDS
         // ─────────────────────────────────────────────────────────
 
         public ICommand GoBackCommand { get; }
+
         public ICommand ToggleThemeCommand { get; }
+
         public ICommand RefreshCommand { get; }
 
         public ICommand AssignWorkerCommand { get; }
+
         public ICommand RemoveWorkerCommand { get; }
 
         public ICommand AssignEquipmentCommand { get; }
+
         public ICommand AddEquipmentCommand { get; }
+
         public ICommand RemoveEquipmentCommand { get; }
+
         public ICommand DistributeCommand { get; }
+
 
         // ─────────────────────────────────────────────────────────
         // CONSTRUCTOR
@@ -210,9 +265,15 @@ namespace StockGuard.ViewModels
             AuthService auth,
             ThemeService theme)
         {
-            _firebase = firebase;
-            _auth = auth;
-            _theme = theme;
+            _firebase =
+                firebase;
+
+            _auth =
+                auth;
+
+            _theme =
+                theme;
+
 
             _theme.ThemeChanged += _ =>
                 MainThread.BeginInvokeOnMainThread(
@@ -220,54 +281,70 @@ namespace StockGuard.ViewModels
                         OnPropertyChanged(
                             nameof(ThemeIcon)));
 
+
             GoBackCommand =
                 new Command(
                     async () =>
                         await Shell.Current
                             .GoToAsync(".."));
 
+
             ToggleThemeCommand =
                 new Command(
-                    () => _theme.Toggle());
+                    () =>
+                        _theme.Toggle());
+
 
             RefreshCommand =
                 new Command(
                     async () =>
                         await LoadAsync());
 
+
             AssignEquipmentCommand =
-                new Command(
-                    async () =>
-                        await AssignEquipmentAsync());
+                new Command<CatalogStockSummary>(
+                    async item =>
+                        await BorrowEquipmentAsync(
+                            item));
+
 
             AddEquipmentCommand =
                 new Command(
                     async () =>
                         await AddEquipmentAsync());
 
+
             RemoveEquipmentCommand =
                 new Command<CatalogStockSummary>(
                     async item =>
-                        await RemoveEquipmentAsync(item));
+                        await RemoveEquipmentAsync(
+                            item));
+
 
             DistributeCommand =
                 new Command<CatalogStockSummary>(
                     async item =>
-                        await DistributeAsync(item));
+                        await DistributeAsync(
+                            item));
+
 
             AssignWorkerCommand =
                 new Command(
                     async () =>
-                        await Shell.Current.GoToAsync(
-                            $"{nameof(BulkSelectView)}" +
-                            $"?projectId={ProjectId}" +
-                            $"&selectMode=workers"));
+                        await Shell.Current
+                            .GoToAsync(
+                                $"{nameof(BulkSelectView)}" +
+                                $"?projectId={ProjectId}" +
+                                $"&selectMode=workers"));
+
 
             RemoveWorkerCommand =
                 new Command<User>(
                     async worker =>
-                        await RemoveWorkerAsync(worker));
+                        await RemoveWorkerAsync(
+                            worker));
         }
+
 
         // ─────────────────────────────────────────────────────────
         // LOAD
@@ -275,30 +352,42 @@ namespace StockGuard.ViewModels
 
         public async Task LoadAsync()
         {
-            if (string.IsNullOrEmpty(ProjectId))
+            if (string.IsNullOrWhiteSpace(
+                    ProjectId))
+            {
                 return;
+            }
 
             if (_isLoading)
                 return;
 
-            _isLoading = true;
-            IsBusy = true;
+
+            _isLoading =
+                true;
+
+            IsBusy =
+                true;
+
 
             try
             {
                 var projects =
-                    await _firebase.GetAllProjectsAsync();
+                    await _firebase
+                        .GetAllProjectsAsync();
 
                 Project =
                     projects.FirstOrDefault(p =>
-                        p.ProjectId == ProjectId);
+                        p.ProjectId ==
+                        ProjectId);
 
                 if (Project == null)
                     return;
 
-                // ── WORKERS ────────────────────────────────
+
+                // ── WORKERS ───────────────────────────────
 
                 AssignedWorkers.Clear();
+
 
                 var workerKeys =
                     await _firebase
@@ -309,25 +398,31 @@ namespace StockGuard.ViewModels
                     await _firebase
                         .GetAllUsersAsync();
 
+
                 foreach (var key in workerKeys)
                 {
                     var worker =
                         allUsers.FirstOrDefault(u =>
-                            u.UniqueKey == key);
+                            u.UniqueKey ==
+                            key);
 
                     if (worker != null)
                     {
-                        AssignedWorkers.Add(worker);
+                        AssignedWorkers.Add(
+                            worker);
                     }
                 }
 
+
                 HasWorkers =
-                    AssignedWorkers.Count > 0;
+                    AssignedWorkers.Count >
+                    0;
 
                 WorkerCount =
                     AssignedWorkers.Count;
 
-                // ── EQUIPMENT ──────────────────────────────
+
+                // ── EQUIPMENT ─────────────────────────────
 
                 var allTools =
                     await _firebase
@@ -340,99 +435,19 @@ namespace StockGuard.ViewModels
             catch (Exception ex)
             {
                 System.Diagnostics.Debug.WriteLine(
-                    $"LoadProject error: {ex.Message}");
+                    $"LoadProject error: " +
+                    $"{ex.Message}");
             }
             finally
             {
-                IsBusy = false;
-                _isLoading = false;
+                IsBusy =
+                    false;
+
+                _isLoading =
+                    false;
             }
         }
 
-        // ─────────────────────────────────────────────────────────
-        // REMOVE WORKER
-        // ─────────────────────────────────────────────────────────
-
-        private async Task RemoveWorkerAsync(
-            User worker)
-        {
-            if (worker == null)
-                return;
-
-            var allTools =
-                await _firebase.GetAllToolsAsync(
-                    forceRefresh: true);
-
-            var workerTools =
-                allTools
-                    .Where(t =>
-                        t.AssignedWorkerId ==
-                            worker.UniqueKey &&
-                        (
-                            t.Status == "Borrowed" ||
-                            t.Status == "PendingReturn"
-                        ))
-                    .ToList();
-
-            if (workerTools.Count > 0)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Cannot Remove Worker",
-                    $"{worker.FullName} still has " +
-                    $"{workerTools.Count} equipment item(s) " +
-                    $"under their responsibility.\n\n" +
-                    "Return all equipment first.",
-                    "OK");
-
-                return;
-            }
-
-            bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Remove Worker",
-                    $"Remove {worker.FullName} from " +
-                    $"{Project?.ProjectName}?",
-                    "Remove",
-                    "Cancel");
-
-            if (!confirm)
-                return;
-
-            try
-            {
-                await _firebase
-                    .RemoveWorkerFromProjectAsync(
-                        ProjectId,
-                        worker.UniqueKey);
-
-                await Shell.Current.DisplayAlert(
-                    "Worker Removed",
-                    $"{worker.FullName} removed from project.",
-                    "OK");
-
-                await LoadAsync();
-            }
-            catch (Exception ex)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Error",
-                    $"Could not remove worker.\n" +
-                    $"{ex.Message}",
-                    "OK");
-            }
-        }
-
-        // ─────────────────────────────────────────────────────────
-        // ASSIGN EQUIPMENT VIA QR
-        // ─────────────────────────────────────────────────────────
-
-        private async Task AssignEquipmentAsync()
-        {
-            await Shell.Current.GoToAsync(
-                $"{nameof(QrScannerView)}" +
-                $"?mode=AssignEquipment" +
-                $"&projectId={ProjectId}");
-        }
 
         // ─────────────────────────────────────────────────────────
         // EQUIPMENT SUMMARY
@@ -448,18 +463,33 @@ namespace StockGuard.ViewModels
 
             EquipmentSummary.Clear();
 
+
             foreach (var req in requirements)
             {
+                var projectTools =
+                    allTools
+                        .Where(t =>
+                            string.Equals(
+                                t.CatalogId,
+                                req.CatalogId,
+                                StringComparison.OrdinalIgnoreCase) &&
+
+                            string.Equals(
+                                t.BorrowedProjectId,
+                                ProjectId,
+                                StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+
+
                 int borrowedCount =
-                    allTools.Count(t =>
-                        t.CatalogId ==
-                            req.CatalogId &&
-                        t.BorrowedProjectId ==
-                            ProjectId &&
-                        (
-                            t.Status == "Borrowed" ||
-                            t.Status == "PendingReturn"
-                        ));
+                    projectTools.Count;
+
+
+                int distributedCount =
+                    projectTools.Count(t =>
+                        !string.IsNullOrWhiteSpace(
+                            t.AssignedWorkerId));
+
 
                 EquipmentSummary.Add(
                     new CatalogStockSummary
@@ -474,24 +504,35 @@ namespace StockGuard.ViewModels
                             req.QuantityNeeded,
 
                         BorrowedCount =
-                            borrowedCount
+                            borrowedCount,
+
+                        DistributedCount =
+                            distributedCount
                     });
             }
 
+
+            // Requirement total.
             ToolCount =
                 requirements.Sum(r =>
                     r.QuantityNeeded);
 
+
+            // Actual physical equipment borrowed
+            // from the office.
             BorrowedCount =
                 EquipmentSummary.Sum(e =>
                     e.BorrowedCount);
 
+
             HasEquipment =
-                EquipmentSummary.Count > 0;
+                EquipmentSummary.Count >
+                0;
         }
 
+
         // ─────────────────────────────────────────────────────────
-        // ADD EQUIPMENT ALLOCATION
+        // ADD EQUIPMENT REQUIREMENT
         // ─────────────────────────────────────────────────────────
 
         private async Task AddEquipmentAsync()
@@ -500,7 +541,8 @@ namespace StockGuard.ViewModels
                 await _firebase
                     .GetAllCatalogsAsync();
 
-            if (catalogs.Count == 0)
+            if (catalogs.Count ==
+                0)
             {
                 await Shell.Current.DisplayAlert(
                     "No Catalog Items",
@@ -510,24 +552,30 @@ namespace StockGuard.ViewModels
                 return;
             }
 
+
             var search =
                 await Shell.Current.DisplayPromptAsync(
                     "Find Equipment",
-                    "Search for the equipment you want to add:",
+                    "Search for equipment required by this project:",
                     "Search",
                     "Cancel",
                     placeholder:
                         "e.g. Power Drill");
 
+
             if (search == null)
                 return;
+
 
             search =
                 search.Trim();
 
+
             var matches =
-                string.IsNullOrWhiteSpace(search)
+                string.IsNullOrWhiteSpace(
+                    search)
                     ? catalogs
+
                     : catalogs
                         .Where(c =>
                             c.CatalogName.Contains(
@@ -535,7 +583,9 @@ namespace StockGuard.ViewModels
                                 StringComparison.OrdinalIgnoreCase))
                         .ToList();
 
-            if (matches.Count == 0)
+
+            if (matches.Count ==
+                0)
             {
                 await Shell.Current.DisplayAlert(
                     "No Match Found",
@@ -545,18 +595,25 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            EquipmentCatalog? catalog = null;
 
-            if (matches.Count == 1)
+            EquipmentCatalog? catalog =
+                null;
+
+
+            if (matches.Count ==
+                1)
             {
-                catalog = matches[0];
+                catalog =
+                    matches[0];
             }
             else
             {
                 var names =
                     matches
-                        .Select(c => c.CatalogName)
+                        .Select(c =>
+                            c.CatalogName)
                         .ToArray();
+
 
                 var selected =
                     await Shell.Current.DisplayActionSheet(
@@ -565,82 +622,88 @@ namespace StockGuard.ViewModels
                         null,
                         names);
 
-                if (string.IsNullOrWhiteSpace(selected) ||
-                    selected == "Cancel")
+
+                if (string.IsNullOrWhiteSpace(
+                        selected) ||
+                    selected ==
+                        "Cancel")
                 {
                     return;
                 }
 
+
                 catalog =
                     matches.FirstOrDefault(c =>
-                        c.CatalogName == selected);
+                        c.CatalogName ==
+                        selected);
             }
 
-            if (catalog == null)
+
+            if (catalog ==
+                null)
+            {
                 return;
+            }
+
 
             var allTools =
                 await _firebase
                     .GetAllToolsAsync(
                         forceRefresh: true);
 
-            var allocations =
-                await _firebase
-                    .GetAllActiveProjectEquipmentRequirementsAsync();
 
-            int totalUsableTools =
+            int totalPhysical =
+                allTools.Count(t =>
+                    t.CatalogId ==
+                    catalog.CatalogId);
+
+
+            int currentlyAvailable =
                 allTools.Count(t =>
                     t.CatalogId ==
                         catalog.CatalogId &&
-                    t.Status != "Damaged" &&
-                    t.Status != "UnderRepair" &&
-                    t.Status != "Lost");
+                    t.Status ==
+                        "Available");
 
-            int totalAllocated =
-                allocations
-                    .Where(a =>
-                        a.CatalogId ==
-                        catalog.CatalogId)
-                    .Sum(a =>
-                        a.QuantityNeeded);
 
-            int availableNow =
-                Math.Max(
-                    0,
-                    totalUsableTools -
-                    totalAllocated);
-
-            if (availableNow <= 0)
+            if (totalPhysical <=
+                0)
             {
                 await Shell.Current.DisplayAlert(
-                    "None Available",
-                    $"All usable {catalog.CatalogName} units " +
-                    "are already allocated to projects.",
+                    "No Physical Equipment",
+                    $"There are no physical {catalog.CatalogName} " +
+                    "units registered.",
                     "OK");
 
                 return;
             }
+
 
             var requirements =
                 await _firebase
                     .GetProjectEquipmentRequirementsAsync(
                         ProjectId);
 
+
             var existingRequirement =
                 requirements.FirstOrDefault(r =>
                     r.CatalogId ==
-                        catalog.CatalogId);
+                    catalog.CatalogId);
+
 
             int currentRequired =
                 existingRequirement?.QuantityNeeded ??
                 0;
 
+
             var qtyText =
                 await Shell.Current.DisplayPromptAsync(
                     $"Add {catalog.CatalogName}",
-                    $"How many more do you want to add?\n\n" +
-                    $"Currently in this project: {currentRequired}\n" +
-                    $"Available company-wide: {availableNow}",
+                    $"How many more does this project require?\n\n" +
+                    $"Currently required: {currentRequired}\n" +
+                    $"Registered company-wide: {totalPhysical}\n" +
+                    $"Currently available in office: {currentlyAvailable}\n\n" +
+                    "Adding a requirement does not borrow the physical equipment.",
                     "Add",
                     "Cancel",
                     keyboard:
@@ -648,13 +711,19 @@ namespace StockGuard.ViewModels
                     initialValue:
                         "1");
 
-            if (qtyText == null)
+
+            if (qtyText ==
+                null)
+            {
                 return;
+            }
+
 
             if (!int.TryParse(
                     qtyText,
                     out int qty) ||
-                qty <= 0)
+                qty <=
+                    0)
             {
                 await Shell.Current.DisplayAlert(
                     "Invalid Quantity",
@@ -664,21 +733,25 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            if (qty > availableNow)
+
+            int newQuantity =
+                currentRequired +
+                qty;
+
+
+            if (newQuantity >
+                totalPhysical)
             {
                 await Shell.Current.DisplayAlert(
-                    "Not Enough Available",
-                    $"Only {availableNow} " +
-                    $"{catalog.CatalogName} unit(s) " +
-                    "are still available company-wide.",
+                    "Requirement Too High",
+                    $"Only {totalPhysical} physical " +
+                    $"{catalog.CatalogName} unit(s) are registered " +
+                    "company-wide.",
                     "OK");
 
                 return;
             }
 
-            int newQuantity =
-                currentRequired +
-                qty;
 
             bool saved =
                 await _firebase
@@ -688,141 +761,110 @@ namespace StockGuard.ViewModels
                         catalog.CatalogName,
                         newQuantity);
 
+
             if (!saved)
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
-                    "Could not update the project equipment allocation.",
+                    "Could not update the project equipment requirement.",
                     "OK");
 
                 return;
             }
+
 
             await Shell.Current.DisplayAlert(
-                "Equipment Added",
-                $"{qty} {catalog.CatalogName} unit(s) added.\n\n" +
-                $"Project total: {newQuantity}\n" +
-                $"Company available remaining: " +
-                $"{availableNow - qty}",
+                "Requirement Added",
+                $"{catalog.CatalogName}\n\n" +
+                $"Required by project: {newQuantity}\n" +
+                $"Currently available in office: {currentlyAvailable}\n\n" +
+                "Use Borrow to scan or manually select the physical equipment.",
                 "OK");
 
-            await LoadAsync();
-        }
-
-        // ─────────────────────────────────────────────────────────
-        // REMOVE EQUIPMENT ALLOCATION
-        // ─────────────────────────────────────────────────────────
-
-        private async Task RemoveEquipmentAsync(
-            CatalogStockSummary item)
-        {
-            if (item == null)
-                return;
-
-            if (item.BorrowedCount > 0)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Cannot Remove",
-                    $"{item.CatalogName} still has " +
-                    $"{item.BorrowedCount} unit(s) " +
-                    "under worker responsibility.\n\n" +
-                    "Wait for them to be returned first.",
-                    "OK");
-
-                return;
-            }
-
-            bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Remove Equipment",
-                    $"Remove {item.CatalogName} from " +
-                    "this project's requirements?",
-                    "Remove",
-                    "Cancel");
-
-            if (!confirm)
-                return;
-
-            await _firebase
-                .RemoveProjectEquipmentRequirementAsync(
-                    ProjectId,
-                    item.CatalogId);
 
             await LoadAsync();
         }
 
-        // ─────────────────────────────────────────────────────────
-        // DISTRIBUTE
-        // ─────────────────────────────────────────────────────────
-
-        private async Task DistributeAsync(
-            CatalogStockSummary item)
-        {
-            if (item == null)
-                return;
-
-            if (item.AvailableCount <= 0)
-            {
-                await Shell.Current.DisplayAlert(
-                    "None Available",
-                    $"All {item.CatalogName} allocated " +
-                    "to this project are already distributed.",
-                    "OK");
-
-                return;
-            }
-
-            if (!HasWorkers)
-            {
-                await Shell.Current.DisplayAlert(
-                    "No Workers",
-                    "Assign workers to this project before " +
-                    "distributing equipment.",
-                    "OK");
-
-                return;
-            }
-
-            var method =
-                await Shell.Current.DisplayActionSheet(
-                    $"Distribute {item.CatalogName}",
-                    "Cancel",
-                    null,
-                    "Manual",
-                    "Scan QR");
-
-            if (method == "Manual")
-            {
-                await DistributeManualAsync(item);
-            }
-            else if (method == "Scan QR")
-            {
-                await Shell.Current.GoToAsync(
-                    $"{nameof(QrScannerView)}" +
-                    $"?mode=Distribute" +
-                    $"&projectId={ProjectId}" +
-                    $"&catalogId={item.CatalogId}");
-            }
-        }
 
         // ─────────────────────────────────────────────────────────
-        // MANUAL DISTRIBUTION
+        // BORROW PHYSICAL EQUIPMENT
         // ─────────────────────────────────────────────────────────
 
-        private async Task DistributeManualAsync(
+        private async Task BorrowEquipmentAsync(
             CatalogStockSummary item)
         {
             if (item == null ||
-                IsBusy ||
                 Project == null)
             {
                 return;
             }
 
-            var user =
+
+            if (item.RemainingCount <=
+                0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Requirement Fulfilled",
+                    $"This project already has all " +
+                    $"{item.QuantityNeeded} required " +
+                    $"{item.CatalogName} unit(s).",
+                    "OK");
+
+                return;
+            }
+
+
+            var method =
+                await Shell.Current.DisplayActionSheet(
+                    $"Borrow {item.CatalogName}",
+                    "Cancel",
+                    null,
+                    "Scan QR",
+                    "Manual Select");
+
+
+            if (method ==
+                "Scan QR")
+            {
+                await Shell.Current
+                    .GoToAsync(
+                        $"{nameof(QrScannerView)}" +
+                        $"?mode=AssignEquipment" +
+                        $"&projectId={ProjectId}" +
+                        $"&catalogId={item.CatalogId}");
+
+                return;
+            }
+
+
+            if (method ==
+                "Manual Select")
+            {
+                await BorrowEquipmentManualAsync(
+                    item);
+            }
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // MANUAL BORROW
+        // ─────────────────────────────────────────────────────────
+
+        private async Task BorrowEquipmentManualAsync(
+            CatalogStockSummary item)
+        {
+            if (Project ==
+                null)
+            {
+                return;
+            }
+
+
+            var currentPE =
                 _auth.CurrentUser;
 
-            if (user == null)
+            if (currentPE ==
+                null)
             {
                 await Shell.Current.DisplayAlert(
                     "Error",
@@ -832,34 +874,12 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            int projectAvailable =
-                item.AvailableCount;
-
-            if (projectAvailable <= 0)
-            {
-                await Shell.Current.DisplayAlert(
-                    "None Available",
-                    $"All allocated {item.CatalogName} units " +
-                    "for this project have already been distributed.",
-                    "OK");
-
-                return;
-            }
-
-            if (AssignedWorkers.Count == 0)
-            {
-                await Shell.Current.DisplayAlert(
-                    "No Workers",
-                    "Assign workers to this project before " +
-                    "distributing equipment.",
-                    "OK");
-
-                return;
-            }
 
             var allTools =
-                await _firebase.GetAllToolsAsync(
-                    forceRefresh: true);
+                await _firebase
+                    .GetAllToolsAsync(
+                        forceRefresh: true);
+
 
             var availableTools =
                 allTools
@@ -872,194 +892,441 @@ namespace StockGuard.ViewModels
                         t.ToolId)
                     .ToList();
 
-            if (availableTools.Count == 0)
+
+            if (availableTools.Count ==
+                0)
             {
                 await Shell.Current.DisplayAlert(
                     "None Available",
                     $"No physical {item.CatalogName} units " +
-                    "are currently available.",
+                    "are currently available in the office.",
                     "OK");
 
                 return;
             }
 
-            int maxCanDistribute =
-                Math.Min(
-                    projectAvailable,
-                    availableTools.Count);
 
-            var qtyText =
-                await Shell.Current.DisplayPromptAsync(
-                    $"Distribute {item.CatalogName}",
-                    $"How many units do you want to distribute?\n\n" +
-                    $"Available for this project: {projectAvailable}\n" +
-                    $"Physical units available: {availableTools.Count}\n" +
-                    $"Maximum: {maxCanDistribute}",
-                    "Continue",
+            var options =
+                availableTools
+                    .Select(t =>
+                        $"{t.ToolId} — {t.ToolName}")
+                    .ToArray();
+
+
+            var selected =
+                await Shell.Current.DisplayActionSheet(
+                    $"Select {item.CatalogName}",
                     "Cancel",
-                    keyboard:
-                        Microsoft.Maui.Keyboard.Numeric,
-                    initialValue:
-                        "1");
+                    null,
+                    options);
 
-            if (qtyText == null)
+
+            if (string.IsNullOrWhiteSpace(
+                    selected) ||
+                selected ==
+                    "Cancel")
+            {
                 return;
+            }
 
-            if (!int.TryParse(
-                    qtyText,
-                    out int quantity) ||
-                quantity <= 0)
+
+            int selectedIndex =
+                Array.IndexOf(
+                    options,
+                    selected);
+
+
+            if (selectedIndex <
+                0)
+            {
+                return;
+            }
+
+
+            var tool =
+                availableTools[
+                    selectedIndex];
+
+
+            string result =
+                await _firebase
+                    .BorrowToolIntoProjectAsync(
+                        tool.ToolId,
+                        ProjectId,
+                        currentPE.UniqueKey,
+                        currentPE.FullName);
+
+
+            if (result ==
+                "SUCCESS")
             {
                 await Shell.Current.DisplayAlert(
-                    "Invalid Quantity",
-                    "Enter a valid quantity.",
+                    "Equipment Borrowed",
+                    $"{tool.ToolName} ({tool.ToolId}) is now Borrowed.\n\n" +
+                    $"Project: {Project.ProjectName}\n" +
+                    $"Accountability: Project Engineer",
+                    "OK");
+
+                await LoadAsync();
+
+                return;
+            }
+
+
+            if (result ==
+                "REQUIREMENT_FULFILLED")
+            {
+                await Shell.Current.DisplayAlert(
+                    "Requirement Fulfilled",
+                    $"This project already has all required " +
+                    $"{item.CatalogName} units.",
+                    "OK");
+
+                await LoadAsync();
+
+                return;
+            }
+
+
+            if (result ==
+                "NOT_AVAILABLE")
+            {
+                await Shell.Current.DisplayAlert(
+                    "Not Available",
+                    $"{tool.ToolName} ({tool.ToolId}) is no longer available.",
+                    "OK");
+
+                await LoadAsync();
+
+                return;
+            }
+
+
+            await Shell.Current.DisplayAlert(
+                "Error",
+                "Could not borrow the selected equipment.",
+                "OK");
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // DISTRIBUTE
+        // ─────────────────────────────────────────────────────────
+
+        private async Task DistributeAsync(
+            CatalogStockSummary item)
+        {
+            if (item ==
+                null)
+            {
+                return;
+            }
+
+
+            if (item.WithPECount <=
+                0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Nothing to Distribute",
+                    $"There are no {item.CatalogName} units currently " +
+                    "under Project Engineer accountability.\n\n" +
+                    "Borrow equipment from the office first.",
                     "OK");
 
                 return;
             }
 
-            if (quantity > maxCanDistribute)
+
+            if (!HasWorkers)
             {
                 await Shell.Current.DisplayAlert(
-                    "Not Enough Available",
-                    $"You can only distribute up to " +
-                    $"{maxCanDistribute} unit(s).",
+                    "No Workers",
+                    "Assign workers to this project before distributing equipment.",
                     "OK");
 
                 return;
             }
 
-            int distributed =
-                0;
 
-            for (int i = 1;
-                 i <= quantity;
-                 i++)
+            var method =
+                await Shell.Current.DisplayActionSheet(
+                    $"Distribute {item.CatalogName}",
+                    "Cancel",
+                    null,
+                    "Manual",
+                    "Scan QR");
+
+
+            if (method ==
+                "Manual")
             {
-                var toolIds =
-                    availableTools
-                        .Select(t =>
-                            t.ToolId)
-                        .ToArray();
+                await DistributeManualAsync(
+                    item);
+            }
+            else if (method ==
+                "Scan QR")
+            {
+                await Shell.Current
+                    .GoToAsync(
+                        $"{nameof(QrScannerView)}" +
+                        $"?mode=Distribute" +
+                        $"&projectId={ProjectId}" +
+                        $"&catalogId={item.CatalogId}");
+            }
+        }
 
-                var selectedToolId =
-                    await Shell.Current.DisplayActionSheet(
-                        $"Tool {i} of {quantity} — Select Physical Unit",
-                        "Stop",
-                        null,
-                        toolIds);
 
-                if (string.IsNullOrWhiteSpace(selectedToolId) ||
-                    selectedToolId == "Stop")
-                {
-                    break;
-                }
+        // ─────────────────────────────────────────────────────────
+        // MANUAL DISTRIBUTION
+        // ─────────────────────────────────────────────────────────
 
-                var tool =
-                    availableTools.FirstOrDefault(t =>
-                        t.ToolId ==
-                        selectedToolId);
-
-                if (tool == null)
-                    continue;
-
-                var workerNames =
-                    AssignedWorkers
-                        .Select(w =>
-                            w.FullName)
-                        .ToArray();
-
-                var selectedWorkerName =
-                    await Shell.Current.DisplayActionSheet(
-                        $"{tool.ToolName} ({tool.ToolId}) — Assign To",
-                        "Stop",
-                        null,
-                        workerNames);
-
-                if (string.IsNullOrWhiteSpace(
-                        selectedWorkerName) ||
-                    selectedWorkerName ==
-                        "Stop")
-                {
-                    break;
-                }
-
-                var worker =
-                    AssignedWorkers.FirstOrDefault(w =>
-                        w.FullName ==
-                        selectedWorkerName);
-
-                if (worker == null)
-                    continue;
-
-                var assignment =
-                    new PreAssignment
-                    {
-                        ToolId =
-                            tool.ToolId,
-
-                        ToolName =
-                            tool.ToolName,
-
-                        WorkerId =
-                            worker.UniqueKey,
-
-                        WorkerName =
-                            worker.FullName,
-
-                        ProjectId =
-                            ProjectId,
-
-                        ProjectName =
-                            Project.ProjectName,
-
-                        AssignedById =
-                            user.UniqueKey,
-
-                        AssignedByName =
-                            user.FullName,
-
-                        Status =
-                            "Pending",
-
-                        DateCreated =
-                            DateTime.Now
-                    };
-
-                bool success =
-                    await _firebase
-                        .CreatePreAssignmentAsync(
-                            assignment);
-
-                if (!success)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Could Not Distribute",
-                        $"{tool.ToolName} ({tool.ToolId}) " +
-                        "could not be distributed.\n\n" +
-                        "It may already have a pending assignment.",
-                        "OK");
-
-                    continue;
-                }
-
-                distributed++;
-
-                availableTools.Remove(tool);
+        private async Task DistributeManualAsync(
+            CatalogStockSummary item)
+        {
+            if (item ==
+                    null ||
+                Project ==
+                    null)
+            {
+                return;
             }
 
-            if (distributed > 0)
+
+            var allTools =
+                await _firebase
+                    .GetAllToolsAsync(
+                        forceRefresh: true);
+
+
+            // IMPORTANT:
+            // Only tools already borrowed into this project.
+            var projectBorrowedTools =
+                allTools
+                    .Where(t =>
+                        t.CatalogId ==
+                            item.CatalogId &&
+
+                        t.Status ==
+                            "Borrowed" &&
+
+                        t.BorrowedProjectId ==
+                            ProjectId &&
+
+                        string.IsNullOrWhiteSpace(
+                            t.AssignedWorkerId))
+                    .OrderBy(t =>
+                        t.ToolId)
+                    .ToList();
+
+
+            if (projectBorrowedTools.Count ==
+                0)
             {
                 await Shell.Current.DisplayAlert(
-                    "Distribution Sent",
-                    $"{distributed} {item.CatalogName} unit(s) " +
-                    "were distributed successfully.\n\n" +
-                    "Each worker must confirm receipt before " +
-                    "the equipment becomes Borrowed.",
+                    "Nothing to Distribute",
+                    $"No borrowed {item.CatalogName} units are " +
+                    "currently under Project Engineer accountability.",
                     "OK");
+
+                return;
             }
+
+
+            var toolOptions =
+                projectBorrowedTools
+                    .Select(t =>
+                        $"{t.ToolId} — {t.ToolName}")
+                    .ToArray();
+
+
+            var selected =
+                await Shell.Current.DisplayActionSheet(
+                    $"Select {item.CatalogName}",
+                    "Cancel",
+                    null,
+                    toolOptions);
+
+
+            if (string.IsNullOrWhiteSpace(
+                    selected) ||
+                selected ==
+                    "Cancel")
+            {
+                return;
+            }
+
+
+            int index =
+                Array.IndexOf(
+                    toolOptions,
+                    selected);
+
+
+            if (index <
+                0)
+            {
+                return;
+            }
+
+
+            var tool =
+                projectBorrowedTools[
+                    index];
+
+
+            bool assigned =
+                await WorkerAssignmentHelper
+                    .AssignToolToWorkerViaPickerAsync(
+                        _firebase,
+                        _auth,
+                        tool,
+                        ProjectId);
+
+
+            if (assigned)
+            {
+                await LoadAsync();
+            }
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // REMOVE EQUIPMENT REQUIREMENT
+        // ─────────────────────────────────────────────────────────
+
+        private async Task RemoveEquipmentAsync(
+            CatalogStockSummary item)
+        {
+            if (item ==
+                null)
+            {
+                return;
+            }
+
+
+            if (item.BorrowedCount >
+                0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Cannot Remove",
+                    $"{item.CatalogName} still has " +
+                    $"{item.BorrowedCount} physical unit(s) " +
+                    "borrowed under this project.\n\n" +
+                    "Return the physical equipment first.",
+                    "OK");
+
+                return;
+            }
+
+
+            bool confirm =
+                await Shell.Current.DisplayAlert(
+                    "Remove Equipment",
+                    $"Remove {item.CatalogName} from this project's requirements?",
+                    "Remove",
+                    "Cancel");
+
+
+            if (!confirm)
+                return;
+
+
+            await _firebase
+                .RemoveProjectEquipmentRequirementAsync(
+                    ProjectId,
+                    item.CatalogId);
+
 
             await LoadAsync();
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // REMOVE WORKER
+        // ─────────────────────────────────────────────────────────
+
+        private async Task RemoveWorkerAsync(
+            User worker)
+        {
+            if (worker ==
+                null)
+            {
+                return;
+            }
+
+
+            var allTools =
+                await _firebase
+                    .GetAllToolsAsync(
+                        forceRefresh: true);
+
+
+            var workerTools =
+                allTools
+                    .Where(t =>
+                        t.AssignedWorkerId ==
+                            worker.UniqueKey &&
+                        (
+                            t.Status ==
+                                "Borrowed" ||
+                            t.Status ==
+                                "PendingReturn"
+                        ))
+                    .ToList();
+
+
+            if (workerTools.Count >
+                0)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Cannot Remove Worker",
+                    $"{worker.FullName} still has " +
+                    $"{workerTools.Count} equipment item(s) " +
+                    "under their responsibility.\n\n" +
+                    "Return all equipment first.",
+                    "OK");
+
+                return;
+            }
+
+
+            bool confirm =
+                await Shell.Current.DisplayAlert(
+                    "Remove Worker",
+                    $"Remove {worker.FullName} from " +
+                    $"{Project?.ProjectName}?",
+                    "Remove",
+                    "Cancel");
+
+
+            if (!confirm)
+                return;
+
+
+            try
+            {
+                await _firebase
+                    .RemoveWorkerFromProjectAsync(
+                        ProjectId,
+                        worker.UniqueKey);
+
+
+                await Shell.Current.DisplayAlert(
+                    "Worker Removed",
+                    $"{worker.FullName} removed from project.",
+                    "OK");
+
+
+                await LoadAsync();
+            }
+            catch (Exception ex)
+            {
+                await Shell.Current.DisplayAlert(
+                    "Error",
+                    $"Could not remove worker.\n" +
+                    $"{ex.Message}",
+                    "OK");
+            }
         }
     }
 }

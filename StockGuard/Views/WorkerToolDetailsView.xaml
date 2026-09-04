@@ -588,8 +588,10 @@
                             CornerRadius="10"
                             HeightRequest="48"/>
 
+                       
 
-                        <Button
+
+                        <!--<Button
                             IsVisible="{Binding ShowTransfer}"
                             Text="Transfer Tool"
                             Command="{Binding TransferCommand}"
@@ -600,7 +602,7 @@
                             FontSize="13"
                             FontAttributes="Bold"
                             CornerRadius="10"
-                            HeightRequest="48"/>
+                            HeightRequest="48"/>-->
 
 
                         <Button
@@ -617,7 +619,25 @@
                             HeightRequest="48"/>
 
 
-                       
+                        <!-- ============================================== -->
+                        <!-- REPORT MISSING -->
+                        <!-- ============================================== -->
+
+                        <Button
+                             IsVisible="{Binding ShowReportMissing}"
+                             Text="Report Missing"
+                             Command="{Binding ReportMissingCommand}"
+                             BackgroundColor="{DynamicResource BgElevated}"
+                             TextColor="{DynamicResource Amber}"
+                             BorderColor="{DynamicResource Amber}"
+                             BorderWidth="1"
+                             FontSize="13"
+                             FontAttributes="Bold"
+                             CornerRadius="10"
+                             HeightRequest="48"/>
+
+
+
 
                         <!-- ============================================== -->
                         <!-- BORROWED BY ANOTHER WORKER -->
@@ -735,6 +755,58 @@
 
                         </Border>
 
+
+                        <!-- ============================================== -->
+                        <!-- MISSING REPORT PENDING -->
+                        <!-- ============================================== -->
+
+                        <Border
+                            IsVisible="{Binding ShowMissingPending}"
+                            BackgroundColor="{DynamicResource BgElevated}"
+                            Stroke="{DynamicResource Amber}"
+                            StrokeShape="RoundRectangle 12"
+                            Padding="16"
+                            Margin="0,4,0,0">
+
+                            <Grid
+                                ColumnDefinitions="Auto,*"
+                                ColumnSpacing="11">
+
+                                <Label
+                                    Grid.Column="0"
+                                    Text="&#xf071;"
+                                    FontFamily="FontAwesome"
+                                    FontSize="16"
+                                    TextColor="{DynamicResource Amber}"
+                                    VerticalOptions="Start"/>
+
+                                <VerticalStackLayout
+                                    Grid.Column="1"
+                                    Spacing="5">
+
+                                    <Label
+                                        Text="Missing report pending"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        TextColor="{DynamicResource Amber}"/>
+
+                                    <Label
+                                        Text="Waiting for Project Engineer verification."
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text2}"/>
+
+                                    <Label
+                                        Text="You remain responsible for this equipment until the report is verified."
+                                        FontSize="11"
+                                        TextColor="{DynamicResource Text3}"
+                                        LineBreakMode="WordWrap"/>
+
+                                </VerticalStackLayout>
+
+                            </Grid>
+
+                        </Border>
+
                     </VerticalStackLayout>
 
 
@@ -814,6 +886,41 @@
                                 FontSize="11"
                                 TextColor="{DynamicResource Amber}"
                                 VerticalOptions="Center"/>
+
+                        </Grid>
+
+                    </Border>
+
+
+                    <!-- ============================================== -->
+                    <!-- LOST -->
+                    <!-- ============================================== -->
+
+                    <Border
+                        BackgroundColor="{DynamicResource BgCard}"
+                        Stroke="{DynamicResource Text3}"
+                        StrokeShape="RoundRectangle 12"
+                        Padding="16"
+                        IsVisible="{Binding Tool.IsLost}">
+
+                        <Grid
+                            ColumnDefinitions="Auto,*"
+                            ColumnSpacing="10">
+
+                            <Label
+                                Grid.Column="0"
+                                Text="&#xf071;"
+                                FontFamily="FontAwesome"
+                                FontSize="15"
+                                TextColor="{DynamicResource Text3}"
+                                VerticalOptions="Start"/>
+
+                            <Label
+                                Grid.Column="1"
+                                Text="This equipment has been officially declared lost by the Project Engineer."
+                                FontSize="11"
+                                TextColor="{DynamicResource Text2}"
+                                LineBreakMode="WordWrap"/>
 
                         </Grid>
 

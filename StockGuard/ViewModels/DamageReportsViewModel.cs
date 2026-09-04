@@ -16,76 +16,155 @@ namespace StockGuard.ViewModels
         // ─────────────────────────────────────────────────────────
 
         public string ThemeIcon =>
-            _theme.IsDark ? "🌙" : "☀️";
+            _theme.IsDark
+                ? "🌙"
+                : "☀️";
 
         // ─────────────────────────────────────────────────────────
         // STATS
         // ─────────────────────────────────────────────────────────
 
         private int _totalReports;
+
         public int TotalReports
         {
-            get => _totalReports;
-            private set => SetProperty(ref _totalReports, value);
+            get =>
+                _totalReports;
+
+            private set =>
+                SetProperty(
+                    ref _totalReports,
+                    value);
         }
 
         private int _pendingReports;
+
         public int PendingReports
         {
-            get => _pendingReports;
-            private set => SetProperty(ref _pendingReports, value);
+            get =>
+                _pendingReports;
+
+            private set =>
+                SetProperty(
+                    ref _pendingReports,
+                    value);
         }
 
         private int _resolvedReports;
+
         public int ResolvedReports
         {
-            get => _resolvedReports;
-            private set => SetProperty(ref _resolvedReports, value);
+            get =>
+                _resolvedReports;
+
+            private set =>
+                SetProperty(
+                    ref _resolvedReports,
+                    value);
         }
 
         // ─────────────────────────────────────────────────────────
-        // REPORTS
+        // COLLECTIONS
         // ─────────────────────────────────────────────────────────
 
-        public ObservableCollection<DamageReportResult> Reports { get; }
+        public ObservableCollection<
+            DamageReportResult>
+            DamageReports
+        { get; }
             = new();
 
-        // ─────────────────────────────────────────────────────────
-        // EMPTY STATE
-        // ─────────────────────────────────────────────────────────
-
-        private bool _hasReports;
-
-        public bool HasReports
-        {
-            get => _hasReports;
-            private set
-            {
-                SetProperty(ref _hasReports, value);
-                OnPropertyChanged(nameof(NoReports));
-            }
-        }
-
-        public bool NoReports => !HasReports;
+        public ObservableCollection<
+            LostReportResult>
+            LostReports
+        { get; }
+            = new();
 
         // ─────────────────────────────────────────────────────────
         // FILTER
         // ─────────────────────────────────────────────────────────
 
-        private string _selectedFilter = "All";
+        private string _selectedFilter =
+            "All";
 
         public string SelectedFilter
         {
-            get => _selectedFilter;
+            get =>
+                _selectedFilter;
+
             set
             {
-                if (SetProperty(ref _selectedFilter, value))
+                if (SetProperty(
+                        ref _selectedFilter,
+                        value))
                 {
+                    OnPropertyChanged(
+                        nameof(ShowDamageSection));
+
+                    OnPropertyChanged(
+                        nameof(ShowLostSection));
+
                     MainThread.BeginInvokeOnMainThread(
-                        async () => await LoadReportsAsync());
+                        async () =>
+                            await LoadReportsAsync());
                 }
             }
         }
+
+        public bool ShowDamageSection =>
+            SelectedFilter ==
+                "All" ||
+            SelectedFilter ==
+                "Damage";
+
+        public bool ShowLostSection =>
+            SelectedFilter ==
+                "All" ||
+            SelectedFilter ==
+                "Lost";
+
+        // ─────────────────────────────────────────────────────────
+        // VISIBILITY
+        // ─────────────────────────────────────────────────────────
+
+        private bool _hasDamageReports;
+
+        public bool HasDamageReports
+        {
+            get =>
+                _hasDamageReports;
+
+            private set
+            {
+                SetProperty(
+                    ref _hasDamageReports,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(NoReports));
+            }
+        }
+
+        private bool _hasLostReports;
+
+        public bool HasLostReports
+        {
+            get =>
+                _hasLostReports;
+
+            private set
+            {
+                SetProperty(
+                    ref _hasLostReports,
+                    value);
+
+                OnPropertyChanged(
+                    nameof(NoReports));
+            }
+        }
+
+        public bool NoReports =>
+            !HasDamageReports &&
+            !HasLostReports;
 
         // ─────────────────────────────────────────────────────────
         // REFRESH
@@ -95,8 +174,13 @@ namespace StockGuard.ViewModels
 
         public bool IsRefreshing
         {
-            get => _isRefreshing;
-            set => SetProperty(ref _isRefreshing, value);
+            get =>
+                _isRefreshing;
+
+            set =>
+                SetProperty(
+                    ref _isRefreshing,
+                    value);
         }
 
         // ─────────────────────────────────────────────────────────
@@ -107,7 +191,9 @@ namespace StockGuard.ViewModels
         public ICommand RefreshCommand { get; }
         public ICommand ToggleThemeCommand { get; }
         public ICommand SetFilterCommand { get; }
-        public ICommand HandleReportCommand { get; }
+
+        public ICommand HandleDamageReportCommand { get; }
+        public ICommand HandleLostReportCommand { get; }
 
         // ─────────────────────────────────────────────────────────
         // CONSTRUCTOR
@@ -118,52 +204,74 @@ namespace StockGuard.ViewModels
             AuthService auth,
             ThemeService theme)
         {
-            _firebase = firebase;
-            _auth = auth;
-            _theme = theme;
+            _firebase =
+                firebase;
 
-            Title = "Damage Reports";
+            _auth =
+                auth;
+
+            _theme =
+                theme;
+
+            Title =
+                "Damage & Lost Reports";
 
             _theme.ThemeChanged += _ =>
                 MainThread.BeginInvokeOnMainThread(
-                    () => OnPropertyChanged(nameof(ThemeIcon)));
+                    () =>
+                        OnPropertyChanged(
+                            nameof(ThemeIcon)));
 
             OpenFlyoutCommand =
-                new Command(() =>
-                {
-                    if (Shell.Current != null)
+                new Command(
+                    () =>
                     {
-                        Shell.Current.FlyoutIsPresented = true;
-                    }
-                });
+                        if (Shell.Current != null)
+                        {
+                            Shell.Current
+                                .FlyoutIsPresented =
+                                true;
+                        }
+                    });
 
             RefreshCommand =
                 new Command(
-                    async () => await RefreshAsync());
+                    async () =>
+                        await RefreshAsync());
 
             ToggleThemeCommand =
                 new Command(
-                    () => _theme.Toggle());
+                    () =>
+                        _theme.Toggle());
 
             SetFilterCommand =
                 new Command<string>(
                     filter =>
                         SelectedFilter =
-                            string.IsNullOrWhiteSpace(filter)
+                            string.IsNullOrWhiteSpace(
+                                filter)
                                 ? "All"
                                 : filter);
 
-            HandleReportCommand =
+            HandleDamageReportCommand =
                 new Command<DamageReportResult>(
                     async item =>
-                        await HandleReportAsync(item));
+                        await HandleDamageReportAsync(
+                            item));
+
+            HandleLostReportCommand =
+                new Command<LostReportResult>(
+                    async item =>
+                        await HandleLostReportAsync(
+                            item));
 
             MainThread.BeginInvokeOnMainThread(
-                async () => await LoadReportsAsync());
+                async () =>
+                    await LoadReportsAsync());
         }
 
         // ─────────────────────────────────────────────────────────
-        // LOAD REPORTS
+        // LOAD
         // ─────────────────────────────────────────────────────────
 
         public async Task LoadReportsAsync()
@@ -171,119 +279,161 @@ namespace StockGuard.ViewModels
             if (IsBusy)
                 return;
 
-            IsBusy = true;
+            IsBusy =
+                true;
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
                 {
-                    Reports.Clear();
+                    DamageReports.Clear();
+                    LostReports.Clear();
 
                     TotalReports = 0;
                     PendingReports = 0;
                     ResolvedReports = 0;
-                    HasReports = false;
+
+                    HasDamageReports =
+                        false;
+
+                    HasLostReports =
+                        false;
 
                     return;
                 }
 
-                var reportsTask =
-                    _firebase.GetAllDamageReportsRawAsync();
+                var damageTask =
+                    _firebase
+                        .GetAllDamageReportsRawAsync();
+
+                var lostTask =
+                    _firebase
+                        .GetAllLostReportsRawAsync();
 
                 var projectsTask =
-                    _firebase.GetAllProjectsAsync();
+                    _firebase
+                        .GetAllProjectsAsync();
 
                 await Task.WhenAll(
-                    reportsTask,
+                    damageTask,
+                    lostTask,
                     projectsTask);
 
-                var rawReports =
-                    reportsTask.Result ??
-                    new List<DamageReportResult>();
+                var damageReports =
+                    damageTask.Result ??
+                    new List<
+                        DamageReportResult>();
+
+                var lostReports =
+                    lostTask.Result ??
+                    new List<
+                        LostReportResult>();
 
                 var projects =
                     projectsTask.Result ??
                     new List<Project>();
 
-                // ── THIS PE'S PROJECTS ─────────────────────────────
-
                 var myProjectIds =
                     projects
                         .Where(p =>
                             !p.IsDeleted &&
-                            p.CreatedBy == user.UniqueKey)
-                        .Select(p => p.ProjectId)
+                            p.CreatedBy ==
+                                user.UniqueKey)
+                        .Select(p =>
+                            p.ProjectId)
                         .ToHashSet();
 
-                // ── REPORTS BELONGING TO THIS PE'S PROJECTS ───────
-
-                var ownedReports =
-                    rawReports
+                var ownedDamage =
+                    damageReports
                         .Where(r =>
                             myProjectIds.Contains(
                                 r.Report.ProjectId))
                         .ToList();
 
-                // ── STATS ─────────────────────────────────────────
+                var ownedLost =
+                    lostReports
+                        .Where(r =>
+                            myProjectIds.Contains(
+                                r.Report.ProjectId))
+                        .ToList();
 
                 TotalReports =
-                    ownedReports.Count;
+                    ownedDamage.Count +
+                    ownedLost.Count;
 
                 PendingReports =
-                    ownedReports.Count(r =>
-                        r.Report.Status == "Pending");
+                    ownedDamage.Count(r =>
+                        r.Report.Status ==
+                            "Pending") +
+
+                    ownedLost.Count(r =>
+                        r.Report.Status ==
+                            "Pending");
 
                 ResolvedReports =
-                    ownedReports.Count(r =>
-                        r.Report.Status == "Resolved");
+                    ownedDamage.Count(r =>
+                        r.Report.Status ==
+                            "Resolved") +
 
-                // ── FILTER ────────────────────────────────────────
+                    ownedLost.Count(r =>
+                        r.Report.Status ==
+                            "Resolved");
 
-                IEnumerable<DamageReportResult> filtered =
-                    ownedReports;
+                DamageReports.Clear();
+                LostReports.Clear();
 
-                if (SelectedFilter != "All")
+                if (ShowDamageSection)
                 {
-                    filtered =
-                        filtered.Where(r =>
-                            r.Report.Status ==
-                            SelectedFilter);
+                    foreach (var item in
+                        ownedDamage
+                            .OrderByDescending(r =>
+                                r.Report.ReportDate))
+                    {
+                        DamageReports.Add(
+                            item);
+                    }
                 }
 
-                // ── DISPLAY ───────────────────────────────────────
-
-                Reports.Clear();
-
-                foreach (var item in filtered
-                    .OrderByDescending(r =>
-                        r.Report.ReportDate))
+                if (ShowLostSection)
                 {
-                    Reports.Add(item);
+                    foreach (var item in
+                        ownedLost
+                            .OrderByDescending(r =>
+                                r.Report.ReportDate))
+                    {
+                        LostReports.Add(
+                            item);
+                    }
                 }
 
-                HasReports =
-                    Reports.Count > 0;
+                HasDamageReports =
+                    DamageReports.Count >
+                    0;
+
+                HasLostReports =
+                    LostReports.Count >
+                    0;
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"LoadReports error: {ex.Message}");
+                System.Diagnostics.Debug
+                    .WriteLine(
+                        $"LoadReports error: {ex.Message}");
             }
             finally
             {
-                IsBusy = false;
+                IsBusy =
+                    false;
             }
         }
 
-        // ─────────────────────────────────────────────────────────
-        // REFRESH
-        // ─────────────────────────────────────────────────────────
-
         private async Task RefreshAsync()
         {
-            IsRefreshing = true;
+            IsRefreshing =
+                true;
 
             try
             {
@@ -291,167 +441,122 @@ namespace StockGuard.ViewModels
             }
             finally
             {
-                IsRefreshing = false;
+                IsRefreshing =
+                    false;
             }
         }
 
         // ─────────────────────────────────────────────────────────
-        // HANDLE REPORT
+        // DAMAGE REPORT
         // ─────────────────────────────────────────────────────────
 
-        private async Task HandleReportAsync(
+        private async Task HandleDamageReportAsync(
             DamageReportResult item)
         {
-            if (item == null || IsBusy)
-                return;
-
-            var report = item.Report;
-
-            // Resolved is the only completely finished state.
-            if (report.Status == "Resolved")
+            if (item == null ||
+                IsBusy)
             {
-                await Shell.Current.DisplayAlert(
-                    "Already Resolved",
-                    "This damage report has already been resolved.",
-                    "OK");
+                return;
+            }
+
+            var report =
+                item.Report;
+
+            if (report.Status ==
+                "Resolved")
+            {
+                await Shell.Current
+                    .DisplayAlert(
+                        "Already Resolved",
+                        "This damage report has already been resolved.",
+                        "OK");
 
                 return;
             }
 
-            // ─────────────────────────────────────────────────────
-            // LOST EQUIPMENT
-            // ─────────────────────────────────────────────────────
-
-            if (report.Status == "Lost")
-            {
-                await HandleFoundEquipmentAsync(item);
-                return;
-            }
-
-            // ─────────────────────────────────────────────────────
-            // NORMAL DAMAGE ACTIONS
-            // ─────────────────────────────────────────────────────
-
+            // IMPORTANT:
+            // NO LOST OPTION HERE.
             var action =
-                await Shell.Current.DisplayActionSheet(
-                    $"Handle {report.ToolName}",
-                    "Cancel",
-                    null,
-                    "Send to Repair",
-                    "Mark Ready for Use",
-                    "Mark as Lost");
+                await Shell.Current
+                    .DisplayActionSheet(
+                        $"Handle {report.ToolName}",
+                        "Cancel",
+                        null,
+                        "Send to Repair",
+                        "Mark Ready for Use");
 
-            if (string.IsNullOrWhiteSpace(action) ||
-                action == "Cancel")
+            if (string.IsNullOrWhiteSpace(
+                    action) ||
+                action ==
+                    "Cancel")
             {
                 return;
             }
 
             string? notes =
-                await Shell.Current.DisplayPromptAsync(
-                    "Resolution Notes",
-                    "Add a short note about the action taken:",
-                    "Save",
-                    "Skip",
-                    placeholder:
-                    "e.g. Sent to maintenance for cable replacement");
+                await Shell.Current
+                    .DisplayPromptAsync(
+                        "Resolution Notes",
+                        "Add a short note about the action taken:",
+                        "Save",
+                        "Skip");
 
             bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Confirm Action",
-                    $"{report.ToolName} ({report.ToolId})\n\n" +
-                    $"Action: {action}",
-                    "Confirm",
-                    "Cancel");
+                await Shell.Current
+                    .DisplayAlert(
+                        "Confirm Action",
+                        $"{report.ToolName} ({report.ToolId})\n\n" +
+                        $"Action: {action}",
+                        "Confirm",
+                        "Cancel");
 
             if (!confirm)
                 return;
 
-            IsBusy = true;
+            IsBusy =
+                true;
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Current Project Engineer could not be identified.",
-                        "OK");
-
                     return;
-                }
 
                 var tool =
-                    await _firebase.GetToolByIdAsync(
-                        report.ToolId);
+                    await _firebase
+                        .GetToolByIdAsync(
+                            report.ToolId);
 
                 if (tool == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "The equipment could not be found.",
-                        "OK");
-
                     return;
-                }
-
-                // ── DETERMINE NEW STATUS ──────────────────────────
 
                 switch (action)
                 {
                     case "Send to Repair":
 
-                        report.Status = "UnderRepair";
-                        tool.Status = "UnderRepair";
+                        report.Status =
+                            "UnderRepair";
+
+                        tool.Status =
+                            "UnderRepair";
 
                         break;
 
                     case "Mark Ready for Use":
 
-                        report.Status = "Resolved";
+                        report.Status =
+                            "Resolved";
 
-                        tool.Status = "Available";
-                        tool.Condition = "Good";
+                        tool.Status =
+                            "Available";
 
-                        tool.AssignedWorkerId =
-                            string.Empty;
+                        tool.Condition =
+                            "Good";
 
-                        tool.AssignedWorkerName =
-                            string.Empty;
-
-                        tool.BorrowedProjectId =
-                            string.Empty;
-
-                        tool.BorrowedProjectName =
-                            string.Empty;
-
-                        tool.BorrowDate =
-                            null;
-
-                        break;
-
-                    case "Mark as Lost":
-
-                        report.Status = "Lost";
-
-                        tool.Status = "Lost";
-
-                        tool.AssignedWorkerId =
-                            string.Empty;
-
-                        tool.AssignedWorkerName =
-                            string.Empty;
-
-                        tool.BorrowedProjectId =
-                            string.Empty;
-
-                        tool.BorrowedProjectName =
-                            string.Empty;
-
-                        tool.BorrowDate =
-                            null;
+                        ClearCurrentAssignment(
+                            tool);
 
                         break;
 
@@ -459,8 +564,6 @@ namespace StockGuard.ViewModels
                         return;
                 }
 
-                // ── REVIEW DETAILS ─────────────────────────────────
-
                 report.ReviewedDate =
                     DateTime.Now;
 
@@ -474,102 +577,325 @@ namespace StockGuard.ViewModels
                     notes?.Trim() ??
                     string.Empty;
 
-                // ── UPDATE REPORT ──────────────────────────────────
-
                 var reportUpdated =
-                    await _firebase.UpdateDamageReportAsync(
-                        item.Key,
-                        report);
+                    await _firebase
+                        .UpdateDamageReportAsync(
+                            item.Key,
+                            report);
 
                 if (!reportUpdated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not update the damage report.",
-                        "OK");
-
                     return;
-                }
-
-                // ── UPDATE TOOL ────────────────────────────────────
 
                 var toolUpdated =
-                    await _firebase.UpdateToolAsync(tool);
+                    await _firebase
+                        .UpdateToolAsync(
+                            tool);
 
                 if (!toolUpdated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Damage report was updated, but the equipment status could not be updated.",
-                        "OK");
-
                     return;
-                }
 
-                // ── TRANSACTION ────────────────────────────────────
+                await _firebase
+                    .LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                tool.ToolId,
 
-                await _firebase.LogTransactionAsync(
-                    new TransactionLog
-                    {
-                        ToolId =
-                            tool.ToolId,
+                            ToolName =
+                                tool.ToolName,
 
-                        ToolName =
-                            tool.ToolName,
+                            WorkerId =
+                                report.WorkerId,
 
-                        WorkerId =
-                            report.WorkerId,
+                            WorkerName =
+                                report.WorkerName,
 
-                        WorkerName =
-                            report.WorkerName,
+                            ProjectId =
+                                report.ProjectId,
 
-                        ProjectId =
-                            report.ProjectId,
+                            ProjectName =
+                                report.ProjectName,
 
-                        ProjectName =
-                            report.ProjectName,
+                            PerformedById =
+                                user.UniqueKey,
 
-                        PerformedById =
-                            user.UniqueKey,
+                            PerformedByName =
+                                user.FullName,
 
-                        PerformedByName =
-                            user.FullName,
+                            Action =
+                                report.Status,
 
-                        Action =
-                            report.Status,
+                            Description =
+                                $"Damage report handled by " +
+                                $"{user.FullName}. " +
+                                $"{action}. " +
+                                $"{report.ResolutionNotes}",
 
-                        Description =
-                            $"Damage report handled by " +
-                            $"{user.FullName}. " +
-                            $"{action}. " +
-                            $"{report.ResolutionNotes}",
+                            Condition =
+                                tool.Condition,
 
-                        Condition =
-                            tool.Condition,
+                            Date =
+                                DateTime.Now
+                        });
 
-                        Date =
-                            DateTime.Now
-                    });
-
-                await Shell.Current.DisplayAlert(
-                    "Report Updated",
-                    $"{report.ToolName} ({report.ToolId})\n\n" +
-                    $"Status: {report.Status}",
-                    "OK");
+                await Shell.Current
+                    .DisplayAlert(
+                        "Report Updated",
+                        $"{report.ToolName}\n\n" +
+                        $"Status: {report.Status}",
+                        "OK");
 
                 await LoadReportsAsync();
             }
-            catch (Exception ex)
+            finally
             {
-                await Shell.Current.DisplayAlert(
-                    "Error",
-                    $"Could not handle damage report.\n" +
-                    $"{ex.Message}",
-                    "OK");
+                IsBusy =
+                    false;
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // LOST REPORT
+        // ─────────────────────────────────────────────────────────
+
+        private async Task HandleLostReportAsync(
+            LostReportResult item)
+        {
+            if (item == null ||
+                IsBusy)
+            {
+                return;
+            }
+
+            var report =
+                item.Report;
+
+            if (report.Status ==
+                "Resolved")
+            {
+                await Shell.Current
+                    .DisplayAlert(
+                        "Already Resolved",
+                        "This missing/lost report has already been resolved.",
+                        "OK");
+
+                return;
+            }
+
+            // Worker reported missing,
+            // PE has not declared Lost yet.
+            if (report.Status ==
+                "Pending")
+            {
+                var action =
+                    await Shell.Current
+                        .DisplayActionSheet(
+                            $"Missing Equipment - {report.ToolName}",
+                            "Cancel",
+                            null,
+                            "Found",
+                            "Declare Lost");
+
+                if (action ==
+                    "Found")
+                {
+                    await HandleFoundAsync(
+                        item,
+                        false);
+
+                    return;
+                }
+
+                if (action ==
+                    "Declare Lost")
+                {
+                    await DeclareLostAsync(
+                        item);
+
+                    return;
+                }
+
+                return;
+            }
+
+            // Already officially Lost.
+            if (report.Status ==
+                "Lost")
+            {
+                var action =
+                    await Shell.Current
+                        .DisplayActionSheet(
+                            $"Lost Equipment - {report.ToolName}",
+                            "Cancel",
+                            null,
+                            "Mark as Found");
+
+                if (action !=
+                    "Mark as Found")
+                {
+                    return;
+                }
+
+                await HandleFoundAsync(
+                    item,
+                    true);
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // DECLARE LOST
+        // ─────────────────────────────────────────────────────────
+
+        private async Task DeclareLostAsync(
+            LostReportResult item)
+        {
+            var report =
+                item.Report;
+
+            string? notes =
+                await Shell.Current
+                    .DisplayPromptAsync(
+                        "Declare Lost",
+                        "Enter verification notes or the reason for declaring this equipment lost:",
+                        "Continue",
+                        "Cancel");
+
+            if (string.IsNullOrWhiteSpace(
+                    notes))
+            {
+                return;
+            }
+
+            bool confirm =
+                await Shell.Current
+                    .DisplayAlert(
+                        "Confirm Lost Declaration",
+                        $"{report.ToolName} ({report.ToolId})\n\n" +
+                        "This will officially mark the equipment as Lost.",
+                        "Declare Lost",
+                        "Cancel");
+
+            if (!confirm)
+                return;
+
+            IsBusy =
+                true;
+
+            try
+            {
+                var user =
+                    _auth.CurrentUser;
+
+                if (user == null)
+                    return;
+
+                var tool =
+                    await _firebase
+                        .GetToolByIdAsync(
+                            report.ToolId);
+
+                if (tool == null)
+                    return;
+
+                report.Status =
+                    "Lost";
+
+                report.VerifiedDate =
+                    DateTime.Now;
+
+                report.VerifiedById =
+                    user.UniqueKey;
+
+                report.VerifiedByName =
+                    user.FullName;
+
+                report.LostDate =
+                    DateTime.Now;
+
+                report.ResolutionNotes =
+                    notes.Trim();
+
+                tool.Status =
+                    "Lost";
+
+                // Active assignment is now cleared.
+                // Historical accountability remains
+                // inside LostReport.
+                ClearCurrentAssignment(
+                    tool);
+
+                var reportUpdated =
+                    await _firebase
+                        .UpdateLostReportAsync(
+                            item.Key,
+                            report);
+
+                if (!reportUpdated)
+                    return;
+
+                var toolUpdated =
+                    await _firebase
+                        .UpdateToolAsync(
+                            tool);
+
+                if (!toolUpdated)
+                    return;
+
+                await _firebase
+                    .LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                report.ToolId,
+
+                            ToolName =
+                                report.ToolName,
+
+                            WorkerId =
+                                report.WorkerId,
+
+                            WorkerName =
+                                report.WorkerName,
+
+                            ProjectId =
+                                report.ProjectId,
+
+                            ProjectName =
+                                report.ProjectName,
+
+                            PerformedById =
+                                user.UniqueKey,
+
+                            PerformedByName =
+                                user.FullName,
+
+                            Action =
+                                "Lost Declared",
+
+                            Description =
+                                $"Project Engineer declared the equipment lost. " +
+                                $"{report.ResolutionNotes}",
+
+                            Condition =
+                                tool.Condition,
+
+                            Date =
+                                DateTime.Now
+                        });
+
+                await Shell.Current
+                    .DisplayAlert(
+                        "Equipment Declared Lost",
+                        $"{report.ToolName} ({report.ToolId}) " +
+                        "has been officially marked as Lost.",
+                        "OK");
+
+                await LoadReportsAsync();
             }
             finally
             {
-                IsBusy = false;
+                IsBusy =
+                    false;
             }
         }
 
@@ -577,248 +903,354 @@ namespace StockGuard.ViewModels
         // FOUND EQUIPMENT
         // ─────────────────────────────────────────────────────────
 
-        private async Task HandleFoundEquipmentAsync(
-            DamageReportResult item)
+        private async Task HandleFoundAsync(
+            LostReportResult item,
+            bool wasDeclaredLost)
         {
-            var report = item.Report;
+            var report =
+                item.Report;
 
-            var action =
-                await Shell.Current.DisplayActionSheet(
-                    $"Lost Equipment - {report.ToolName}",
-                    "Cancel",
-                    null,
-                    "Mark as Found");
+            var condition =
+                await Shell.Current
+                    .DisplayActionSheet(
+                        "Equipment Found",
+                        "Cancel",
+                        null,
+                        "Good",
+                        "Damaged");
 
-            if (string.IsNullOrWhiteSpace(action) ||
-                action == "Cancel")
+            if (string.IsNullOrWhiteSpace(
+                    condition) ||
+                condition ==
+                    "Cancel")
             {
                 return;
             }
 
-            var condition =
-                await Shell.Current.DisplayActionSheet(
-                    "Equipment Found",
-                    "Cancel",
-                    null,
-                    "Good",
-                    "Damaged");
+            string severity =
+                string.Empty;
 
-            if (string.IsNullOrWhiteSpace(condition) ||
-                condition == "Cancel")
+            string damageDescription =
+                string.Empty;
+
+            // PE evaluates damage.
+            if (condition ==
+                "Damaged")
             {
-                return;
+                severity =
+                    await Shell.Current
+                        .DisplayActionSheet(
+                            "Damage Severity",
+                            "Cancel",
+                            null,
+                            "Minor",
+                            "Major");
+
+                if (string.IsNullOrWhiteSpace(
+                        severity) ||
+                    severity ==
+                        "Cancel")
+                {
+                    return;
+                }
+
+                damageDescription =
+                    await Shell.Current
+                        .DisplayPromptAsync(
+                            "Damage Description",
+                            "Describe the damage found during inspection:",
+                            "Continue",
+                            "Cancel")
+                    ?? string.Empty;
+
+                if (string.IsNullOrWhiteSpace(
+                        damageDescription))
+                {
+                    return;
+                }
+
+                damageDescription =
+                    damageDescription.Trim();
             }
 
             string? notes =
-                await Shell.Current.DisplayPromptAsync(
-                    "Found Equipment",
-                    "Where was the equipment found or what happened?",
-                    "Save",
-                    "Skip",
-                    placeholder:
-                    "e.g. Found inside the project storage area");
-
-            string resultText =
-                condition == "Good"
-                    ? "Available"
-                    : "Under Repair";
+                await Shell.Current
+                    .DisplayPromptAsync(
+                        "Found Equipment",
+                        "Where was the equipment found or what happened?",
+                        "Save",
+                        "Skip");
 
             bool confirm =
-                await Shell.Current.DisplayAlert(
-                    "Confirm Found Equipment",
-                    $"{report.ToolName} ({report.ToolId})\n\n" +
-                    $"Condition: {condition}\n" +
-                    $"Result: {resultText}",
-                    "Confirm",
-                    "Cancel");
+                await Shell.Current
+                    .DisplayAlert(
+                        "Confirm Found Equipment",
+                        $"{report.ToolName} ({report.ToolId})\n\n" +
+                        $"Condition: {condition}",
+                        "Confirm",
+                        "Cancel");
 
             if (!confirm)
                 return;
 
-            IsBusy = true;
+            IsBusy =
+                true;
 
             try
             {
-                var user = _auth.CurrentUser;
+                var user =
+                    _auth.CurrentUser;
 
                 if (user == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Current Project Engineer could not be identified.",
-                        "OK");
-
                     return;
-                }
 
                 var tool =
-                    await _firebase.GetToolByIdAsync(
-                        report.ToolId);
+                    await _firebase
+                        .GetToolByIdAsync(
+                            report.ToolId);
 
                 if (tool == null)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "The equipment could not be found.",
-                        "OK");
-
                     return;
-                }
 
-                // ── FOUND AND GOOD ─────────────────────────────────
+                report.Status =
+                    "Resolved";
 
-                if (condition == "Good")
-                {
-                    report.Status =
-                        "Resolved";
-
-                    tool.Status =
-                        "Available";
-
-                    tool.Condition =
-                        "Good";
-                }
-
-                // ── FOUND BUT STILL DAMAGED ───────────────────────
-
-                else
-                {
-                    report.Status =
-                        "UnderRepair";
-
-                    tool.Status =
-                        "UnderRepair";
-                }
-
-                // A lost tool already had its current assignment
-                // cleared when it was marked lost.
-                tool.AssignedWorkerId =
-                    string.Empty;
-
-                tool.AssignedWorkerName =
-                    string.Empty;
-
-                tool.BorrowedProjectId =
-                    string.Empty;
-
-                tool.BorrowedProjectName =
-                    string.Empty;
-
-                tool.BorrowDate =
-                    null;
-
-                // ── REVIEW DETAILS ─────────────────────────────────
-
-                report.ReviewedDate =
+                report.VerifiedDate ??=
                     DateTime.Now;
 
-                report.ReviewedById =
+                report.VerifiedById =
                     user.UniqueKey;
 
-                report.ReviewedByName =
+                report.VerifiedByName =
                     user.FullName;
+
+                report.FoundDate =
+                    DateTime.Now;
+
+                report.FoundCondition =
+                    condition;
 
                 report.ResolutionNotes =
                     notes?.Trim() ??
                     string.Empty;
 
-                // ── UPDATE REPORT ──────────────────────────────────
+                // ─────────────────────────────────────
+                // FOUND + GOOD
+                // ─────────────────────────────────────
 
-                var reportUpdated =
-                    await _firebase.UpdateDamageReportAsync(
-                        item.Key,
-                        report);
-
-                if (!reportUpdated)
+                if (condition ==
+                    "Good")
                 {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "Could not update the damage report.",
-                        "OK");
+                    tool.Condition =
+                        "Good";
 
-                    return;
+                    // It was officially Lost before recovery.
+                    if (wasDeclaredLost)
+                    {
+                        tool.Status =
+                            "Available";
+
+                        ClearCurrentAssignment(
+                            tool);
+                    }
+
+                    // Worker only reported Missing.
+                    // PE found it before declaring Lost.
+                    else
+                    {
+                        tool.Status =
+                            "Borrowed";
+
+                        // Keep worker/project.
+                    }
                 }
 
-                // ── UPDATE TOOL ────────────────────────────────────
+                // ─────────────────────────────────────
+                // FOUND + DAMAGED
+                // ─────────────────────────────────────
+
+                else
+                {
+                    tool.Status =
+                        "Damaged";
+
+                    tool.Condition =
+                        severity;
+
+                    // If previously declared Lost,
+                    // its active assignment was already cleared.
+                    if (wasDeclaredLost)
+                    {
+                        ClearCurrentAssignment(
+                            tool);
+                    }
+
+                    // If only Pending Missing,
+                    // worker/project remain attached.
+                }
+
+                var lostUpdated =
+                    await _firebase
+                        .UpdateLostReportAsync(
+                            item.Key,
+                            report);
+
+                if (!lostUpdated)
+                    return;
 
                 var toolUpdated =
-                    await _firebase.UpdateToolAsync(tool);
+                    await _firebase
+                        .UpdateToolAsync(
+                            tool);
 
                 if (!toolUpdated)
-                {
-                    await Shell.Current.DisplayAlert(
-                        "Error",
-                        "The report was updated, but the equipment status could not be updated.",
-                        "OK");
-
                     return;
+
+                // IMPORTANT:
+                // LostReport is resolved.
+                // A NEW DamageReport is created.
+                if (condition ==
+                    "Damaged")
+                {
+                    var damageReport =
+                        new DamageReport
+                        {
+                            ToolId =
+                                report.ToolId,
+
+                            ToolName =
+                                report.ToolName,
+
+                            WorkerId =
+                                report.WorkerId,
+
+                            WorkerName =
+                                report.WorkerName,
+
+                            ProjectId =
+                                report.ProjectId,
+
+                            ProjectName =
+                                report.ProjectName,
+
+                            ProjectEngineerId =
+                                user.UniqueKey,
+
+                            ProjectEngineerName =
+                                user.FullName,
+
+                            Description =
+                                damageDescription,
+
+                            Severity =
+                                severity,
+
+                            Status =
+                                "Pending",
+
+                            ReportDate =
+                                DateTime.Now
+                        };
+
+                    await _firebase
+                        .SubmitDamageReportAsync(
+                            damageReport);
                 }
 
-                // ── TRANSACTION ────────────────────────────────────
+                await _firebase
+                    .LogTransactionAsync(
+                        new TransactionLog
+                        {
+                            ToolId =
+                                report.ToolId,
 
-                await _firebase.LogTransactionAsync(
-                    new TransactionLog
-                    {
-                        ToolId =
-                            tool.ToolId,
+                            ToolName =
+                                report.ToolName,
 
-                        ToolName =
-                            tool.ToolName,
+                            WorkerId =
+                                report.WorkerId,
 
-                        WorkerId =
-                            report.WorkerId,
+                            WorkerName =
+                                report.WorkerName,
 
-                        WorkerName =
-                            report.WorkerName,
+                            ProjectId =
+                                report.ProjectId,
 
-                        ProjectId =
-                            report.ProjectId,
+                            ProjectName =
+                                report.ProjectName,
 
-                        ProjectName =
-                            report.ProjectName,
+                            PerformedById =
+                                user.UniqueKey,
 
-                        PerformedById =
-                            user.UniqueKey,
+                            PerformedByName =
+                                user.FullName,
 
-                        PerformedByName =
-                            user.FullName,
+                            Action =
+                                "Equipment Found",
 
-                        Action =
-                            "Equipment Found",
+                            Description =
+                                condition ==
+                                    "Good"
 
-                        Description =
-                            $"{report.ToolName} was found. " +
-                            $"Condition: {condition}. " +
-                            $"{report.ResolutionNotes}",
+                                    ? $"Equipment found and inspected as Good. " +
+                                      $"{report.ResolutionNotes}"
 
-                        Condition =
-                            tool.Condition,
+                                    : $"Equipment found and inspected as Damaged ({severity}). " +
+                                      $"A separate Damage Report was created. " +
+                                      $"{report.ResolutionNotes}",
 
-                        Date =
-                            DateTime.Now
-                    });
+                            Condition =
+                                tool.Condition,
 
-                await Shell.Current.DisplayAlert(
-                    "Equipment Found",
-                    condition == "Good"
-                        ? $"{report.ToolName} ({report.ToolId}) is now available for use."
-                        : $"{report.ToolName} ({report.ToolId}) was found but still requires repair.",
-                    "OK");
+                            Date =
+                                DateTime.Now
+                        });
+
+                await Shell.Current
+                    .DisplayAlert(
+                        "Equipment Found",
+
+                        condition ==
+                            "Good"
+
+                            ? wasDeclaredLost
+                                ? $"{report.ToolName} is now Available."
+                                : $"{report.ToolName} was found and remains assigned to {report.WorkerName}."
+
+                            : $"{report.ToolName} was found damaged. A separate Damage Report was created.",
+
+                        "OK");
 
                 await LoadReportsAsync();
             }
-            catch (Exception ex)
-            {
-                await Shell.Current.DisplayAlert(
-                    "Error",
-                    $"Could not update the found equipment.\n" +
-                    $"{ex.Message}",
-                    "OK");
-            }
             finally
             {
-                IsBusy = false;
+                IsBusy =
+                    false;
             }
+        }
+
+        // ─────────────────────────────────────────────────────────
+        // CLEAR ACTIVE ASSIGNMENT
+        // ─────────────────────────────────────────────────────────
+
+        private static void ClearCurrentAssignment(
+            Tool tool)
+        {
+            tool.AssignedWorkerId =
+                string.Empty;
+
+            tool.AssignedWorkerName =
+                string.Empty;
+
+            tool.BorrowedProjectId =
+                string.Empty;
+
+            tool.BorrowedProjectName =
+                string.Empty;
+
+            tool.BorrowDate =
+                null;
         }
     }
 }

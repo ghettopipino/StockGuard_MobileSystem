@@ -784,6 +784,200 @@ namespace StockGuard.Services
             }
         }
 
+
+
+        // ─────────────────────────────────────────────────────────
+        // LOST / MISSING REPORTS
+        // ─────────────────────────────────────────────────────────
+
+        public async Task<string>
+            SubmitLostReportAsync(
+                LostReport report)
+        {
+            try
+            {
+                // Prevent more than one active
+                // Missing/Lost report for the same tool.
+                var existing =
+                    await _client
+                        .Child("lostReports")
+                        .OnceAsync<LostReport>();
+
+                bool duplicate =
+                    existing.Any(x =>
+                        x.Object != null &&
+
+                        string.Equals(
+                            x.Object.ToolId?.Trim(),
+                            report.ToolId?.Trim(),
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        (
+                            x.Object.Status == "Pending" ||
+                            x.Object.Status == "Lost"
+                        ));
+
+                if (duplicate)
+                {
+                    return "DUPLICATE";
+                }
+
+                var result =
+                    await _client
+                        .Child("lostReports")
+                        .PostAsync(report);
+
+                var key =
+                    result.Key;
+
+                if (string.IsNullOrWhiteSpace(
+                        key))
+                {
+                    return string.Empty;
+                }
+
+                report.ReportId =
+                    key;
+
+                await _client
+                    .Child("lostReports")
+                    .Child(key)
+                    .PutAsync(report);
+
+                return key;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"SubmitLostReportAsync error: {ex.Message}");
+
+                return string.Empty;
+            }
+        }
+
+
+        public async Task<List<LostReportResult>>
+            GetAllLostReportsRawAsync()
+        {
+            try
+            {
+                var result =
+                    await _client
+                        .Child("lostReports")
+                        .OnceAsync<LostReport>();
+
+                if (result == null)
+                {
+                    return new List<
+                        LostReportResult>();
+                }
+
+                var reports =
+                    new List<
+                        LostReportResult>();
+
+                foreach (var item in result)
+                {
+                    if (item.Object == null)
+                        continue;
+
+                    var report =
+                        item.Object;
+
+                    if (string.IsNullOrWhiteSpace(
+                            report.ReportId))
+                    {
+                        report.ReportId =
+                            item.Key;
+                    }
+
+                    reports.Add(
+                        new LostReportResult
+                        {
+                            Key =
+                                item.Key,
+
+                            Report =
+                                report
+                        });
+                }
+
+                return reports
+                    .OrderByDescending(r =>
+                        r.Report.ReportDate)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllLostReportsRawAsync error: {ex.Message}");
+
+                return new List<
+                    LostReportResult>();
+            }
+        }
+
+
+        public async Task<List<LostReport>>
+            GetAllLostReportsAsync()
+        {
+            try
+            {
+                var result =
+                    await _client
+                        .Child("lostReports")
+                        .OnceAsync<LostReport>();
+
+                if (result == null)
+                {
+                    return new List<
+                        LostReport>();
+                }
+
+                return result
+                    .Where(r =>
+                        r.Object != null)
+                    .Select(r =>
+                        r.Object)
+                    .OrderByDescending(r =>
+                        r.ReportDate)
+                    .ToList();
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"GetAllLostReportsAsync error: {ex.Message}");
+
+                return new List<
+                    LostReport>();
+            }
+        }
+
+
+        public async Task<bool>
+            UpdateLostReportAsync(
+                string key,
+                LostReport report)
+        {
+            try
+            {
+                await _client
+                    .Child("lostReports")
+                    .Child(key)
+                    .PutAsync(report);
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"UpdateLostReportAsync error: {ex.Message}");
+
+                return false;
+            }
+        }
+
+
         // ─────────────────────────────────────────────────────────
         // CATALOGS
         // ─────────────────────────────────────────────────────────
@@ -1250,6 +1444,240 @@ namespace StockGuard.Services
             }
         }
 
+
+        public async Task<string>
+    BorrowToolIntoProjectAsync(
+        string toolId,
+        string projectId,
+        string projectEngineerId,
+        string projectEngineerName)
+        {
+            try
+            {
+                // ─────────────────────────────────────────────
+                // VALIDATE PROJECT
+                // ─────────────────────────────────────────────
+
+                var projects =
+                    await GetAllProjectsAsync();
+
+                var project =
+                    projects.FirstOrDefault(p =>
+                        string.Equals(
+                            p.ProjectId?.Trim(),
+                            projectId?.Trim(),
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (project == null ||
+                    project.Status == "Completed")
+                {
+                    return "INVALID_PROJECT";
+                }
+
+
+                // ─────────────────────────────────────────────
+                // FIND TOOL
+                // ─────────────────────────────────────────────
+
+                var tool =
+                    await GetToolByIdAsync(
+                        toolId);
+
+                if (tool == null)
+                {
+                    return "NOT_FOUND";
+                }
+
+
+                // ─────────────────────────────────────────────
+                // TOOL MUST BE AVAILABLE
+                // ─────────────────────────────────────────────
+
+                if (!string.Equals(
+                        tool.Status,
+                        "Available",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return "NOT_AVAILABLE";
+                }
+
+
+                // ─────────────────────────────────────────────
+                // EQUIPMENT MUST BE REQUIRED BY PROJECT
+                // ─────────────────────────────────────────────
+
+                var requirements =
+                    await GetProjectEquipmentRequirementsAsync(
+                        projectId);
+
+                var requirement =
+                    requirements.FirstOrDefault(r =>
+                        string.Equals(
+                            r.CatalogId,
+                            tool.CatalogId,
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (requirement == null)
+                {
+                    return "NOT_REQUIRED";
+                }
+
+
+                // ─────────────────────────────────────────────
+                // CHECK REQUIREMENT LIMIT
+                // ─────────────────────────────────────────────
+
+                var allTools =
+                    await GetAllToolsAsync(
+                        forceRefresh: true);
+
+                int currentlyBorrowed =
+                    allTools.Count(t =>
+                        string.Equals(
+                            t.CatalogId,
+                            tool.CatalogId,
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        string.Equals(
+                            t.BorrowedProjectId,
+                            projectId,
+                            StringComparison.OrdinalIgnoreCase));
+
+                if (currentlyBorrowed >=
+                    requirement.QuantityNeeded)
+                {
+                    return "REQUIREMENT_FULFILLED";
+                }
+
+
+                // ─────────────────────────────────────────────
+                // PE BORROWS THE PHYSICAL TOOL
+                // ─────────────────────────────────────────────
+
+                tool.Status =
+                    "Borrowed";
+
+                tool.BorrowedProjectId =
+                    project.ProjectId;
+
+                tool.BorrowedProjectName =
+                    project.ProjectName;
+
+                // No Worker yet.
+                tool.AssignedWorkerId =
+                    string.Empty;
+
+                tool.AssignedWorkerName =
+                    string.Empty;
+
+                // PE who borrowed the equipment.
+                tool.AssignedById =
+                    projectEngineerId;
+
+                tool.AssignedByName =
+                    projectEngineerName;
+
+                tool.BorrowDate =
+                    DateTime.Now;
+
+                tool.PreAssignedWorkerId =
+                    string.Empty;
+
+                tool.PreAssignedWorkerName =
+                    string.Empty;
+
+                // Reset old check-in data.
+                tool.LastCheckInLocation =
+                    string.Empty;
+
+                tool.LastCheckInDate =
+                    null;
+
+                tool.IsCheckInPending =
+                    false;
+
+                tool.LastCheckInVerifiedById =
+                    string.Empty;
+
+                tool.LastCheckInVerifiedByName =
+                    string.Empty;
+
+
+                bool updated =
+                    await UpdateToolAsync(
+                        tool);
+
+                if (!updated)
+                {
+                    return "ERROR";
+                }
+
+
+                // Keep projectTools in sync.
+                await DeployToolToProjectAsync(
+                    project.ProjectId,
+                    tool.ToolId);
+
+
+                // ─────────────────────────────────────────────
+                // TRANSACTION
+                // ─────────────────────────────────────────────
+
+                await LogTransactionAsync(
+                    new TransactionLog
+                    {
+                        ToolId =
+                            tool.ToolId,
+
+                        ToolName =
+                            tool.ToolName,
+
+                        WorkerId =
+                            string.Empty,
+
+                        WorkerName =
+                            string.Empty,
+
+                        ProjectId =
+                            project.ProjectId,
+
+                        ProjectName =
+                            project.ProjectName,
+
+                        PerformedById =
+                            projectEngineerId,
+
+                        PerformedByName =
+                            projectEngineerName,
+
+                        Action =
+                            "Borrowed",
+
+                        Description =
+                            $"{projectEngineerName} borrowed " +
+                            $"{tool.ToolName} ({tool.ToolId}) " +
+                            $"from the office for {project.ProjectName}.",
+
+                        Condition =
+                            tool.Condition,
+
+                        Date =
+                            DateTime.Now
+                    });
+
+
+                return "SUCCESS";
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"BorrowToolIntoProjectAsync error: " +
+                    $"{ex.Message}");
+
+                return "ERROR";
+            }
+        }
+
         // ─────────────────────────────────────────────────────────
         // RETURN REQUESTS
         // ─────────────────────────────────────────────────────────
@@ -1356,6 +1784,7 @@ namespace StockGuard.Services
                     "borrowRequests",
                     "transferRequests",
                     "damageReports",
+                    "lostReports",
                     "returnRequests",
                     "users",
                     "projects",
@@ -1443,11 +1872,37 @@ namespace StockGuard.Services
                     await GetToolByIdAsync(
                         assignment.ToolId);
 
-                if (tool == null ||
-                    tool.Status != "Available")
+                if (tool == null)
+                    return false;
+
+
+                // Tool must already be borrowed from office.
+                if (!string.Equals(
+                        tool.Status,
+                        "Borrowed",
+                        StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }
+
+
+                // Tool must belong to this same project.
+                if (!string.Equals(
+                        tool.BorrowedProjectId,
+                        assignment.ProjectId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+
+                // Tool must still be under PE accountability.
+                if (!string.IsNullOrWhiteSpace(
+                        tool.AssignedWorkerId))
+                {
+                    return false;
+                }
+
 
                 var existing =
                     await _client
@@ -1457,13 +1912,20 @@ namespace StockGuard.Services
                 bool alreadyPending =
                     existing.Any(x =>
                         x.Object != null &&
-                        x.Object.ToolId ==
-                        assignment.ToolId &&
-                        x.Object.Status ==
-                        "Pending");
+
+                        string.Equals(
+                            x.Object.ToolId,
+                            assignment.ToolId,
+                            StringComparison.OrdinalIgnoreCase) &&
+
+                        string.Equals(
+                            x.Object.Status,
+                            "Pending",
+                            StringComparison.OrdinalIgnoreCase));
 
                 if (alreadyPending)
                     return false;
+
 
                 assignment.Status =
                     "Pending";
@@ -1471,9 +1933,12 @@ namespace StockGuard.Services
                 assignment.DateCreated =
                     DateTime.Now;
 
+
                 await _client
                     .Child("preAssignments")
-                    .PostAsync(assignment);
+                    .PostAsync(
+                        assignment);
+
 
                 return true;
             }
@@ -1486,7 +1951,6 @@ namespace StockGuard.Services
                 return false;
             }
         }
-
         public async Task<bool>
             BorrowToolForProjectAsync(
                 string toolId,
@@ -1641,9 +2105,9 @@ namespace StockGuard.Services
         }
 
         public async Task<bool>
-            ConfirmAssignmentAsync(
-                string assignmentKey,
-                PreAssignment assignment)
+    ConfirmAssignmentAsync(
+        string assignmentKey,
+        PreAssignment assignment)
         {
             try
             {
@@ -1654,35 +2118,68 @@ namespace StockGuard.Services
                 if (tool == null)
                     return false;
 
-                if (tool.Status != "Available")
-                    return false;
 
-                // Worker becomes responsible custodian.
+                // Tool must already be borrowed by the PE.
+                if (!string.Equals(
+                        tool.Status,
+                        "Borrowed",
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+
+                // Must still belong to the same project.
+                if (!string.Equals(
+                        tool.BorrowedProjectId,
+                        assignment.ProjectId,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    return false;
+                }
+
+
+                // Another worker must not already have it.
+                if (!string.IsNullOrWhiteSpace(
+                        tool.AssignedWorkerId))
+                {
+                    return false;
+                }
+
+
+                // ─────────────────────────────────────────────
+                // ACCOUNTABILITY PE → WORKER
+                // ─────────────────────────────────────────────
+
                 tool.AssignedWorkerId =
                     assignment.WorkerId;
 
                 tool.AssignedWorkerName =
                     assignment.WorkerName;
 
-                // Project assignment.
                 tool.BorrowedProjectId =
                     assignment.ProjectId;
 
                 tool.BorrowedProjectName =
                     assignment.ProjectName;
 
-                // PE who originally assigned it.
                 tool.AssignedById =
                     assignment.AssignedById;
 
                 tool.AssignedByName =
                     assignment.AssignedByName;
 
-                tool.BorrowDate =
+
+                // BorrowDate was already established when
+                // the PE borrowed it from the office.
+                tool.BorrowDate ??=
                     DateTime.Now;
 
+
+                // Status DOES NOT change.
                 tool.Status =
                     "Borrowed";
+
 
                 tool.PreAssignedWorkerId =
                     string.Empty;
@@ -1690,14 +2187,19 @@ namespace StockGuard.Services
                 tool.PreAssignedWorkerName =
                     string.Empty;
 
-                var updated =
+
+                bool updated =
                     await UpdateToolAsync(
                         tool);
 
                 if (!updated)
                     return false;
 
-                // Worker performed the confirmation.
+
+                // ─────────────────────────────────────────────
+                // TRANSACTION
+                // ─────────────────────────────────────────────
+
                 await LogTransactionAsync(
                     new TransactionLog
                     {
@@ -1726,13 +2228,13 @@ namespace StockGuard.Services
                             assignment.WorkerName,
 
                         Action =
-                            "Borrowed",
+                            "Assignment Accepted",
 
                         Description =
-                            $"Equipment assigned by " +
-                            $"{assignment.AssignedByName} " +
-                            $"and accepted by " +
-                            $"{assignment.WorkerName}.",
+                            $"{assignment.WorkerName} accepted " +
+                            $"{tool.ToolName} ({tool.ToolId}) from " +
+                            $"{assignment.AssignedByName}. " +
+                            "Accountability transferred to the worker.",
 
                         Condition =
                             tool.Condition,
@@ -1741,13 +2243,17 @@ namespace StockGuard.Services
                             DateTime.Now
                     });
 
+
                 assignment.Status =
                     "Accepted";
+
 
                 await _client
                     .Child("preAssignments")
                     .Child(assignmentKey)
-                    .PutAsync(assignment);
+                    .PutAsync(
+                        assignment);
+
 
                 return true;
             }

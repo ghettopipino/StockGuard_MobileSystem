@@ -28,7 +28,7 @@ namespace StockGuard.Models
         // Minor / Major
         public string Severity { get; set; } = "Minor";
 
-        // Pending / Reviewed / Resolved
+        // Pending / UnderRepair / Resolved
         public string Status { get; set; } = "Pending";
 
         public DateTime ReportDate { get; set; } = DateTime.Now;
@@ -50,7 +50,6 @@ namespace StockGuard.Models
 
         [Newtonsoft.Json.JsonIgnore]
         public bool IsFinal =>
-    Status == "Resolved" ||
-    Status == "Lost";
+            Status == "Resolved";
     }
 }

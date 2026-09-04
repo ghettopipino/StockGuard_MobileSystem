@@ -401,7 +401,7 @@
 
                         <Button
                             x:Name="BtnDamage"
-                            Text="Damage Report"
+                            Text="Damage and Lost Report"
                             Clicked="OnDamageClicked"
                             Style="{StaticResource FlyoutItemStyle}"/>
 

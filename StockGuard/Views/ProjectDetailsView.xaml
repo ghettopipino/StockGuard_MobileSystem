@@ -197,7 +197,7 @@
                                 </VerticalStackLayout>
 
 
-                                <!-- TOOLS -->
+                                <!-- REQUIRED -->
                                 <VerticalStackLayout
                                     Grid.Column="1"
                                     Spacing="3"
@@ -218,7 +218,7 @@
                                         HorizontalOptions="Center"/>
 
                                     <Label
-                                        Text="Tools"
+                                        Text="Required Units"
                                         FontSize="9"
                                         TextColor="{DynamicResource Text3}"
                                         HorizontalOptions="Center"/>
@@ -542,7 +542,7 @@
                                 TextColor="{DynamicResource Text1}"/>
 
                             <Label
-                                Text="Project allocation and distribution"
+                                Text="Requirements, borrowing and worker distribution"
                                 FontSize="9"
                                 TextColor="{DynamicResource Text3}"/>
 
@@ -586,7 +586,7 @@
                                 HorizontalOptions="Center"/>
 
                             <Label
-                                Text="No equipment added yet"
+                                Text="No equipment requirements added yet"
                                 FontSize="12"
                                 TextColor="{DynamicResource Text3}"
                                 HorizontalOptions="Center"/>
@@ -617,14 +617,14 @@
                                         Spacing="0">
 
 
-                                        <!-- TOP -->
+                                        <!-- EQUIPMENT INFORMATION -->
                                         <Grid
                                             ColumnDefinitions="Auto,*"
                                             ColumnSpacing="12"
                                             Padding="14">
 
 
-                                            <!-- TRANSPARENT ICON -->
+                                            <!-- ICON -->
                                             <Label
                                                 Grid.Column="0"
                                                 Text="&#xf0ad;"
@@ -634,15 +634,17 @@
                                                 WidthRequest="36"
                                                 HorizontalTextAlignment="Center"
                                                 VerticalTextAlignment="Center"
-                                                VerticalOptions="Center"/>
+                                                VerticalOptions="Start"
+                                                Margin="0,2,0,0"/>
 
 
-                                            <!-- INFO -->
+                                            <!-- INFORMATION -->
                                             <VerticalStackLayout
                                                 Grid.Column="1"
-                                                Spacing="8">
+                                                Spacing="10">
 
 
+                                                <!-- NAME -->
                                                 <Label
                                                     Text="{Binding CatalogName}"
                                                     FontSize="14"
@@ -653,67 +655,128 @@
 
                                                 <!-- COUNTS -->
                                                 <Grid
-                                                    ColumnDefinitions="*,*,*"
-                                                    ColumnSpacing="8">
+                                                    ColumnDefinitions="*,*,*,*"
+                                                    ColumnSpacing="6">
 
 
                                                     <!-- REQUIRED -->
                                                     <VerticalStackLayout
                                                         Grid.Column="0"
-                                                        Spacing="2">
+                                                        Spacing="2"
+                                                        HorizontalOptions="Center">
 
                                                         <Label
                                                             Text="{Binding QuantityNeeded}"
                                                             FontSize="17"
                                                             FontAttributes="Bold"
-                                                            TextColor="{DynamicResource Blue}"/>
+                                                            TextColor="{DynamicResource Blue}"
+                                                            HorizontalOptions="Center"/>
 
                                                         <Label
                                                             Text="Required"
-                                                            FontSize="9"
-                                                            TextColor="{DynamicResource Text3}"/>
-
-                                                    </VerticalStackLayout>
-
-
-                                                    <!-- AVAILABLE -->
-                                                    <VerticalStackLayout
-                                                        Grid.Column="1"
-                                                        Spacing="2">
-
-                                                        <Label
-                                                            Text="{Binding AvailableCount}"
-                                                            FontSize="17"
-                                                            FontAttributes="Bold"
-                                                            TextColor="{DynamicResource Green}"/>
-
-                                                        <Label
-                                                            Text="Available"
-                                                            FontSize="9"
-                                                            TextColor="{DynamicResource Text3}"/>
+                                                            FontSize="8"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            HorizontalOptions="Center"/>
 
                                                     </VerticalStackLayout>
 
 
                                                     <!-- BORROWED -->
                                                     <VerticalStackLayout
-                                                        Grid.Column="2"
-                                                        Spacing="2">
+                                                        Grid.Column="1"
+                                                        Spacing="2"
+                                                        HorizontalOptions="Center">
 
                                                         <Label
                                                             Text="{Binding BorrowedCount}"
                                                             FontSize="17"
                                                             FontAttributes="Bold"
-                                                            TextColor="{DynamicResource Amber}"/>
+                                                            TextColor="{DynamicResource Amber}"
+                                                            HorizontalOptions="Center"/>
 
                                                         <Label
-                                                            Text="Distributed"
-                                                            FontSize="9"
-                                                            TextColor="{DynamicResource Text3}"/>
+                                                            Text="Borrowed"
+                                                            FontSize="8"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            HorizontalOptions="Center"/>
 
                                                     </VerticalStackLayout>
 
+
+                                                    <!-- WITH PE -->
+                                                    <VerticalStackLayout
+                                                        Grid.Column="2"
+                                                        Spacing="2"
+                                                        HorizontalOptions="Center">
+
+                                                        <Label
+                                                            Text="{Binding WithPECount}"
+                                                            FontSize="17"
+                                                            FontAttributes="Bold"
+                                                            TextColor="{DynamicResource Green}"
+                                                            HorizontalOptions="Center"/>
+
+                                                        <Label
+                                                            Text="With PE"
+                                                            FontSize="8"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            HorizontalOptions="Center"/>
+
+                                                    </VerticalStackLayout>
+
+
+                                                    <!-- DISTRIBUTED -->
+                                                    <VerticalStackLayout
+                                                        Grid.Column="3"
+                                                        Spacing="2"
+                                                        HorizontalOptions="Center">
+
+                                                        <Label
+                                                            Text="{Binding DistributedCount}"
+                                                            FontSize="17"
+                                                            FontAttributes="Bold"
+                                                            TextColor="{DynamicResource Blue}"
+                                                            HorizontalOptions="Center"/>
+
+                                                        <Label
+                                                            Text="Distributed"
+                                                            FontSize="8"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            HorizontalOptions="Center"/>
+
+                                                    </VerticalStackLayout>
                                                 </Grid>
+
+
+                                                <!-- REMAINING -->
+                                                <Border
+                                                    Stroke="{DynamicResource BorderSoft}"
+                                                    StrokeShape="RoundRectangle 8"
+                                                    BackgroundColor="{DynamicResource BgElevated}"
+                                                    Padding="8,5">
+
+                                                    <Grid
+                                                        ColumnDefinitions="Auto,*"
+                                                        ColumnSpacing="6">
+
+                                                        <Label
+                                                            Grid.Column="0"
+                                                            Text="&#xf466;"
+                                                            FontFamily="FontAwesome"
+                                                            FontSize="9"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            VerticalOptions="Center"/>
+
+                                                        <Label
+                                                            Grid.Column="1"
+                                                            Text="{Binding RemainingCount, StringFormat='Remaining to borrow: {0}'}"
+                                                            FontSize="9"
+                                                            TextColor="{DynamicResource Text3}"
+                                                            VerticalOptions="Center"/>
+
+                                                    </Grid>
+
+                                                </Border>
 
                                             </VerticalStackLayout>
 
@@ -729,36 +792,56 @@
 
                                         <!-- ACTIONS -->
                                         <Grid
-                                            ColumnDefinitions="*,Auto"
-                                            ColumnSpacing="8"
+                                            ColumnDefinitions="*,*,Auto"
+                                            ColumnSpacing="6"
                                             Padding="12,8">
 
 
+                                            <!-- BORROW FROM OFFICE -->
                                             <Button
                                                 Grid.Column="0"
+                                                Text="Borrow"
+                                                CommandParameter="{Binding .}"
+                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}},
+                                                                  Path=AssignEquipmentCommand}"
+                                                BackgroundColor="{DynamicResource Green}"
+                                                TextColor="White"
+                                                FontSize="10"
+                                                FontAttributes="Bold"
+                                                CornerRadius="10"
+                                                HeightRequest="38"
+                                                Padding="8,0"/>
+
+
+                                            <!-- DISTRIBUTE TO WORKER -->
+                                            <Button
+                                                Grid.Column="1"
                                                 Text="Distribute"
                                                 CommandParameter="{Binding .}"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}},
                                                                   Path=DistributeCommand}"
                                                 BackgroundColor="{DynamicResource Blue}"
                                                 TextColor="White"
-                                                FontSize="11"
+                                                FontSize="10"
                                                 FontAttributes="Bold"
                                                 CornerRadius="10"
-                                                HeightRequest="38"/>
+                                                HeightRequest="38"
+                                                Padding="8,0"/>
 
 
+                                            <!-- REMOVE REQUIREMENT -->
                                             <Button
-                                                Grid.Column="1"
+                                                Grid.Column="2"
                                                 Text="Remove"
                                                 CommandParameter="{Binding .}"
                                                 Command="{Binding Source={RelativeSource AncestorType={x:Type vm:ProjectDetailsViewModel}},
                                                                   Path=RemoveEquipmentCommand}"
                                                 BackgroundColor="Transparent"
                                                 TextColor="{DynamicResource Red}"
-                                                FontSize="10"
+                                                FontSize="9"
                                                 FontAttributes="Bold"
-                                                Padding="10,0"/>
+                                                HeightRequest="38"
+                                                Padding="7,0"/>
 
                                         </Grid>
 
@@ -776,7 +859,10 @@
 
 
 
-                <!-- FOOTER -->
+                <!-- ═══════════════════════════════════════
+                     FOOTER
+                     ═══════════════════════════════════════ -->
+
                 <HorizontalStackLayout
                     HorizontalOptions="Center"
                     Spacing="6"

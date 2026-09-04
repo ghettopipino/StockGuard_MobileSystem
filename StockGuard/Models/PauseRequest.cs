@@ -37,10 +37,6 @@ namespace StockGuard.Models
         public string ProjectName { get; set; }
             = string.Empty;
 
-        [JsonProperty("holdLocation")]
-        public string HoldLocation { get; set; } 
-            = string.Empty;
-
         [JsonProperty("reason")]
         public string Reason { get; set; }
             = string.Empty;
@@ -54,12 +50,7 @@ namespace StockGuard.Models
         public DateTime RequestDate { get; set; }
             = DateTime.Now;
 
-        [JsonProperty("approvedDate")]
-        public DateTime? ApprovedDate { get; set; }
 
-        [JsonProperty("approvedBy")]
-        public string ApprovedBy { get; set; }
-            = string.Empty;
 
         [JsonIgnore]
         public string StatusIcon => Status switch

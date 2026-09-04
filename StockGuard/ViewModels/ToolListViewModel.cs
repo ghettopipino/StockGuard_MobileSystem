@@ -13,6 +13,7 @@ namespace StockGuard.ViewModels
         private readonly FirebaseService _firebase;
         private readonly ThemeService _theme;
 
+
         // ─────────────────────────────────────────────────────
         // QUERY PROPERTIES
         // ─────────────────────────────────────────────────────
@@ -27,6 +28,7 @@ namespace StockGuard.ViewModels
                 value);
         }
 
+
         private string _catalogName = string.Empty;
 
         public string CatalogName
@@ -39,7 +41,7 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────
-        // PHYSICAL INVENTORY
+        // PHYSICAL INVENTORY COUNTS
         // ─────────────────────────────────────────────────────
 
         private int _availableCount;
@@ -82,21 +84,6 @@ namespace StockGuard.ViewModels
             get => _lostCount;
             private set => SetProperty(
                 ref _lostCount,
-                value);
-        }
-
-
-        // ─────────────────────────────────────────────────────
-        // PROJECT ALLOCATION
-        // ─────────────────────────────────────────────────────
-
-        private int _allocatedCount;
-
-        public int AllocatedCount
-        {
-            get => _allocatedCount;
-            private set => SetProperty(
-                ref _allocatedCount,
                 value);
         }
 
@@ -156,16 +143,19 @@ namespace StockGuard.ViewModels
             _firebase = firebase;
             _theme = theme;
 
+
             GoBackCommand =
                 new Command(
                     async () =>
                         await Shell.Current
                             .GoToAsync(".."));
 
+
             RefreshCommand =
                 new Command(
                     async () =>
                         await RefreshAsync());
+
 
             ShowQrCommand =
                 new Command<Tool>(
@@ -186,7 +176,9 @@ namespace StockGuard.ViewModels
                 return;
             }
 
+
             IsBusy = true;
+
 
             try
             {
@@ -201,19 +193,11 @@ namespace StockGuard.ViewModels
 
 
                 // ─────────────────────────────────────────────
-                // LOAD ACTIVE PROJECT ALLOCATIONS
-                // ─────────────────────────────────────────────
-
-                var allocations =
-                    await _firebase
-                        .GetAllActiveProjectEquipmentRequirementsAsync();
-
-
-                // ─────────────────────────────────────────────
                 // DISPLAY TOOLS
                 // ─────────────────────────────────────────────
 
                 Tools.Clear();
+
 
                 foreach (var tool in
                          tools
@@ -227,49 +211,57 @@ namespace StockGuard.ViewModels
 
 
                 // ─────────────────────────────────────────────
-                // PHYSICAL AVAILABLE
+                // AVAILABLE
                 // ─────────────────────────────────────────────
                 //
-                // This is ACTUAL physical availability.
-                //
-                // Project allocation does NOT reduce this
-                // number unless the physical tool status
-                // itself changes.
+                // Physical tools currently available
+                // in the office.
                 // ─────────────────────────────────────────────
 
                 AvailableCount =
                     tools.Count(t =>
                         !t.IsDeleted &&
-                        t.Status ==
-                            "Available");
+                        string.Equals(
+                            t.Status,
+                            "Available",
+                            StringComparison.OrdinalIgnoreCase));
 
 
                 // ─────────────────────────────────────────────
-                // ACTUAL BORROWED
+                // BORROWED
                 // ─────────────────────────────────────────────
                 //
-                // Borrowed means:
+                // Borrowed includes:
                 //
-                // PE distributed a specific tool
-                //        ↓
-                // worker accepted it
-                //        ↓
-                // Tool.Status = Borrowed
+                // 1. Tool borrowed from office by PE
+                //    but not yet distributed to a worker.
                 //
-                // PendingReturn still counts because the
-                // worker physically has the tool until the
-                // PE approves the return.
+                // 2. Tool accepted by a worker.
+                //
+                // 3. PendingReturn because the physical tool
+                //    has not yet been approved as returned.
+                //
+                // Accountability can therefore be:
+                //
+                // PE     → AssignedWorkerId is empty
+                // Worker → AssignedWorkerId has a value
+                //
+                // Inventory Status remains Borrowed.
                 // ─────────────────────────────────────────────
 
                 BorrowedCount =
                     tools.Count(t =>
                         !t.IsDeleted &&
                         (
-                            t.Status ==
-                                "Borrowed" ||
-
-                            t.Status ==
-                                "PendingReturn"
+                            string.Equals(
+                                t.Status,
+                                "Borrowed",
+                                StringComparison.OrdinalIgnoreCase)
+                            ||
+                            string.Equals(
+                                t.Status,
+                                "PendingReturn",
+                                StringComparison.OrdinalIgnoreCase)
                         ));
 
 
@@ -281,11 +273,15 @@ namespace StockGuard.ViewModels
                     tools.Count(t =>
                         !t.IsDeleted &&
                         (
-                            t.Status ==
-                                "Damaged" ||
-
-                            t.Status ==
-                                "UnderRepair"
+                            string.Equals(
+                                t.Status,
+                                "Damaged",
+                                StringComparison.OrdinalIgnoreCase)
+                            ||
+                            string.Equals(
+                                t.Status,
+                                "UnderRepair",
+                                StringComparison.OrdinalIgnoreCase)
                         ));
 
 
@@ -296,30 +292,15 @@ namespace StockGuard.ViewModels
                 LostCount =
                     tools.Count(t =>
                         !t.IsDeleted &&
-                        t.Status ==
-                            "Lost");
+                        string.Equals(
+                            t.Status,
+                            "Lost",
+                            StringComparison.OrdinalIgnoreCase));
 
 
                 // ─────────────────────────────────────────────
-                // PROJECT ALLOCATION
+                // UPDATE LABEL
                 // ─────────────────────────────────────────────
-                //
-                // Allocation is PE/project accountability.
-                //
-                // It is NOT worker borrowing.
-                // ─────────────────────────────────────────────
-
-                AllocatedCount =
-                    allocations
-                        .Where(a =>
-                            string.Equals(
-                                a.CatalogId,
-                                CatalogId,
-                                StringComparison
-                                    .OrdinalIgnoreCase))
-                        .Sum(a =>
-                            a.QuantityNeeded);
-
 
                 OnPropertyChanged(
                     nameof(
@@ -347,6 +328,7 @@ namespace StockGuard.ViewModels
         {
             IsRefreshing = true;
 
+
             try
             {
                 await LoadToolsAsync();
@@ -367,6 +349,7 @@ namespace StockGuard.ViewModels
         {
             if (tool == null)
                 return;
+
 
             await Shell.Current
                 .GoToAsync(
