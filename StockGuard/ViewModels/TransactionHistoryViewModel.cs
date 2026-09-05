@@ -232,6 +232,28 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────────
+        // LOST
+        // ─────────────────────────────────────────────────────────
+        //
+        // This counts official Lost declarations only.
+        //
+        // "Missing Reported" is not yet an official Lost tool.
+        // The Project Engineer must verify and declare it Lost.
+        //
+
+        private int _lostCount;
+
+        public int LostCount
+        {
+            get => _lostCount;
+            private set =>
+                SetProperty(
+                    ref _lostCount,
+                    value);
+        }
+
+
+        // ─────────────────────────────────────────────────────────
         // TRANSACTIONS
         // ─────────────────────────────────────────────────────────
 
@@ -678,6 +700,18 @@ namespace StockGuard.ViewModels
                                 t.Action));
 
                     break;
+
+
+                case "Lost":
+
+                    // Lost filter shows the complete
+                    // missing / lost / found lifecycle.
+                    filtered =
+                        filtered.Where(t =>
+                            IsLostAction(
+                                t.Action));
+
+                    break;
             }
 
 
@@ -811,6 +845,17 @@ namespace StockGuard.ViewModels
                 all.Count(t =>
                     IsDamageAction(
                         t.Action));
+
+
+            // Only an official declaration by the PE
+            // is counted as Lost.
+            //
+            // A worker reporting equipment as missing
+            // does not immediately make the tool Lost.
+            LostCount =
+                all.Count(t =>
+                    t.Action ==
+                    "Lost Declared");
         }
 
 
@@ -831,16 +876,50 @@ namespace StockGuard.ViewModels
                        "Returned Damaged" ||
 
                    action ==
+                       "Damage Found During Check-In" ||
+
+                   action ==
                        "UnderRepair" ||
 
                    action ==
                        "Resolved" ||
 
                    action ==
-                       "Repaired" ||
+                       "Repaired";
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // LOST GROUP
+        // ─────────────────────────────────────────────────────────
+        //
+        // This is used by the Lost filter.
+        //
+        // It intentionally includes the complete lifecycle:
+        //
+        // Worker reports missing
+        //          ↓
+        // PE verifies and declares Lost
+        //          ↓
+        // Equipment may later be found
+        //          ↓
+        // Missing report is resolved
+        //
+
+        private static bool IsLostAction(
+            string action)
+        {
+            return action ==
+                       "Missing Reported" ||
 
                    action ==
-                       "Lost";
+                       "Lost Declared" ||
+
+                   action ==
+                       "Equipment Found" ||
+
+                   action ==
+                       "Missing Report Resolved";
         }
     }
 }

@@ -309,7 +309,7 @@
                             <!-- SECOND ROW -->
 
                             <Grid
-                                ColumnDefinitions="*,*"
+                                ColumnDefinitions="*,*,*"
                                 ColumnSpacing="8">
 
 
@@ -320,42 +320,33 @@
                                     Stroke="{DynamicResource BorderColor}"
                                     StrokeShape="RoundRectangle 12"
                                     BackgroundColor="{DynamicResource BgCard}"
-                                    Padding="10,12">
+                                    Padding="8,12">
 
-                                    <Grid
-                                        ColumnDefinitions="Auto,*"
-                                        ColumnSpacing="10">
+                                    <VerticalStackLayout
+                                        Spacing="4"
+                                        HorizontalOptions="Center">
 
                                         <Label
-                                            Grid.Column="0"
                                             Text="&#xf2f5;"
                                             FontFamily="FontAwesome"
-                                            FontSize="17"
+                                            FontSize="15"
                                             TextColor="{DynamicResource Blue}"
-                                            WidthRequest="30"
-                                            HorizontalTextAlignment="Center"
-                                            VerticalTextAlignment="Center"
-                                            VerticalOptions="Center"/>
+                                            HorizontalOptions="Center"/>
 
-                                        <VerticalStackLayout
-                                            Grid.Column="1"
-                                            Spacing="1"
-                                            VerticalOptions="Center">
+                                        <Label
+                                            Text="{Binding CheckInCount}"
+                                            FontSize="21"
+                                            FontAttributes="Bold"
+                                            TextColor="{DynamicResource Blue}"
+                                            HorizontalOptions="Center"/>
 
-                                            <Label
-                                                Text="{Binding CheckInCount}"
-                                                FontSize="20"
-                                                FontAttributes="Bold"
-                                                TextColor="{DynamicResource Blue}"/>
+                                        <Label
+                                            Text="Check-In"
+                                            FontSize="9"
+                                            TextColor="{DynamicResource Text3}"
+                                            HorizontalOptions="Center"/>
 
-                                            <Label
-                                                Text="Check-In"
-                                                FontSize="9"
-                                                TextColor="{DynamicResource Text3}"/>
-
-                                        </VerticalStackLayout>
-
-                                    </Grid>
+                                    </VerticalStackLayout>
 
                                 </Border>
 
@@ -367,42 +358,71 @@
                                     Stroke="{DynamicResource BorderColor}"
                                     StrokeShape="RoundRectangle 12"
                                     BackgroundColor="{DynamicResource BgCard}"
-                                    Padding="10,12">
+                                    Padding="8,12">
 
-                                    <Grid
-                                        ColumnDefinitions="Auto,*"
-                                        ColumnSpacing="10">
+                                    <VerticalStackLayout
+                                        Spacing="4"
+                                        HorizontalOptions="Center">
 
                                         <Label
-                                            Grid.Column="0"
                                             Text="&#xf071;"
                                             FontFamily="FontAwesome"
-                                            FontSize="17"
+                                            FontSize="15"
                                             TextColor="{DynamicResource Red}"
-                                            WidthRequest="30"
-                                            HorizontalTextAlignment="Center"
-                                            VerticalTextAlignment="Center"
-                                            VerticalOptions="Center"/>
+                                            HorizontalOptions="Center"/>
 
-                                        <VerticalStackLayout
-                                            Grid.Column="1"
-                                            Spacing="1"
-                                            VerticalOptions="Center">
+                                        <Label
+                                            Text="{Binding DamageCount}"
+                                            FontSize="21"
+                                            FontAttributes="Bold"
+                                            TextColor="{DynamicResource Red}"
+                                            HorizontalOptions="Center"/>
 
-                                            <Label
-                                                Text="{Binding DamageCount}"
-                                                FontSize="20"
-                                                FontAttributes="Bold"
-                                                TextColor="{DynamicResource Red}"/>
+                                        <Label
+                                            Text="Damage"
+                                            FontSize="9"
+                                            TextColor="{DynamicResource Text3}"
+                                            HorizontalOptions="Center"/>
 
-                                            <Label
-                                                Text="Damage"
-                                                FontSize="9"
-                                                TextColor="{DynamicResource Text3}"/>
+                                    </VerticalStackLayout>
 
-                                        </VerticalStackLayout>
+                                </Border>
 
-                                    </Grid>
+
+                                <!-- LOST -->
+
+                                <Border
+                                    Grid.Column="2"
+                                    Stroke="{DynamicResource BorderColor}"
+                                    StrokeShape="RoundRectangle 12"
+                                    BackgroundColor="{DynamicResource BgCard}"
+                                    Padding="8,12">
+
+                                    <VerticalStackLayout
+                                        Spacing="4"
+                                        HorizontalOptions="Center">
+
+                                        <Label
+                                            Text="&#xf002;"
+                                            FontFamily="FontAwesome"
+                                            FontSize="15"
+                                            TextColor="{DynamicResource Red}"
+                                            HorizontalOptions="Center"/>
+
+                                        <Label
+                                            Text="{Binding LostCount}"
+                                            FontSize="21"
+                                            FontAttributes="Bold"
+                                            TextColor="{DynamicResource Red}"
+                                            HorizontalOptions="Center"/>
+
+                                        <Label
+                                            Text="Lost"
+                                            FontSize="9"
+                                            TextColor="{DynamicResource Text3}"
+                                            HorizontalOptions="Center"/>
+
+                                    </VerticalStackLayout>
 
                                 </Border>
 
@@ -489,6 +509,21 @@
                                         Text="Damage"
                                         Command="{Binding SetFilterCommand}"
                                         CommandParameter="Damage"
+                                        BackgroundColor="{DynamicResource BgCard}"
+                                        TextColor="{DynamicResource Red}"
+                                        BorderColor="{DynamicResource BorderColor}"
+                                        BorderWidth="1"
+                                        CornerRadius="18"
+                                        FontSize="11"
+                                        HeightRequest="36"
+                                        Padding="16,0"/>
+
+                                    <!-- LOST -->
+
+                                    <Button
+                                        Text="Lost"
+                                        Command="{Binding SetFilterCommand}"
+                                        CommandParameter="Lost"
                                         BackgroundColor="{DynamicResource BgCard}"
                                         TextColor="{DynamicResource Red}"
                                         BorderColor="{DynamicResource BorderColor}"

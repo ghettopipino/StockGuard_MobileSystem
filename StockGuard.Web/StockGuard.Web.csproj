@@ -9,7 +9,8 @@
   <ItemGroup>
     <PackageReference Include="FirebaseDatabase.net" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
-    <PackageReference Include="QRCoder" Version="1.7.0" />
+    <PackageReference Include="QRCoder" Version="1.8.0" />
+    <PackageReference Include="QuestPDF" Version="2026.8.0" />
   </ItemGroup>
 
 </Project>

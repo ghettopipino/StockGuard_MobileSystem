@@ -34,6 +34,7 @@ namespace StockGuard
             builder.Services.AddSingleton<FirebaseService>();
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<ThemeService>();
+            builder.Services.AddSingleton<QrPrintService>();
 
             // ── ViewModels ────────────────────────────────────────────────────
             //
