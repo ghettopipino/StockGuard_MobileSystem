@@ -537,16 +537,37 @@
 
                                             <!-- VERIFY -->
 
-                                            <Button
-                                                Text="Verify Check-In"
-                                                CommandParameter="{Binding .}"
-                                                Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
-                                                                  Path=VerifyCheckInCommand}"
-                                                BackgroundColor="Transparent"
-                                                TextColor="{DynamicResource Blue}"
-                                                FontSize="11"
-                                                FontAttributes="Bold"
-                                                HeightRequest="46"/>
+                                            <!-- CHECK-IN ACTIONS -->
+
+                                            <Grid
+    ColumnDefinitions="*,*"
+    HeightRequest="48">
+
+                                                <Button
+        Grid.Column="0"
+        Text="Verify Check-In"
+        CommandParameter="{Binding .}"
+        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                          Path=VerifyCheckInCommand}"
+        BackgroundColor="Transparent"
+        TextColor="{DynamicResource Blue}"
+        FontSize="11"
+        FontAttributes="Bold"
+        CornerRadius="0"/>
+
+                                                <Button
+        Grid.Column="1"
+        Text="Reject"
+        CommandParameter="{Binding .}"
+        Command="{Binding Source={RelativeSource AncestorType={x:Type vm:PauseRequestsViewModel}},
+                          Path=RejectCheckInCommand}"
+        BackgroundColor="Transparent"
+        TextColor="{DynamicResource Red}"
+        FontSize="11"
+        FontAttributes="Bold"
+        CornerRadius="0"/>
+
+                                            </Grid>
 
                                         </VerticalStackLayout>
 

@@ -280,72 +280,54 @@
 
 
                     <!-- ═══════════════════════════════════════
-                         FILTERS
-                         ═══════════════════════════════════════ -->
+     FILTERS
+     ═══════════════════════════════════════ -->
 
                     <VerticalStackLayout
-                        Padding="20,20,0,14"
-                        Spacing="8">
+    Padding="20,20,20,14"
+    Spacing="8">
 
                         <Label
-                            Text="Filter Reports"
-                            FontSize="12"
-                            FontAttributes="Bold"
-                            TextColor="{DynamicResource Text2}"/>
+        Text="Filter Reports"
+        FontSize="12"
+        FontAttributes="Bold"
+        TextColor="{DynamicResource Text2}"/>
 
-                        <ScrollView
-                            Orientation="Horizontal"
-                            HorizontalScrollBarVisibility="Never">
+                        <Border
+        BackgroundColor="{DynamicResource BgCard}"
+        Stroke="{DynamicResource BorderColor}"
+        StrokeShape="RoundRectangle 12"
+        Padding="12,0">
 
-                            <HorizontalStackLayout
-                                Spacing="8"
-                                Padding="0,0,20,0">
+                            <Grid
+            ColumnDefinitions="Auto,*"
+            ColumnSpacing="10">
 
-                                <Button
-                                    Text="All"
-                                    Command="{Binding SetFilterCommand}"
-                                    CommandParameter="All"
-                                    BackgroundColor="{DynamicResource BgCard}"
-                                    TextColor="{DynamicResource Text2}"
-                                    BorderColor="{DynamicResource BorderColor}"
-                                    BorderWidth="1"
-                                    FontSize="11"
-                                    CornerRadius="18"
-                                    HeightRequest="36"
-                                    Padding="16,0"/>
+                                <Label
+                Grid.Column="0"
+                Text="&#xf0b0;"
+                FontFamily="FontAwesome"
+                FontSize="12"
+                TextColor="{DynamicResource Text3}"
+                VerticalOptions="Center"/>
 
-                                <Button
-                                    Text="Damage"
-                                    Command="{Binding SetFilterCommand}"
-                                    CommandParameter="Damage"
-                                    BackgroundColor="{DynamicResource BgCard}"
-                                    TextColor="{DynamicResource Red}"
-                                    BorderColor="{DynamicResource BorderColor}"
-                                    BorderWidth="1"
-                                    FontSize="11"
-                                    CornerRadius="18"
-                                    HeightRequest="36"
-                                    Padding="16,0"/>
+                                <Picker
+                Grid.Column="1"
+                Title="Select report type"
+                ItemsSource="{Binding FilterOptions}"
+                SelectedItem="{Binding SelectedFilter}"
+                TextColor="{DynamicResource Text1}"
+                TitleColor="{DynamicResource Text3}"
+                FontSize="11"
+                BackgroundColor="Transparent"
+                HorizontalOptions="Fill"
+                VerticalOptions="Center"/>
 
-                                <Button
-                                    Text="Missing / Lost"
-                                    Command="{Binding SetFilterCommand}"
-                                    CommandParameter="Lost"
-                                    BackgroundColor="{DynamicResource BgCard}"
-                                    TextColor="{DynamicResource Amber}"
-                                    BorderColor="{DynamicResource BorderColor}"
-                                    BorderWidth="1"
-                                    FontSize="11"
-                                    CornerRadius="18"
-                                    HeightRequest="36"
-                                    Padding="16,0"/>
+                            </Grid>
 
-                            </HorizontalStackLayout>
-
-                        </ScrollView>
+                        </Border>
 
                     </VerticalStackLayout>
-
 
                     <!-- ═══════════════════════════════════════
                          LOADING

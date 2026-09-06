@@ -342,16 +342,33 @@ namespace StockGuard.ViewModels
         // FILTER
         // ─────────────────────────────────────────────────────────
 
+        public List<string> FilterOptions { get; } =
+            new()
+            {
+        "All",
+        "Borrowed",
+        "Returned",
+        "Check-In",
+        "Damage",
+        "Lost"
+            };
+
         private string _selectedFilter =
             "All";
 
         public string SelectedFilter
         {
             get => _selectedFilter;
-            private set =>
-                SetProperty(
-                    ref _selectedFilter,
-                    value);
+
+            set
+            {
+                if (SetProperty(
+                        ref _selectedFilter,
+                        value))
+                {
+                    ApplyFilters();
+                }
+            }
         }
 
 

@@ -83,6 +83,14 @@ namespace StockGuard.ViewModels
         // FILTER
         // ─────────────────────────────────────────────────────────
 
+        public List<string> FilterOptions { get; } =
+            new()
+            {
+        "All",
+        "Damage",
+        "Missing / Lost"
+            };
+
         private string _selectedFilter =
             "All";
 
@@ -117,10 +125,10 @@ namespace StockGuard.ViewModels
                 "Damage";
 
         public bool ShowLostSection =>
-            SelectedFilter ==
-                "All" ||
-            SelectedFilter ==
-                "Lost";
+             SelectedFilter ==
+                 "All" ||
+             SelectedFilter ==
+                 "Missing / Lost";
 
         // ─────────────────────────────────────────────────────────
         // VISIBILITY
