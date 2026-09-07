@@ -118,6 +118,14 @@ public partial class AppShell : Shell
             nameof(RegisterView),
             typeof(RegisterView));
 
+        Routing.RegisterRoute(
+            nameof(ForgotPasswordView),
+            typeof(ForgotPasswordView));
+
+        Routing.RegisterRoute(
+            nameof(ResetPasswordView),
+            typeof(ResetPasswordView));
+
         // ── QR ───────────────────────────────────────────────
 
         Routing.RegisterRoute(

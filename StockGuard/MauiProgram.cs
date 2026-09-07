@@ -35,6 +35,8 @@ namespace StockGuard
             builder.Services.AddSingleton<AuthService>();
             builder.Services.AddSingleton<ThemeService>();
             builder.Services.AddSingleton<QrPrintService>();
+            builder.Services.AddSingleton<PasswordResetService>();
+
 
             // ── ViewModels ────────────────────────────────────────────────────
             //
@@ -49,6 +51,7 @@ namespace StockGuard
             //
             builder.Services.AddTransient<LoginViewModel>();
             builder.Services.AddTransient<RegisterViewModel>();
+            builder.Services.AddTransient<ForgotPasswordViewModel>();
             builder.Services.AddTransient<WorkerDashboardViewModel>();
             builder.Services.AddSingleton<ToolDetailsViewModel>();           // ← Singleton
             builder.Services.AddTransient<PEDashboardViewModel>();
@@ -66,6 +69,8 @@ namespace StockGuard
             builder.Services.AddTransient<ProjectAnalyticsViewModel>();
             builder.Services.AddTransient<WorkerToolDetailsViewModel>();
             builder.Services.AddTransient<AdminToolDetailsViewModel>();
+            builder.Services.AddTransient<ResetPasswordViewModel>();
+            builder.Services.AddTransient<ResetPasswordView>();
 
             // ── Views ─────────────────────────────────────────────────────────
             //
@@ -77,6 +82,7 @@ namespace StockGuard
             //
             builder.Services.AddTransient<LoginView>();
             builder.Services.AddTransient<RegisterView>();
+            builder.Services.AddTransient<ForgotPasswordView>();
             builder.Services.AddTransient<WorkerDashboardView>();
             builder.Services.AddTransient<MainView>();
             builder.Services.AddTransient<QrScannerView>();

@@ -7,6 +7,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockGuard", "StockGuard\St
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockGuard.Web", "StockGuard.Web\StockGuard.Web.csproj", "{63C2ABA2-E778-4998-979A-D60B0BBCCF71}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StockGuard.Api", "StockGuard.Api\StockGuard.Api.csproj", "{AA14B571-BA6A-4162-93CE-ACDF315B827C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{63C2ABA2-E778-4998-979A-D60B0BBCCF71}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA14B571-BA6A-4162-93CE-ACDF315B827C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA14B571-BA6A-4162-93CE-ACDF315B827C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA14B571-BA6A-4162-93CE-ACDF315B827C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA14B571-BA6A-4162-93CE-ACDF315B827C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

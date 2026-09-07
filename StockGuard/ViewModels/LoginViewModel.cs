@@ -48,12 +48,15 @@ namespace StockGuard.ViewModels
             }
         }
 
+
+
         public bool HasError => !string.IsNullOrWhiteSpace(ErrorMessage);
 
         // Bound directly to Button.Text — no x:Name needed
         public string ThemeIcon => _theme.IsDark ? "🌙" : "☀️";
 
         public ICommand LoginCommand { get; }
+        public ICommand GoToForgotPasswordCommand { get; }
         public ICommand GoToRegisterCommand { get; }
         public ICommand TogglePasswordCommand { get; }
         public ICommand ToggleThemeCommand { get; }
@@ -75,12 +78,17 @@ namespace StockGuard.ViewModels
             GoToRegisterCommand = new Command(async () =>
                 await Shell.Current.GoToAsync(nameof(RegisterView)));
 
+            GoToForgotPasswordCommand = new Command(async () =>
+                await Shell.Current.GoToAsync(nameof(ForgotPasswordView)));
+
             TogglePasswordCommand = new Command(() =>
                 ShowPassword = !ShowPassword);
 
             ToggleThemeCommand = new Command(() => _theme.Toggle());
             GoBackCommand = new Command(async () =>
-    await Shell.Current.GoToAsync($"//{nameof(HomeView)}"));
+                await Shell.Current.GoToAsync($"//{nameof(HomeView)}"));
+
+            
         }
 
         private async Task LoginAsync()

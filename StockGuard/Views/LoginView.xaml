@@ -219,6 +219,18 @@
 
                     </VerticalStackLayout>
 
+                    <Button
+                         Text="Forgot Password?"
+                         Command="{Binding GoToForgotPasswordCommand}"
+                         BackgroundColor="Transparent"
+                         TextColor="{DynamicResource Blue}"
+                         FontSize="11"
+                         FontAttributes="Bold"
+                         Padding="0"
+                         HeightRequest="32"
+                         HorizontalOptions="End"/>
+
+
 
                     <!-- SIGN IN -->
 
@@ -232,6 +244,7 @@
                         HeightRequest="48"
                         CornerRadius="10"/>
 
+                   
 
                     <!-- LOADING -->
 
