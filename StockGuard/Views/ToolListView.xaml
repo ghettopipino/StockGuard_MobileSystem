@@ -529,11 +529,10 @@
 
                                                 </HorizontalStackLayout>
 
-
-                                                <!-- WORKER -->
+                                                <!-- ACCOUNTABILITY -->
                                                 <HorizontalStackLayout
-                                                    Spacing="5"
-                                                    IsVisible="{Binding IsBorrowed}">
+                                                        Spacing="5"
+                                                        IsVisible="{Binding HasAccountability}">
 
                                                     <Label
                                                         Text="&#xf007;"
@@ -543,11 +542,18 @@
                                                         VerticalOptions="Center"/>
 
                                                     <Label
-                                                        Text="{Binding AssignedWorkerName}"
+                                                        Text="{Binding AccountablePersonName}"
                                                         FontSize="10"
                                                         TextColor="{DynamicResource Blue}"
                                                         FontAttributes="Bold"
                                                         LineBreakMode="TailTruncation"/>
+
+                                                    <Label
+                                                        Text="{Binding AccountabilityRole,
+                                                                       StringFormat='({0})'}"
+                                                        FontSize="9"
+                                                        TextColor="{DynamicResource Text3}"
+                                                        VerticalOptions="Center"/>
 
                                                 </HorizontalStackLayout>
 
@@ -729,11 +735,10 @@
 
                                                 </HorizontalStackLayout>
 
-
-                                                <!-- WORKER -->
+                                                <!-- ACCOUNTABILITY -->
                                                 <HorizontalStackLayout
-                                                    Spacing="5"
-                                                    IsVisible="{Binding IsBorrowed}">
+                                                        Spacing="5"
+                                                        IsVisible="{Binding HasAccountability}">
 
                                                     <Label
                                                         Text="&#xf007;"
@@ -743,11 +748,18 @@
                                                         VerticalOptions="Center"/>
 
                                                     <Label
-                                                        Text="{Binding AssignedWorkerName}"
+                                                        Text="{Binding AccountablePersonName}"
                                                         FontSize="10"
                                                         TextColor="{DynamicResource Blue}"
                                                         FontAttributes="Bold"
                                                         LineBreakMode="TailTruncation"/>
+
+                                                    <Label
+                                                        Text="{Binding AccountabilityRole,
+                                                                       StringFormat='({0})'}"
+                                                        FontSize="9"
+                                                        TextColor="{DynamicResource Text3}"
+                                                        VerticalOptions="Center"/>
 
                                                 </HorizontalStackLayout>
 

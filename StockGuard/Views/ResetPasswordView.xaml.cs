@@ -8,7 +8,6 @@ public partial class ResetPasswordView : ContentPage
         ResetPasswordViewModel viewModel)
     {
         InitializeComponent();
-
         BindingContext = viewModel;
     }
 }

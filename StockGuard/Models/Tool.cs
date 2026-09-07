@@ -57,7 +57,7 @@ namespace StockGuard.Models
 
 
         // ─────────────────────────────────────────────────────────
-        // PROJECT ENGINEER WHO ASSIGNED THE TOOL
+        // PROJECT ENGINEER WHO ASSIGNED / HOLDS ACCOUNTABILITY
         // ─────────────────────────────────────────────────────────
 
         [JsonProperty("assignedById")]
@@ -102,6 +102,72 @@ namespace StockGuard.Models
 
 
         // ─────────────────────────────────────────────────────────
+        // ACCOUNTABILITY DISPLAY
+        // ─────────────────────────────────────────────────────────
+        //
+        // If a Worker currently has the equipment:
+        //      Worker is accountable.
+        //
+        // If there is no Worker but the equipment is still
+        // borrowed under a project:
+        //      Project Engineer is accountable.
+        //
+
+        [JsonIgnore]
+        public string AccountablePersonName
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(
+                        AssignedWorkerName))
+                {
+                    return AssignedWorkerName;
+                }
+
+                if (!string.IsNullOrWhiteSpace(
+                        BorrowedProjectId) &&
+                    !string.IsNullOrWhiteSpace(
+                        AssignedByName))
+                {
+                    return AssignedByName;
+                }
+
+                return string.Empty;
+            }
+        }
+
+
+        [JsonIgnore]
+        public string AccountabilityRole
+        {
+            get
+            {
+                if (!string.IsNullOrWhiteSpace(
+                        AssignedWorkerId))
+                {
+                    return "Worker";
+                }
+
+                if (!string.IsNullOrWhiteSpace(
+                        BorrowedProjectId) &&
+                    !string.IsNullOrWhiteSpace(
+                        AssignedById))
+                {
+                    return "Project Engineer";
+                }
+
+                return string.Empty;
+            }
+        }
+
+
+        [JsonIgnore]
+        public bool HasAccountability =>
+            !string.IsNullOrWhiteSpace(
+                AccountablePersonName);
+
+
+        // ─────────────────────────────────────────────────────────
         // STATUS HELPERS
         // ─────────────────────────────────────────────────────────
 
@@ -131,11 +197,13 @@ namespace StockGuard.Models
 
 
         // Worker/project information should remain visible
-        // for Borrowed, PendingReturn, or worker-reported Damaged tools.
+        // for Borrowed, PendingReturn, or damaged project tools.
         [JsonIgnore]
         public bool HasAssignmentInfo =>
-            !string.IsNullOrWhiteSpace(AssignedWorkerId) ||
-            !string.IsNullOrWhiteSpace(BorrowedProjectId);
+            !string.IsNullOrWhiteSpace(
+                AssignedWorkerId) ||
+            !string.IsNullOrWhiteSpace(
+                BorrowedProjectId);
 
 
         // ─────────────────────────────────────────────────────────

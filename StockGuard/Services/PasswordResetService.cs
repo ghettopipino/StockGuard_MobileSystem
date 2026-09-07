@@ -7,13 +7,10 @@ namespace StockGuard.Services
         private readonly HttpClient _httpClient;
 
         // ── API ADDRESS ──────────────────────────────────────────────────────
-        // Windows Machine:
-        // http://localhost:5287
-        //
-        // Android Emulator later:
-        // http://10.0.2.2:5287
+        // StockGuard API hosted on Azure.
+        // Works on Windows and Android without running the API locally.
         private const string BaseUrl =
-            "http://localhost:5287";
+            "https://stockguard-api-fzhsdtc0dvf5dpa0.southeastasia-01.azurewebsites.net";
 
         public PasswordResetService()
         {
