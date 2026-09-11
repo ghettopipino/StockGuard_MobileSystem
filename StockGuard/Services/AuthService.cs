@@ -1,10 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using SQLite;
-using StockGuard.Models;
+﻿using StockGuard.Models;
 
 namespace StockGuard.Services
 {
@@ -13,146 +7,356 @@ namespace StockGuard.Services
         private readonly FirebaseService _firebase;
 
         public User? CurrentUser { get; private set; }
-        public bool IsLoggedIn => CurrentUser != null;
 
-        public AuthService(FirebaseService firebase)
+        public bool IsLoggedIn =>
+            CurrentUser != null;
+
+
+        public AuthService(
+            FirebaseService firebase)
         {
             _firebase = firebase;
-
         }
+
 
         // ── LOGIN ─────────────────────────────────────────────────
 
         public async Task<(bool Success, string Message)>
-    LoginAsync(string email, string password)
+            LoginAsync(
+                string email,
+                string password)
         {
             if (string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(password))
-                return (false,
+            {
+                return (
+                    false,
                     "Please enter your email and password.");
+            }
+
 
             try
             {
-                var emailClean = email.Trim().ToLower();
-                var user = await _firebase
-                    .GetUserByEmailAsync(emailClean);
+                var emailClean =
+                    email.Trim().ToLower();
+
+
+                var user =
+                    await _firebase
+                        .GetUserByEmailAsync(
+                            emailClean);
+
 
                 if (user is null)
-                    return (false, "Incorrect email or password.");
+                {
+                    return (
+                        false,
+                        "Incorrect email or password.");
+                }
+
 
                 if (user.Password != password)
-                    return (false, "Incorrect email or password.");
+                {
+                    return (
+                        false,
+                        "Incorrect email or password.");
+                }
+
+
+                if (user.IsDeleted)
+                {
+                    return (
+                        false,
+                        "This account is no longer available.");
+                }
+
 
                 if (user.AccountStatus == "Pending")
-                    return (false,
+                {
+                    if (user.IsProjectEngineer)
+                    {
+                        return (
+                            false,
+                            "Your Project Engineer account is " +
+                            "pending approval.");
+                    }
+
+                    return (
+                        false,
                         "Your account is pending approval " +
                         "by the Project Engineer.");
+                }
+
 
                 if (user.AccountStatus == "Rejected")
-                    return (false,
+                {
+                    return (
+                        false,
                         "Your account has been rejected. " +
                         "Please contact the Project Engineer.");
+                }
+
 
                 // ✅ Debug log to verify UniqueKey
                 System.Diagnostics.Debug.WriteLine(
                     $"Login success: {user.Email} | " +
                     $"UniqueKey: {user.UniqueKey}");
 
+
                 CurrentUser = user;
-                return (true, "Login successful.");
+
+                return (
+                    true,
+                    "Login successful.");
             }
             catch (Exception ex)
             {
-                return (false,
+                return (
+                    false,
                     $"Connection error. Please check your " +
                     $"internet connection.\n\n{ex.Message}");
             }
         }
 
+
         // ── REGISTER ──────────────────────────────────────────────
 
         public async Task<(bool Success, string Message)>
-            RegisterAsync(string fullName, string email, string phoneNumber, string address,
-                string password, string confirmPassword,
+            RegisterAsync(
+                string fullName,
+                string email,
+                string phoneNumber,
+                string address,
+                string password,
+                string confirmPassword,
                 string role)
         {
             if (string.IsNullOrWhiteSpace(fullName))
-                return (false, "Full name is required.");
+            {
+                return (
+                    false,
+                    "Full name is required.");
+            }
+
 
             if (string.IsNullOrWhiteSpace(email))
-                return (false, "Email is required.");
+            {
+                return (
+                    false,
+                    "Email is required.");
+            }
 
-            if (!email.Contains("@") || !email.Contains("."))
-                return (false,
+
+            if (!email.Contains("@") ||
+                !email.Contains("."))
+            {
+                return (
+                    false,
                     "Please enter a valid email address.");
+            }
+
 
             if (string.IsNullOrWhiteSpace(phoneNumber))
-                return (false, "Phone number is required.");
+            {
+                return (
+                    false,
+                    "Phone number is required.");
+            }
+
 
             if (string.IsNullOrWhiteSpace(address))
-                return (false, "Address is required.");
+            {
+                return (
+                    false,
+                    "Address is required.");
+            }
+
 
             if (string.IsNullOrWhiteSpace(password))
-                return (false, "Password is required.");
+            {
+                return (
+                    false,
+                    "Password is required.");
+            }
+
 
             if (password.Length < 6)
-                return (false,
+            {
+                return (
+                    false,
                     "Password must be at least 6 characters.");
+            }
+
 
             if (password != confirmPassword)
-                return (false, "Passwords do not match.");
+            {
+                return (
+                    false,
+                    "Passwords do not match.");
+            }
+
+
+            // Only allow valid StockGuard roles.
+            if (role != "Worker" &&
+                role != "Project Engineer")
+            {
+                return (
+                    false,
+                    "Please select a valid account role.");
+            }
 
 
             try
             {
-                var emailClean = email.Trim().ToLower();
+                var emailClean =
+                    email.Trim().ToLower();
+
 
                 // Check if email already exists
-                var existing = await _firebase
-                    .GetUserByEmailAsync(emailClean);
+                var existing =
+                    await _firebase
+                        .GetUserByEmailAsync(
+                            emailClean);
+
 
                 if (existing is not null)
-                    return (false,
+                {
+                    return (
+                        false,
                         "An account with this email already exists.");
+                }
+
+
+                // ──────────────────────────────────────────────
+                // CHECK EXISTING PROJECT ENGINEERS
+                // ──────────────────────────────────────────────
+
+                var allUsers =
+                    await _firebase
+                        .GetAllUsersAsync();
+
+
+                bool hasApprovedProjectEngineer =
+                    allUsers.Any(user =>
+                        !user.IsDeleted &&
+                        user.Role == "Project Engineer" &&
+                        user.AccountStatus == "Approved");
+
+
+                // ──────────────────────────────────────────────
+                // ACCOUNT STATUS
+                // ──────────────────────────────────────────────
+
+                string accountStatus;
+
+
+                if (role == "Project Engineer" &&
+                    !hasApprovedProjectEngineer)
+                {
+                    // First PE is automatically approved.
+                    // This allows StockGuard to start from
+                    // a completely empty database.
+                    accountStatus = "Approved";
+                }
+                else
+                {
+                    // Workers and additional Project Engineers
+                    // require approval.
+                    accountStatus = "Pending";
+                }
+
 
                 // ✅ Use timestamp as unique ID
                 // Guarantees no collision ever
-                var uniqueId = DateTimeOffset.UtcNow
-                    .ToUnixTimeMilliseconds();
+                var uniqueId =
+                    DateTimeOffset.UtcNow
+                        .ToUnixTimeMilliseconds();
 
-                var newUser = new User
-                {
-                    Id = (int)(uniqueId % int.MaxValue),
-                    UniqueKey = uniqueId.ToString(),
-                    FullName = fullName.Trim(),
-                    Email = emailClean,
-                    PhoneNumber = phoneNumber.Trim(),
-                    Address = address.Trim(),
-                    Password = password,
-                    Role = role,
-                    AccountStatus = "Pending",
-                    DateCreated = DateTime.Now,
-                    IsDeleted = false
-                };
+
+                var newUser =
+                    new User
+                    {
+                        Id =
+                            (int)(
+                                uniqueId %
+                                int.MaxValue),
+
+                        UniqueKey =
+                            uniqueId.ToString(),
+
+                        FullName =
+                            fullName.Trim(),
+
+                        Email =
+                            emailClean,
+
+                        PhoneNumber =
+                            phoneNumber.Trim(),
+
+                        Address =
+                            address.Trim(),
+
+                        Password =
+                            password,
+
+                        Role =
+                            role,
+
+                        AccountStatus =
+                            accountStatus,
+
+                        DateCreated =
+                            DateTime.Now,
+
+                        IsDeleted =
+                            false
+                    };
+
 
                 // ✅ Use UniqueKey as Firebase node key
                 // so accounts never overwrite each other
-                await _firebase.CreateUserWithKeyAsync(newUser);
+                await _firebase
+                    .CreateUserWithKeyAsync(
+                        newUser);
 
-                return (true,
-                    role == "Project Engineer"
-                        ? "Registration successful. Your Project " +
-                          "Engineer account is pending approval."
-                        : "Registration successful. Your account " +
-                          "is pending approval by the Project Engineer.");
+
+                // ──────────────────────────────────────────────
+                // SUCCESS MESSAGE
+                // ──────────────────────────────────────────────
+
+                if (role == "Project Engineer" &&
+                    accountStatus == "Approved")
+                {
+                    return (
+                        true,
+                        "Project Engineer account created successfully. " +
+                        "You may now sign in.");
+                }
+
+
+                if (role == "Project Engineer")
+                {
+                    return (
+                        true,
+                        "Project Engineer registration successful. " +
+                        "Your account is pending approval.");
+                }
+
+
+                return (
+                    true,
+                    "Registration successful. Your account " +
+                    "is pending approval by the Project Engineer.");
             }
             catch (Exception ex)
             {
-                return (false,
+                return (
+                    false,
                     $"Registration failed. Please check your " +
                     $"internet connection.\n\n{ex.Message}");
             }
         }
+
 
         // ── LOGOUT ────────────────────────────────────────────────
 
@@ -161,6 +365,7 @@ namespace StockGuard.Services
             CurrentUser = null;
         }
 
+
         // ── SEED DEFAULT ACCOUNTS ─────────────────────────────────
 
         public async Task SeedDefaultAccountsAsync()
@@ -168,44 +373,85 @@ namespace StockGuard.Services
             try
             {
                 // ✅ Check by email — not by count
-                var pe = await _firebase
-                    .GetUserByEmailAsync("pe@stockguard.com");
+                var pe =
+                    await _firebase
+                        .GetUserByEmailAsync(
+                            "pe@stockguard.com");
+
 
                 if (pe is null)
                 {
-                    await _firebase.CreateUserWithKeyAsync(
-                        new User
-                        {
-                            Id = 1,
-                            UniqueKey = "pe-default",
-                            FullName = "Project Engineer",
-                            Email = "pe@stockguard.com",
-                            Password = "admin123",
-                            Role = "Project Engineer",
-                            AccountStatus = "Approved",
-                            DateCreated = DateTime.Now,
-                            IsDeleted = false
-                        });
+                    await _firebase
+                        .CreateUserWithKeyAsync(
+                            new User
+                            {
+                                Id = 1,
+
+                                UniqueKey =
+                                    "pe-default",
+
+                                FullName =
+                                    "Project Engineer",
+
+                                Email =
+                                    "pe@stockguard.com",
+
+                                Password =
+                                    "admin123",
+
+                                Role =
+                                    "Project Engineer",
+
+                                AccountStatus =
+                                    "Approved",
+
+                                DateCreated =
+                                    DateTime.Now,
+
+                                IsDeleted =
+                                    false
+                            });
                 }
 
-                var worker = await _firebase
-                    .GetUserByEmailAsync("worker@stockguard.com");
+
+                var worker =
+                    await _firebase
+                        .GetUserByEmailAsync(
+                            "worker@stockguard.com");
+
 
                 if (worker is null)
                 {
-                    await _firebase.CreateUserWithKeyAsync(
-                        new User
-                        {
-                            Id = 2,
-                            UniqueKey = "worker-default",
-                            FullName = "Juan Dela Cruz",
-                            Email = "worker@stockguard.com",
-                            Password = "worker123",
-                            Role = "Worker",
-                            AccountStatus = "Approved",
-                            DateCreated = DateTime.Now,
-                            IsDeleted = false
-                        });
+                    await _firebase
+                        .CreateUserWithKeyAsync(
+                            new User
+                            {
+                                Id = 2,
+
+                                UniqueKey =
+                                    "worker-default",
+
+                                FullName =
+                                    "Juan Dela Cruz",
+
+                                Email =
+                                    "worker@stockguard.com",
+
+                                Password =
+                                    "worker123",
+
+                                Role =
+                                    "Worker",
+
+                                AccountStatus =
+                                    "Approved",
+
+                                DateCreated =
+                                    DateTime.Now,
+
+                                IsDeleted =
+                                    false
+                            });
                 }
             }
             catch (Exception ex)
@@ -215,16 +461,14 @@ namespace StockGuard.Services
             }
         }
 
+
         // ── GET ALL USERS ─────────────────────────────────────────
 
-        public async Task<List<User>> GetAllUsersAsync()
+        public async Task<List<User>>
+            GetAllUsersAsync()
         {
-            return await _firebase.GetAllUsersAsync();
+            return await _firebase
+                .GetAllUsersAsync();
         }
-
-
     }
 }
-
-
-    

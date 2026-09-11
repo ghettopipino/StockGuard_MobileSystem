@@ -8,11 +8,14 @@ namespace StockGuard.ViewModels
 {
     [QueryProperty(nameof(ToolId), "toolId")]
     [QueryProperty(nameof(ViewMode), "viewMode")]
-    public class TransactionHistoryViewModel : BaseViewModel
+
+    public class TransactionHistoryViewModel :
+        BaseViewModel
     {
         private readonly FirebaseService _firebase;
         private readonly AuthService _auth;
         private readonly ThemeService _theme;
+
 
         // ─────────────────────────────────────────────────────────
         // PAGINATION
@@ -30,17 +33,21 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────────
-        // QUERY: TOOL
+        // TOOL QUERY
         // ─────────────────────────────────────────────────────────
 
-        private string _toolId = string.Empty;
+        private string _toolId =
+            string.Empty;
 
         public string ToolId
         {
             get => _toolId;
+
             set
             {
-                if (SetProperty(ref _toolId, value))
+                if (SetProperty(
+                        ref _toolId,
+                        value))
                 {
                     OnPropertyChanged(
                         nameof(PageSubtitle));
@@ -52,22 +59,21 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────────
-        // QUERY: VIEW MODE
+        // VIEW MODE
         // ─────────────────────────────────────────────────────────
-        //
-        // worker = worker activity
-        // tool   = PE viewing one tool
-        // all    = PE viewing their project transactions
-        //
 
-        private string _viewMode = string.Empty;
+        private string _viewMode =
+            string.Empty;
 
         public string ViewMode
         {
             get => _viewMode;
+
             set
             {
-                if (SetProperty(ref _viewMode, value))
+                if (SetProperty(
+                        ref _viewMode,
+                        value))
                 {
                     OnPropertyChanged(
                         nameof(PageTitle));
@@ -89,30 +95,42 @@ namespace StockGuard.ViewModels
 
         private bool _loadRequested;
 
+
         private void RequestLoad()
         {
-            if (string.IsNullOrWhiteSpace(ViewMode))
-                return;
-
-            if (ViewMode == "tool" &&
-                string.IsNullOrWhiteSpace(ToolId))
+            if (string.IsNullOrWhiteSpace(
+                    ViewMode))
             {
                 return;
             }
 
+
+            if (ViewMode == "tool" &&
+                string.IsNullOrWhiteSpace(
+                    ToolId))
+            {
+                return;
+            }
+
+
             if (_loadRequested)
                 return;
 
-            _loadRequested = true;
+
+            _loadRequested =
+                true;
+
 
             MainThread.BeginInvokeOnMainThread(
                 async () =>
                     await LoadAsync());
         }
 
+
         public void ResetLoadState()
         {
-            _loadRequested = false;
+            _loadRequested =
+                false;
         }
 
 
@@ -136,6 +154,7 @@ namespace StockGuard.ViewModels
                 ? "🌙"
                 : "☀️";
 
+
         public string PageTitle =>
             ViewMode switch
             {
@@ -149,11 +168,13 @@ namespace StockGuard.ViewModels
                     "My Activity"
             };
 
+
         public string PageSubtitle =>
             ViewMode switch
             {
                 "tool" =>
-                    string.IsNullOrWhiteSpace(ToolId)
+                    string.IsNullOrWhiteSpace(
+                        ToolId)
                         ? "Equipment activity"
                         : $"Activity for {ToolId}",
 
@@ -161,7 +182,8 @@ namespace StockGuard.ViewModels
                     "Activity from your managed projects",
 
                 _ =>
-                    string.IsNullOrWhiteSpace(ToolId)
+                    string.IsNullOrWhiteSpace(
+                        ToolId)
                         ? "Your equipment activity"
                         : $"Your activity for {ToolId}"
             };
@@ -176,6 +198,7 @@ namespace StockGuard.ViewModels
         public int TotalCount
         {
             get => _totalCount;
+
             private set =>
                 SetProperty(
                     ref _totalCount,
@@ -188,6 +211,7 @@ namespace StockGuard.ViewModels
         public int BorrowCount
         {
             get => _borrowCount;
+
             private set =>
                 SetProperty(
                     ref _borrowCount,
@@ -200,6 +224,7 @@ namespace StockGuard.ViewModels
         public int ReturnCount
         {
             get => _returnCount;
+
             private set =>
                 SetProperty(
                     ref _returnCount,
@@ -212,6 +237,7 @@ namespace StockGuard.ViewModels
         public int CheckInCount
         {
             get => _checkInCount;
+
             private set =>
                 SetProperty(
                     ref _checkInCount,
@@ -224,6 +250,7 @@ namespace StockGuard.ViewModels
         public int DamageCount
         {
             get => _damageCount;
+
             private set =>
                 SetProperty(
                     ref _damageCount,
@@ -231,21 +258,12 @@ namespace StockGuard.ViewModels
         }
 
 
-        // ─────────────────────────────────────────────────────────
-        // LOST
-        // ─────────────────────────────────────────────────────────
-        //
-        // This counts official Lost declarations only.
-        //
-        // "Missing Reported" is not yet an official Lost tool.
-        // The Project Engineer must verify and declare it Lost.
-        //
-
         private int _lostCount;
 
         public int LostCount
         {
             get => _lostCount;
+
             private set =>
                 SetProperty(
                     ref _lostCount,
@@ -263,7 +281,7 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────────
-        // PAGINATION STATE
+        // PAGINATION
         // ─────────────────────────────────────────────────────────
 
         private bool _hasMoreItems;
@@ -271,6 +289,7 @@ namespace StockGuard.ViewModels
         public bool HasMoreItems
         {
             get => _hasMoreItems;
+
             private set
             {
                 SetProperty(
@@ -289,6 +308,7 @@ namespace StockGuard.ViewModels
         public string PaginationLabel
         {
             get => _paginationLabel;
+
             private set =>
                 SetProperty(
                     ref _paginationLabel,
@@ -301,6 +321,7 @@ namespace StockGuard.ViewModels
         public bool IsLoadingMore
         {
             get => _isLoadingMore;
+
             private set
             {
                 SetProperty(
@@ -322,6 +343,7 @@ namespace StockGuard.ViewModels
         public bool HasTransactions
         {
             get => _hasTransactions;
+
             private set
             {
                 SetProperty(
@@ -333,6 +355,7 @@ namespace StockGuard.ViewModels
             }
         }
 
+
         public bool NoTransactions =>
             !HasTransactions &&
             !IsBusy;
@@ -342,16 +365,19 @@ namespace StockGuard.ViewModels
         // FILTER
         // ─────────────────────────────────────────────────────────
 
-        public List<string> FilterOptions { get; } =
+        public List<string>
+            FilterOptions
+        { get; } =
             new()
             {
-        "All",
-        "Borrowed",
-        "Returned",
-        "Check-In",
-        "Damage",
-        "Lost"
+                "All",
+                "Borrowed",
+                "Returned",
+                "Check-In",
+                "Damage",
+                "Lost"
             };
+
 
         private string _selectedFilter =
             "All";
@@ -381,6 +407,7 @@ namespace StockGuard.ViewModels
         public bool IsRefreshing
         {
             get => _isRefreshing;
+
             set =>
                 SetProperty(
                     ref _isRefreshing,
@@ -414,16 +441,23 @@ namespace StockGuard.ViewModels
             AuthService auth,
             ThemeService theme)
         {
-            _firebase = firebase;
-            _auth = auth;
-            _theme = theme;
+            _firebase =
+                firebase;
 
-            // Set directly to avoid triggering
-            // loading before constructor finishes.
+            _auth =
+                auth;
+
+            _theme =
+                theme;
+
+
             _viewMode =
-                auth.CurrentUser?.IsProjectEngineer == true
+                auth.CurrentUser
+                    ?.IsProjectEngineer ==
+                true
                     ? "all"
                     : "worker";
+
 
             _theme.ThemeChanged += _ =>
                 MainThread.BeginInvokeOnMainThread(
@@ -431,15 +465,19 @@ namespace StockGuard.ViewModels
                         OnPropertyChanged(
                             nameof(ThemeIcon)));
 
+
             OpenFlyoutCommand =
-                new Command(() =>
-                {
-                    if (Shell.Current != null)
+                new Command(
+                    () =>
                     {
-                        Shell.Current.FlyoutIsPresented =
-                            true;
-                    }
-                });
+                        if (Shell.Current != null)
+                        {
+                            Shell.Current
+                                .FlyoutIsPresented =
+                                true;
+                        }
+                    });
+
 
             GoBackCommand =
                 new Command(
@@ -449,11 +487,12 @@ namespace StockGuard.ViewModels
                             !string.IsNullOrWhiteSpace(
                                 ToolId))
                         {
-                            await Shell.Current.GoToAsync(
-                                $"//WorkerDashboardView/" +
-                                $"{nameof(WorkerToolDetailsView)}" +
-                                $"?toolId=" +
-                                $"{Uri.EscapeDataString(ToolId)}");
+                            await Shell.Current
+                                .GoToAsync(
+                                    $"//WorkerDashboardView/" +
+                                    $"{nameof(WorkerToolDetailsView)}" +
+                                    $"?toolId=" +
+                                    $"{Uri.EscapeDataString(ToolId)}");
                         }
                         else
                         {
@@ -462,32 +501,33 @@ namespace StockGuard.ViewModels
                         }
                     });
 
+
             RefreshCommand =
                 new Command(
                     async () =>
                         await RefreshAsync());
 
+
             ToggleThemeCommand =
                 new Command(
-                    () => _theme.Toggle());
+                    () =>
+                        _theme.Toggle());
+
 
             SetFilterCommand =
                 new Command<string>(
                     filter =>
                     {
                         string selected =
-                            string.IsNullOrWhiteSpace(filter)
+                            string.IsNullOrWhiteSpace(
+                                filter)
                                 ? "All"
                                 : filter;
 
-                        if (SelectedFilter == selected)
-                            return;
-
                         SelectedFilter =
                             selected;
-
-                        ApplyFilters();
                     });
+
 
             LoadMoreCommand =
                 new Command(
@@ -498,6 +538,7 @@ namespace StockGuard.ViewModels
                         () =>
                             HasMoreItems &&
                             !IsLoadingMore);
+
 
             MainThread.BeginInvokeOnMainThread(
                 async () =>
@@ -515,12 +556,16 @@ namespace StockGuard.ViewModels
             if (IsBusy)
                 return;
 
-            IsBusy = true;
+
+            IsBusy =
+                true;
+
 
             try
             {
                 var currentUser =
                     _auth.CurrentUser;
+
 
                 if (currentUser == null)
                 {
@@ -538,9 +583,9 @@ namespace StockGuard.ViewModels
                 }
 
 
-                // ───────────────────────────────────────────
+                // ─────────────────────────────────────────────
                 // PROJECT ENGINEER
-                // ───────────────────────────────────────────
+                // ─────────────────────────────────────────────
 
                 if (currentUser.IsProjectEngineer)
                 {
@@ -548,14 +593,15 @@ namespace StockGuard.ViewModels
                         await _firebase
                             .GetAllProjectsAsync();
 
+
                     var myProjectIds =
                         projects
-                            .Where(p =>
-                                !p.IsDeleted &&
-                                p.CreatedBy ==
+                            .Where(project =>
+                                !project.IsDeleted &&
+                                project.CreatedBy ==
                                     currentUser.UniqueKey)
-                            .Select(p =>
-                                p.ProjectId)
+                            .Select(project =>
+                                project.ProjectId)
                             .ToHashSet();
 
 
@@ -570,13 +616,14 @@ namespace StockGuard.ViewModels
                                     ToolId,
                                     forceRefresh);
 
+
                         _allTransactions =
                             toolTransactions
-                                .Where(t =>
+                                .Where(transaction =>
                                     string.IsNullOrWhiteSpace(
-                                        t.ProjectId) ||
+                                        transaction.ProjectId) ||
                                     myProjectIds.Contains(
-                                        t.ProjectId))
+                                        transaction.ProjectId))
                                 .ToList();
                     }
 
@@ -588,18 +635,19 @@ namespace StockGuard.ViewModels
                                 .GetAllTransactionsAsync(
                                     forceRefresh);
 
+
                         _allTransactions =
                             allTransactions
-                                .Where(t =>
+                                .Where(transaction =>
                                     myProjectIds.Contains(
-                                        t.ProjectId))
+                                        transaction.ProjectId))
                                 .ToList();
                     }
                 }
 
-                // ───────────────────────────────────────────
+                // ─────────────────────────────────────────────
                 // WORKER
-                // ───────────────────────────────────────────
+                // ─────────────────────────────────────────────
 
                 else
                 {
@@ -609,13 +657,14 @@ namespace StockGuard.ViewModels
                                 currentUser.UniqueKey,
                                 forceRefresh);
 
+
                     if (!string.IsNullOrWhiteSpace(
                             ToolId))
                     {
                         _allTransactions =
                             _allTransactions
-                                .Where(t =>
-                                    t.ToolId ==
+                                .Where(transaction =>
+                                    transaction.ToolId ==
                                     ToolId)
                                 .ToList();
                     }
@@ -625,17 +674,20 @@ namespace StockGuard.ViewModels
                 UpdateStats(
                     _allTransactions);
 
+
                 ApplyFilters();
             }
             catch (Exception ex)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"[TransactionHistoryVM] Load error: " +
-                    $"{ex.Message}");
+                System.Diagnostics.Debug
+                    .WriteLine(
+                        "[TransactionHistoryVM] " +
+                        $"Load error: {ex.Message}");
             }
             finally
             {
-                IsBusy = false;
+                IsBusy =
+                    false;
 
                 OnPropertyChanged(
                     nameof(NoTransactions));
@@ -649,7 +701,13 @@ namespace StockGuard.ViewModels
 
         private async Task RefreshAsync()
         {
-            IsRefreshing = true;
+            if (IsRefreshing)
+                return;
+
+
+            IsRefreshing =
+                true;
+
 
             try
             {
@@ -658,7 +716,8 @@ namespace StockGuard.ViewModels
             }
             finally
             {
-                IsRefreshing = false;
+                IsRefreshing =
+                    false;
             }
         }
 
@@ -673,14 +732,16 @@ namespace StockGuard.ViewModels
                 filtered =
                     _allTransactions;
 
+
             switch (SelectedFilter)
             {
                 case "Borrowed":
 
                     filtered =
-                        filtered.Where(t =>
-                            t.Action ==
-                            "Borrowed");
+                        filtered.Where(
+                            transaction =>
+                                transaction.Action ==
+                                "Borrowed");
 
                     break;
 
@@ -688,11 +749,13 @@ namespace StockGuard.ViewModels
                 case "Returned":
 
                     filtered =
-                        filtered.Where(t =>
-                            t.Action ==
-                                "Returned" ||
-                            t.Action ==
-                                "Returned Damaged");
+                        filtered.Where(
+                            transaction =>
+                                transaction.Action ==
+                                    "Returned" ||
+
+                                transaction.Action ==
+                                    "Returned Damaged");
 
                     break;
 
@@ -700,11 +763,10 @@ namespace StockGuard.ViewModels
                 case "Check-In":
 
                     filtered =
-                        filtered.Where(t =>
-                            t.Action ==
-                                "End Day Check-In" ||
-                            t.Action ==
-                                "End Day Check-In Verified");
+                        filtered.Where(
+                            transaction =>
+                                IsCheckInAction(
+                                    transaction.Action));
 
                     break;
 
@@ -712,21 +774,21 @@ namespace StockGuard.ViewModels
                 case "Damage":
 
                     filtered =
-                        filtered.Where(t =>
-                            IsDamageAction(
-                                t.Action));
+                        filtered.Where(
+                            transaction =>
+                                IsDamageAction(
+                                    transaction.Action));
 
                     break;
 
 
                 case "Lost":
 
-                    // Lost filter shows the complete
-                    // missing / lost / found lifecycle.
                     filtered =
-                        filtered.Where(t =>
-                            IsLostAction(
-                                t.Action));
+                        filtered.Where(
+                            transaction =>
+                                IsLostAction(
+                                    transaction.Action));
 
                     break;
             }
@@ -734,13 +796,15 @@ namespace StockGuard.ViewModels
 
             _filteredTransactions =
                 filtered
-                    .OrderByDescending(t =>
-                        t.Date)
+                    .OrderByDescending(
+                        transaction =>
+                            transaction.Date)
                     .ToList();
 
 
             _currentPage =
                 1;
+
 
             Transactions.Clear();
 
@@ -757,7 +821,9 @@ namespace StockGuard.ViewModels
             HasTransactions =
                 Transactions.Count > 0;
 
+
             UpdatePaginationState();
+
 
             OnPropertyChanged(
                 nameof(NoTransactions));
@@ -765,7 +831,7 @@ namespace StockGuard.ViewModels
 
 
         // ─────────────────────────────────────────────────────────
-        // LOAD NEXT PAGE
+        // LOAD MORE
         // ─────────────────────────────────────────────────────────
 
         private void LoadNextPage()
@@ -776,12 +842,15 @@ namespace StockGuard.ViewModels
                 return;
             }
 
+
             IsLoadingMore =
                 true;
+
 
             try
             {
                 _currentPage++;
+
 
                 var nextItems =
                     _filteredTransactions
@@ -791,11 +860,14 @@ namespace StockGuard.ViewModels
                         .Take(PageSize)
                         .ToList();
 
-                foreach (var transaction in nextItems)
+
+                foreach (var transaction
+                    in nextItems)
                 {
                     Transactions.Add(
                         transaction);
                 }
+
 
                 UpdatePaginationState();
             }
@@ -819,8 +891,10 @@ namespace StockGuard.ViewModels
             int total =
                 _filteredTransactions.Count;
 
+
             HasMoreItems =
                 visible < total;
+
 
             PaginationLabel =
                 total == 0
@@ -839,40 +913,62 @@ namespace StockGuard.ViewModels
             TotalCount =
                 all.Count;
 
+
             BorrowCount =
-                all.Count(t =>
-                    t.Action ==
+                all.Count(transaction =>
+                    transaction.Action ==
                     "Borrowed");
 
+
             ReturnCount =
-                all.Count(t =>
-                    t.Action ==
+                all.Count(transaction =>
+                    transaction.Action ==
                         "Returned" ||
-                    t.Action ==
+
+                    transaction.Action ==
                         "Returned Damaged");
 
+
             CheckInCount =
-                all.Count(t =>
-                    t.Action ==
-                        "End Day Check-In" ||
-                    t.Action ==
-                        "End Day Check-In Verified");
+                all.Count(transaction =>
+                    IsCheckInAction(
+                        transaction.Action));
+
 
             DamageCount =
-                all.Count(t =>
+                all.Count(transaction =>
                     IsDamageAction(
-                        t.Action));
+                        transaction.Action));
 
 
-            // Only an official declaration by the PE
-            // is counted as Lost.
-            //
-            // A worker reporting equipment as missing
-            // does not immediately make the tool Lost.
+            // Only official Lost declaration
+            // counts as Lost.
             LostCount =
-                all.Count(t =>
-                    t.Action ==
+                all.Count(transaction =>
+                    transaction.Action ==
                     "Lost Declared");
+        }
+
+
+        // ─────────────────────────────────────────────────────────
+        // CHECK-IN GROUP
+        // ─────────────────────────────────────────────────────────
+
+        private static bool IsCheckInAction(
+            string action)
+        {
+            return
+                action ==
+                    "End Day Check-In" ||
+
+                action ==
+                    "End Day Check-In Verified" ||
+
+                action ==
+                    "End Day Check-In Rejected" ||
+
+                action ==
+                    "Damage Found During Check-In";
         }
 
 
@@ -883,60 +979,49 @@ namespace StockGuard.ViewModels
         private static bool IsDamageAction(
             string action)
         {
-            return action ==
-                       "Damage Reported" ||
+            return
+                action ==
+                    "Damage Reported" ||
 
-                   action ==
-                       "Damaged" ||
+                action ==
+                    "Damaged" ||
 
-                   action ==
-                       "Returned Damaged" ||
+                action ==
+                    "Returned Damaged" ||
 
-                   action ==
-                       "Damage Found During Check-In" ||
+                action ==
+                    "Damage Found During Check-In" ||
 
-                   action ==
-                       "UnderRepair" ||
+                action ==
+                    "UnderRepair" ||
 
-                   action ==
-                       "Resolved" ||
+                action ==
+                    "Resolved" ||
 
-                   action ==
-                       "Repaired";
+                action ==
+                    "Repaired";
         }
 
 
         // ─────────────────────────────────────────────────────────
         // LOST GROUP
         // ─────────────────────────────────────────────────────────
-        //
-        // This is used by the Lost filter.
-        //
-        // It intentionally includes the complete lifecycle:
-        //
-        // Worker reports missing
-        //          ↓
-        // PE verifies and declares Lost
-        //          ↓
-        // Equipment may later be found
-        //          ↓
-        // Missing report is resolved
-        //
 
         private static bool IsLostAction(
             string action)
         {
-            return action ==
-                       "Missing Reported" ||
+            return
+                action ==
+                    "Missing Reported" ||
 
-                   action ==
-                       "Lost Declared" ||
+                action ==
+                    "Lost Declared" ||
 
-                   action ==
-                       "Equipment Found" ||
+                action ==
+                    "Equipment Found" ||
 
-                   action ==
-                       "Missing Report Resolved";
+                action ==
+                    "Missing Report Resolved";
         }
     }
 }

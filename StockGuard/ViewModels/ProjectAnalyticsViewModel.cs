@@ -8,27 +8,46 @@ namespace StockGuard.ViewModels
     public class ProjectAnalyticsViewModel : BaseViewModel
     {
         private readonly FirebaseService _firebase;
+        private readonly AuthService _auth;
         private readonly ThemeService _theme;
+
 
         // =========================================================
         // RAW DATA
         // =========================================================
 
-        private List<Project> _allProjects = new();
-        private List<Tool> _allTools = new();
-        private List<User> _allUsers = new();
-        private List<TransactionLog> _allTransactions = new();
-        private List<DamageReport> _allReports = new();
+        private List<Project> _allProjects =
+            new();
+
+        private List<Tool> _allTools =
+            new();
+
+        private List<User> _allUsers =
+            new();
+
+        private List<TransactionLog> _allTransactions =
+            new();
+
+        private List<DamageReport> _allDamageReports =
+            new();
+
+        private List<LostReport> _allLostReports =
+            new();
 
         private List<ProjectEquipmentRequirement>
-            _projectRequirements = new();
+            _projectRequirements =
+                new();
+
+        private List<string> _projectWorkerIds =
+            new();
 
 
         // =========================================================
         // RISK INSIGHTS
         // =========================================================
 
-        private List<ToolRiskItem> _highRiskTools = new();
+        private List<ToolRiskItem> _highRiskTools =
+            new();
 
         public List<ToolRiskItem> HighRiskTools
         {
@@ -37,13 +56,15 @@ namespace StockGuard.ViewModels
             private set
             {
                 _highRiskTools = value;
+
                 OnPropertyChanged();
             }
         }
 
 
         private List<WorkerRiskItem>
-            _frequentlyInvolvedWorkers = new();
+            _frequentlyInvolvedWorkers =
+                new();
 
         public List<WorkerRiskItem>
             FrequentlyInvolvedWorkers
@@ -53,6 +74,7 @@ namespace StockGuard.ViewModels
             private set
             {
                 _frequentlyInvolvedWorkers = value;
+
                 OnPropertyChanged();
             }
         }
@@ -95,6 +117,7 @@ namespace StockGuard.ViewModels
                     OnPropertyChanged(
                         nameof(IsIdle));
 
+
                     if (value != null)
                     {
                         MainThread.BeginInvokeOnMainThread(
@@ -121,31 +144,44 @@ namespace StockGuard.ViewModels
 
 
         // =========================================================
-        // TOOL STATS
+        // EQUIPMENT OVERVIEW
         // =========================================================
 
-        private int _totalTools;
+        private int _requiredTools;
 
-        public int TotalTools
+        public int RequiredTools
         {
-            get => _totalTools;
+            get => _requiredTools;
 
             private set =>
                 SetProperty(
-                    ref _totalTools,
+                    ref _requiredTools,
                     value);
         }
 
 
-        private int _availableTools;
+        private int _borrowedTools;
 
-        public int AvailableTools
+        public int BorrowedTools
         {
-            get => _availableTools;
+            get => _borrowedTools;
 
             private set =>
                 SetProperty(
-                    ref _availableTools,
+                    ref _borrowedTools,
+                    value);
+        }
+
+
+        private int _remainingNeededTools;
+
+        public int RemainingNeededTools
+        {
+            get => _remainingNeededTools;
+
+            private set =>
+                SetProperty(
+                    ref _remainingNeededTools,
                     value);
         }
 
@@ -177,63 +213,63 @@ namespace StockGuard.ViewModels
 
 
         // =========================================================
-        // TRANSACTION STATS
+        // TRANSACTION SUMMARY
         // =========================================================
 
-        private int _totalTransactions;
+        private int _totalActivities;
 
-        public int TotalTransactions
+        public int TotalActivities
         {
-            get => _totalTransactions;
+            get => _totalActivities;
 
             private set =>
                 SetProperty(
-                    ref _totalTransactions,
+                    ref _totalActivities,
                     value);
         }
 
 
-        private int _totalBorrows;
+        private int _projectBorrows;
 
-        public int TotalBorrows
+        public int ProjectBorrows
         {
-            get => _totalBorrows;
+            get => _projectBorrows;
 
             private set =>
                 SetProperty(
-                    ref _totalBorrows,
+                    ref _projectBorrows,
                     value);
         }
 
 
-        private int _totalReturns;
+        private int _workerReturns;
 
-        public int TotalReturns
+        public int WorkerReturns
         {
-            get => _totalReturns;
+            get => _workerReturns;
 
             private set =>
                 SetProperty(
-                    ref _totalReturns,
+                    ref _workerReturns,
                     value);
         }
 
 
-        private int _totalTransfers;
+        private int _totalCheckIns;
 
-        public int TotalTransfers
+        public int TotalCheckIns
         {
-            get => _totalTransfers;
+            get => _totalCheckIns;
 
             private set =>
                 SetProperty(
-                    ref _totalTransfers,
+                    ref _totalCheckIns,
                     value);
         }
 
 
         // =========================================================
-        // WORKER PERFORMANCE
+        // WORKER ACTIVITY
         // =========================================================
 
         public ObservableCollection<WorkerStatItem>
@@ -326,6 +362,19 @@ namespace StockGuard.ViewModels
         }
 
 
+        private int _underRepairReports;
+
+        public int UnderRepairReports
+        {
+            get => _underRepairReports;
+
+            private set =>
+                SetProperty(
+                    ref _underRepairReports,
+                    value);
+        }
+
+
         private int _resolvedReports;
 
         public int ResolvedReports
@@ -335,23 +384,6 @@ namespace StockGuard.ViewModels
             private set =>
                 SetProperty(
                     ref _resolvedReports,
-                    value);
-        }
-
-
-        // =========================================================
-        // DISPUTED REPORTS
-        // =========================================================
-
-        private int _disputedReports;
-
-        public int DisputedReports
-        {
-            get => _disputedReports;
-
-            private set =>
-                SetProperty(
-                    ref _disputedReports,
                     value);
         }
 
@@ -377,6 +409,8 @@ namespace StockGuard.ViewModels
         // COMMANDS
         // =========================================================
 
+        public ICommand OpenFlyoutCommand { get; }
+
         public ICommand RefreshCommand { get; }
 
         public ICommand ToggleThemeCommand { get; }
@@ -388,9 +422,11 @@ namespace StockGuard.ViewModels
 
         public ProjectAnalyticsViewModel(
             FirebaseService firebase,
+            AuthService auth,
             ThemeService theme)
         {
             _firebase = firebase;
+            _auth = auth;
             _theme = theme;
 
             Title = "Analytics";
@@ -401,6 +437,18 @@ namespace StockGuard.ViewModels
                     () =>
                         OnPropertyChanged(
                             nameof(ThemeIcon)));
+
+
+            OpenFlyoutCommand =
+                new Command(
+                    () =>
+                    {
+                        if (Shell.Current != null)
+                        {
+                            Shell.Current.FlyoutIsPresented =
+                                true;
+                        }
+                    });
 
 
             RefreshCommand =
@@ -417,10 +465,11 @@ namespace StockGuard.ViewModels
 
 
         // =========================================================
-        // LOAD ALL DATA
+        // LOAD
         // =========================================================
 
-        public async Task LoadAsync()
+        public async Task LoadAsync(
+            bool forceRefresh = false)
         {
             if (IsBusy)
                 return;
@@ -429,6 +478,25 @@ namespace StockGuard.ViewModels
 
             try
             {
+                var currentUser =
+                    _auth.CurrentUser;
+
+
+                if (currentUser == null)
+                {
+                    Projects.Clear();
+
+                    _selectedProject = null;
+
+                    OnPropertyChanged(
+                        nameof(SelectedProject));
+
+                    ClearStats();
+
+                    return;
+                }
+
+
                 var previousProjectId =
                     SelectedProject?.ProjectId;
 
@@ -438,20 +506,30 @@ namespace StockGuard.ViewModels
                 // ─────────────────────────────────────────────
 
                 var projectsTask =
-                    _firebase.GetAllProjectsAsync();
+                    _firebase
+                        .GetAllProjectsAsync();
 
                 var toolsTask =
-                    _firebase.GetAllToolsAsync(
-                        forceRefresh: true);
+                    _firebase
+                        .GetAllToolsAsync(
+                            forceRefresh);
 
                 var usersTask =
-                    _firebase.GetAllUsersAsync();
+                    _firebase
+                        .GetAllUsersAsync();
 
                 var transactionsTask =
-                    _firebase.GetAllTransactionsAsync();
+                    _firebase
+                        .GetAllTransactionsAsync(
+                            forceRefresh);
 
-                var reportsTask =
-                    _firebase.GetAllDamageReportsAsync();
+                var damageReportsTask =
+                    _firebase
+                        .GetAllDamageReportsAsync();
+
+                var lostReportsTask =
+                    _firebase
+                        .GetAllLostReportsAsync();
 
 
                 await Task.WhenAll(
@@ -459,7 +537,8 @@ namespace StockGuard.ViewModels
                     toolsTask,
                     usersTask,
                     transactionsTask,
-                    reportsTask);
+                    damageReportsTask,
+                    lostReportsTask);
 
 
                 _allProjects =
@@ -478,13 +557,17 @@ namespace StockGuard.ViewModels
                     transactionsTask.Result ??
                     new List<TransactionLog>();
 
-                _allReports =
-                    reportsTask.Result ??
+                _allDamageReports =
+                    damageReportsTask.Result ??
                     new List<DamageReport>();
+
+                _allLostReports =
+                    lostReportsTask.Result ??
+                    new List<LostReport>();
 
 
                 // ─────────────────────────────────────────────
-                // PROJECT PICKER
+                // ONLY PROJECTS MANAGED BY CURRENT PE
                 // ─────────────────────────────────────────────
 
                 Projects.Clear();
@@ -492,36 +575,51 @@ namespace StockGuard.ViewModels
 
                 foreach (var project in
                     _allProjects
-                        .Where(p =>
-                            !p.IsDeleted)
-                        .OrderByDescending(p =>
-                            p.StartDate))
+                        .Where(project =>
+                            !project.IsDeleted &&
+                            Same(
+                                project.CreatedBy,
+                                currentUser.UniqueKey))
+                        .OrderByDescending(project =>
+                            project.StartDate))
                 {
                     Projects.Add(project);
                 }
 
 
-                Project? projectToSelect = null;
+                Project? projectToSelect =
+                    null;
 
 
+                // Keep currently selected project.
                 if (!string.IsNullOrWhiteSpace(
                         previousProjectId))
                 {
                     projectToSelect =
-                        Projects.FirstOrDefault(p =>
+                        Projects.FirstOrDefault(project =>
                             Same(
-                                p.ProjectId,
+                                project.ProjectId,
                                 previousProjectId));
                 }
 
 
+                // Prefer Active project.
                 projectToSelect ??=
-                    Projects.FirstOrDefault(p =>
+                    Projects.FirstOrDefault(project =>
                         Same(
-                            p.Status,
-                            "Completed"));
+                            project.Status,
+                            "Active"));
 
 
+                // Then Paused.
+                projectToSelect ??=
+                    Projects.FirstOrDefault(project =>
+                        Same(
+                            project.Status,
+                            "Paused"));
+
+
+                // Then any project.
                 projectToSelect ??=
                     Projects.FirstOrDefault();
 
@@ -529,28 +627,20 @@ namespace StockGuard.ViewModels
                 _selectedProject =
                     projectToSelect;
 
+
                 OnPropertyChanged(
                     nameof(SelectedProject));
 
 
-                // ─────────────────────────────────────────────
-                // PROJECT REQUIREMENTS
-                // ─────────────────────────────────────────────
-
                 if (_selectedProject != null)
                 {
-                    _projectRequirements =
-                        await _firebase
-                            .GetProjectEquipmentRequirementsAsync(
-                                _selectedProject.ProjectId)
-                        ?? new List<ProjectEquipmentRequirement>();
+                    await LoadProjectSpecificDataAsync(
+                        _selectedProject.ProjectId);
 
                     ComputeStats();
                 }
                 else
                 {
-                    _projectRequirements.Clear();
-
                     ClearStats();
                 }
             }
@@ -577,41 +667,21 @@ namespace StockGuard.ViewModels
         // LOAD SELECTED PROJECT
         // =========================================================
 
-        private async Task LoadSelectedProjectStatsAsync()
+        private async Task
+            LoadSelectedProjectStatsAsync()
         {
             if (SelectedProject == null)
             {
                 ClearStats();
+
                 return;
             }
 
+
             try
             {
-                _allTools =
-                    await _firebase
-                        .GetAllToolsAsync(
-                            forceRefresh: true)
-                    ?? new List<Tool>();
-
-
-                _allReports =
-                    await _firebase
-                        .GetAllDamageReportsAsync()
-                    ?? new List<DamageReport>();
-
-
-                _allTransactions =
-                    await _firebase
-                        .GetAllTransactionsAsync()
-                    ?? new List<TransactionLog>();
-
-
-                _projectRequirements =
-                    await _firebase
-                        .GetProjectEquipmentRequirementsAsync(
-                            SelectedProject.ProjectId)
-                    ?? new List<ProjectEquipmentRequirement>();
-
+                await LoadProjectSpecificDataAsync(
+                    SelectedProject.ProjectId);
 
                 ComputeStats();
             }
@@ -621,6 +691,40 @@ namespace StockGuard.ViewModels
                     $"[AnalyticsVM] Selected project error: " +
                     $"{ex.Message}");
             }
+        }
+
+
+        // =========================================================
+        // PROJECT-SPECIFIC DATA
+        // =========================================================
+
+        private async Task
+            LoadProjectSpecificDataAsync(
+                string projectId)
+        {
+            var requirementsTask =
+                _firebase
+                    .GetProjectEquipmentRequirementsAsync(
+                        projectId);
+
+            var workerIdsTask =
+                _firebase
+                    .GetProjectWorkerKeysAsync(
+                        projectId);
+
+
+            await Task.WhenAll(
+                requirementsTask,
+                workerIdsTask);
+
+
+            _projectRequirements =
+                requirementsTask.Result ??
+                new List<ProjectEquipmentRequirement>();
+
+            _projectWorkerIds =
+                workerIdsTask.Result ??
+                new List<string>();
         }
 
 
@@ -637,7 +741,8 @@ namespace StockGuard.ViewModels
 
             try
             {
-                await LoadAsync();
+                await LoadAsync(
+                    forceRefresh: true);
             }
             finally
             {
@@ -655,106 +760,13 @@ namespace StockGuard.ViewModels
             if (SelectedProject == null)
             {
                 ClearStats();
+
                 return;
             }
 
 
             string projectId =
                 SelectedProject.ProjectId;
-
-
-            // =====================================================
-            // PROJECT DAMAGE REPORTS
-            // =====================================================
-
-            var projectReports =
-                _allReports
-                    .Where(report =>
-                        Same(
-                            report.ProjectId,
-                            projectId))
-                    .ToList();
-
-
-            // =====================================================
-            // TOOL OVERVIEW
-            // =====================================================
-
-            TotalTools =
-                _projectRequirements
-                    .Sum(requirement =>
-                        requirement.QuantityNeeded);
-
-
-            // =====================================================
-            // DISTRIBUTED / ACTIVE EQUIPMENT
-            // =====================================================
-
-            int distributedCount =
-                _allTools.Count(tool =>
-                    !tool.IsDeleted &&
-                    Same(
-                        tool.BorrowedProjectId,
-                        projectId) &&
-                    (
-                        Same(
-                            tool.Status,
-                            "Borrowed") ||
-                        Same(
-                            tool.Status,
-                            "PendingReturn")
-                    ));
-
-
-            // =====================================================
-            // AVAILABLE EQUIPMENT
-            // =====================================================
-
-            AvailableTools =
-                Math.Max(
-                    0,
-                    TotalTools -
-                    distributedCount);
-
-
-            // =====================================================
-            // DAMAGED EQUIPMENT
-            // =====================================================
-
-            DamagedTools =
-                _allTools.Count(tool =>
-                    !tool.IsDeleted &&
-                    Same(
-                        tool.BorrowedProjectId,
-                        projectId) &&
-                    (
-                        Same(
-                            tool.Status,
-                            "Damaged") ||
-                        Same(
-                            tool.Status,
-                            "UnderRepair")
-                    ));
-
-
-            // =====================================================
-            // LOST EQUIPMENT
-            // =====================================================
-
-            LostTools =
-                projectReports
-                    .Where(report =>
-                        Same(
-                            report.Status,
-                            "Lost"))
-                    .Where(report =>
-                        !string.IsNullOrWhiteSpace(
-                            report.ToolId))
-                    .Select(report =>
-                        report.ToolId)
-                    .Distinct(
-                        StringComparer.OrdinalIgnoreCase)
-                    .Count();
 
 
             // =====================================================
@@ -770,18 +782,120 @@ namespace StockGuard.ViewModels
                     .ToList();
 
 
-            TotalTransactions =
+            // =====================================================
+            // PROJECT DAMAGE REPORTS
+            // =====================================================
+
+            var projectDamageReports =
+                _allDamageReports
+                    .Where(report =>
+                        Same(
+                            report.ProjectId,
+                            projectId))
+                    .ToList();
+
+
+            // =====================================================
+            // PROJECT LOST / MISSING REPORTS
+            // =====================================================
+
+            var projectLostReports =
+                _allLostReports
+                    .Where(report =>
+                        Same(
+                            report.ProjectId,
+                            projectId))
+                    .ToList();
+
+
+            // =====================================================
+            // CURRENT PROJECT TOOLS
+            // =====================================================
+
+            var projectTools =
+                _allTools
+                    .Where(tool =>
+                        !tool.IsDeleted &&
+                        Same(
+                            tool.BorrowedProjectId,
+                            projectId))
+                    .ToList();
+
+
+            // =====================================================
+            // EQUIPMENT OVERVIEW
+            // =====================================================
+
+            // Planned number of physical equipment needed.
+            RequiredTools =
+                _projectRequirements
+                    .Sum(requirement =>
+                        requirement.QuantityNeeded);
+
+
+            // Physical equipment currently borrowed
+            // into the selected project.
+            BorrowedTools =
+                projectTools.Count;
+
+
+            // Equipment still needed to complete
+            // the project's requirement.
+            RemainingNeededTools =
+                Math.Max(
+                    0,
+                    RequiredTools -
+                    BorrowedTools);
+
+
+            // Current damaged or under-repair
+            // equipment still attached to project.
+            DamagedTools =
+                projectTools.Count(tool =>
+                    Same(
+                        tool.Status,
+                        "Damaged") ||
+                    Same(
+                        tool.Status,
+                        "UnderRepair"));
+
+
+            // Only official Lost declarations count.
+            LostTools =
+                projectLostReports
+                    .Where(report =>
+                        Same(
+                            report.Status,
+                            "Lost"))
+                    .Where(report =>
+                        !string.IsNullOrWhiteSpace(
+                            report.ToolId))
+                    .Select(report =>
+                        report.ToolId)
+                    .Distinct(
+                        StringComparer.OrdinalIgnoreCase)
+                    .Count();
+
+
+            // =====================================================
+            // TRANSACTION SUMMARY
+            // =====================================================
+
+            TotalActivities =
                 projectTransactions.Count;
 
 
-            TotalBorrows =
+            // PE borrowed equipment from the office
+            // into the project.
+            ProjectBorrows =
                 projectTransactions.Count(transaction =>
                     Same(
                         transaction.Action,
                         "Borrowed"));
 
 
-            TotalReturns =
+            // Completed Worker return transactions.
+            WorkerReturns =
                 projectTransactions.Count(transaction =>
                     Same(
                         transaction.Action,
@@ -791,11 +905,13 @@ namespace StockGuard.ViewModels
                         "Returned Damaged"));
 
 
-            TotalTransfers =
+            // Count one check-in submission as one check-in.
+            // Verification is not counted as another check-in.
+            TotalCheckIns =
                 projectTransactions.Count(transaction =>
                     Same(
                         transaction.Action,
-                        "Transferred"));
+                        "End Day Check-In"));
 
 
             // =====================================================
@@ -803,62 +919,33 @@ namespace StockGuard.ViewModels
             // =====================================================
 
             TotalReports =
-                projectReports.Count;
+                projectDamageReports.Count;
 
 
             PendingReports =
-                projectReports.Count(report =>
+                projectDamageReports.Count(report =>
                     Same(
                         report.Status,
-                        "Pending") ||
+                        "Pending"));
+
+
+            UnderRepairReports =
+                projectDamageReports.Count(report =>
                     Same(
                         report.Status,
                         "UnderRepair"));
 
 
             ResolvedReports =
-                projectReports.Count(report =>
+                projectDamageReports.Count(report =>
                     Same(
                         report.Status,
-                        "Resolved") ||
-                    Same(
-                        report.Status,
-                        "Lost"));
-
-
-            DisputedReports =
-                projectReports.Count(report =>
-                    Same(
-                        report.Status,
-                        "Disputed"));
+                        "Resolved"));
 
 
             // =====================================================
             // PROJECT WORKERS
             // =====================================================
-
-            var workerIds =
-                projectTransactions
-                    .Where(transaction =>
-                        !string.IsNullOrWhiteSpace(
-                            transaction.WorkerId))
-                    .Select(transaction =>
-                        transaction.WorkerId)
-
-                    .Concat(
-                        projectReports
-                            .Where(report =>
-                                !string.IsNullOrWhiteSpace(
-                                    report.WorkerId))
-                            .Select(report =>
-                                report.WorkerId))
-
-                    .Distinct(
-                        StringComparer.OrdinalIgnoreCase)
-
-                    .ToHashSet(
-                        StringComparer.OrdinalIgnoreCase);
-
 
             var projectWorkers =
                 _allUsers
@@ -869,24 +956,15 @@ namespace StockGuard.ViewModels
                         Same(
                             user.AccountStatus,
                             "Approved") &&
-                        workerIds.Contains(
-                            user.UniqueKey))
+                        _projectWorkerIds.Any(workerId =>
+                            Same(
+                                workerId,
+                                user.UniqueKey)))
                     .ToList();
 
 
             // =====================================================
-            // WORKER PERFORMANCE
-            // =====================================================
-            //
-            // Borrows:
-            // Equipment originally borrowed/accepted by worker.
-            //
-            // TransfersReceived:
-            // Equipment received by worker through a transfer.
-            //
-            // IMPORTANT:
-            // A transfer does NOT increase Borrows.
-            // It is recorded separately as TransfersReceived.
+            // WORKER ACTIVITY
             // =====================================================
 
             var workerStats =
@@ -900,29 +978,54 @@ namespace StockGuard.ViewModels
                             WorkerName =
                                 worker.FullName,
 
-                            Borrows =
-                                projectTransactions.Count(transaction =>
-                                    Same(
-                                        transaction.WorkerId,
-                                        worker.UniqueKey) &&
-                                    Same(
-                                        transaction.Action,
-                                        "Borrowed")),
 
-                            TransfersReceived =
-                                projectTransactions.Count(transaction =>
-                                    Same(
-                                        transaction.WorkerId,
-                                        worker.UniqueKey) &&
-                                    Same(
-                                        transaction.Action,
-                                        "Transferred")),
+                            // Normal workflow:
+                            // Worker accepts PE pre-assignment.
+                            //
+                            // Direct Borrowed with WorkerId is
+                            // also accepted for compatibility.
+                            AssignmentsAccepted =
+                                projectTransactions.Count(
+                                    transaction =>
+                                        Same(
+                                            transaction.WorkerId,
+                                            worker.UniqueKey) &&
+                                        (
+                                            Same(
+                                                transaction.Action,
+                                                "Assignment Accepted") ||
+                                            (
+                                                Same(
+                                                    transaction.Action,
+                                                    "Borrowed") &&
+                                                !string.IsNullOrWhiteSpace(
+                                                    transaction.WorkerId)
+                                            )
+                                        )),
+
+
+                            Returns =
+                                projectTransactions.Count(
+                                    transaction =>
+                                        Same(
+                                            transaction.WorkerId,
+                                            worker.UniqueKey) &&
+                                        (
+                                            Same(
+                                                transaction.Action,
+                                                "Returned") ||
+                                            Same(
+                                                transaction.Action,
+                                                "Returned Damaged")
+                                        )),
+
 
                             Damages =
-                                projectReports.Count(report =>
-                                    Same(
-                                        report.WorkerId,
-                                        worker.UniqueKey))
+                                projectDamageReports.Count(
+                                    report =>
+                                        Same(
+                                            report.WorkerId,
+                                            worker.UniqueKey))
                         })
 
                     .OrderByDescending(worker =>
@@ -939,12 +1042,15 @@ namespace StockGuard.ViewModels
 
             foreach (var worker in workerStats)
             {
-                WorkerStats.Add(worker);
+                WorkerStats.Add(
+                    worker);
             }
 
 
             MostActiveWorker =
                 workerStats
+                    .Where(worker =>
+                        worker.TotalActivity > 0)
                     .OrderByDescending(worker =>
                         worker.TotalActivity)
                     .ThenBy(worker =>
@@ -965,7 +1071,7 @@ namespace StockGuard.ViewModels
                         transaction.ToolId)
 
                     .Concat(
-                        projectReports
+                        projectDamageReports
                             .Where(report =>
                                 !string.IsNullOrWhiteSpace(
                                     report.ToolId))
@@ -973,11 +1079,15 @@ namespace StockGuard.ViewModels
                                 report.ToolId))
 
                     .Concat(
-                        _allTools
-                            .Where(tool =>
-                                Same(
-                                    tool.BorrowedProjectId,
-                                    projectId))
+                        projectLostReports
+                            .Where(report =>
+                                !string.IsNullOrWhiteSpace(
+                                    report.ToolId))
+                            .Select(report =>
+                                report.ToolId))
+
+                    .Concat(
+                        projectTools
                             .Select(tool =>
                                 tool.ToolId))
 
@@ -1011,20 +1121,35 @@ namespace StockGuard.ViewModels
                             Status =
                                 tool.Status,
 
+
+                            // Usage means equipment was
+                            // received by a Worker.
                             Usage =
-                                projectTransactions.Count(transaction =>
-                                    Same(
-                                        transaction.ToolId,
-                                        tool.ToolId) &&
-                                    Same(
-                                        transaction.Action,
-                                        "Borrowed")),
+                                projectTransactions.Count(
+                                    transaction =>
+                                        Same(
+                                            transaction.ToolId,
+                                            tool.ToolId) &&
+                                        (
+                                            Same(
+                                                transaction.Action,
+                                                "Assignment Accepted") ||
+                                            (
+                                                Same(
+                                                    transaction.Action,
+                                                    "Borrowed") &&
+                                                !string.IsNullOrWhiteSpace(
+                                                    transaction.WorkerId)
+                                            )
+                                        )),
+
 
                             Damages =
-                                projectReports.Count(report =>
-                                    Same(
-                                        report.ToolId,
-                                        tool.ToolId))
+                                projectDamageReports.Count(
+                                    report =>
+                                        Same(
+                                            report.ToolId,
+                                            tool.ToolId))
                         })
 
                     .OrderByDescending(tool =>
@@ -1041,23 +1166,28 @@ namespace StockGuard.ViewModels
 
             foreach (var tool in toolStats)
             {
-                ToolStats.Add(tool);
+                ToolStats.Add(
+                    tool);
             }
 
 
             MostUsedTool =
                 toolStats
+                    .Where(tool =>
+                        tool.Usage > 0)
                     .OrderByDescending(tool =>
                         tool.Usage)
+                    .ThenBy(tool =>
+                        tool.ToolName)
                     .FirstOrDefault();
 
 
             // =====================================================
-            // HIGH-RISK TOOLS
+            // TOOLS INVOLVED IN MULTIPLE DAMAGE REPORTS
             // =====================================================
 
             HighRiskTools =
-                projectReports
+                projectDamageReports
                     .Where(report =>
                         !string.IsNullOrWhiteSpace(
                             report.ToolId))
@@ -1076,10 +1206,12 @@ namespace StockGuard.ViewModels
                             group.First();
 
                         var physicalTool =
-                            _allTools.FirstOrDefault(tool =>
-                                Same(
-                                    tool.ToolId,
-                                    group.Key));
+                            _allTools
+                                .FirstOrDefault(tool =>
+                                    Same(
+                                        tool.ToolId,
+                                        group.Key));
+
 
                         return new ToolRiskItem
                         {
@@ -1102,11 +1234,11 @@ namespace StockGuard.ViewModels
 
 
             // =====================================================
-            // FREQUENTLY INVOLVED WORKERS
+            // WORKERS INVOLVED IN MULTIPLE DAMAGE REPORTS
             // =====================================================
 
             FrequentlyInvolvedWorkers =
-                projectReports
+                projectDamageReports
                     .Where(report =>
                         !string.IsNullOrWhiteSpace(
                             report.WorkerId))
@@ -1125,10 +1257,12 @@ namespace StockGuard.ViewModels
                             group.First();
 
                         var user =
-                            _allUsers.FirstOrDefault(user =>
-                                Same(
-                                    user.UniqueKey,
-                                    group.Key));
+                            _allUsers
+                                .FirstOrDefault(user =>
+                                    Same(
+                                        user.UniqueKey,
+                                        group.Key));
+
 
                         return new WorkerRiskItem
                         {
@@ -1174,20 +1308,21 @@ namespace StockGuard.ViewModels
 
         private void ClearStats()
         {
-            TotalTools = 0;
-            AvailableTools = 0;
+            RequiredTools = 0;
+            BorrowedTools = 0;
+            RemainingNeededTools = 0;
             DamagedTools = 0;
             LostTools = 0;
 
-            TotalTransactions = 0;
-            TotalBorrows = 0;
-            TotalReturns = 0;
-            TotalTransfers = 0;
+            TotalActivities = 0;
+            ProjectBorrows = 0;
+            WorkerReturns = 0;
+            TotalCheckIns = 0;
 
             TotalReports = 0;
             PendingReports = 0;
+            UnderRepairReports = 0;
             ResolvedReports = 0;
-            DisputedReports = 0;
 
             WorkerStats.Clear();
             ToolStats.Clear();
@@ -1200,6 +1335,7 @@ namespace StockGuard.ViewModels
 
             FrequentlyInvolvedWorkers =
                 new List<WorkerRiskItem>();
+
 
             OnPropertyChanged(
                 nameof(HasSelectedProject));

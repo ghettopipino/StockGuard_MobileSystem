@@ -1,50 +1,66 @@
 ﻿namespace StockGuard.Models
 {
     /// <summary>
-    /// Represents one worker in the Worker Performance
+    /// Represents one Worker in the Worker Activity
     /// section of ProjectAnalyticsView.
     /// </summary>
     public class WorkerStatItem
     {
-        // ── WORKER ──────────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // WORKER
+        // ─────────────────────────────────────────────────────────
 
-        public string WorkerId { get; set; } = string.Empty;
+        public string WorkerId { get; set; } =
+            string.Empty;
 
-        public string WorkerName { get; set; } = string.Empty;
+        public string WorkerName { get; set; } =
+            string.Empty;
 
 
-        // ── PERFORMANCE ─────────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // ACTIVITY
+        // ─────────────────────────────────────────────────────────
 
-        // Number of equipment originally borrowed/accepted
-        public int Borrows { get; set; }
+        // Number of equipment assignments accepted
+        // by this Worker.
+        public int AssignmentsAccepted { get; set; }
 
-        // Number of equipment received through transfer
-        public int TransfersReceived { get; set; }
 
-        // Number of damage reports involving this worker
+        // Number of completed equipment returns
+        // involving this Worker.
+        public int Returns { get; set; }
+
+
+        // Number of damage reports where this Worker
+        // was responsible for the equipment at that time.
+        //
+        // This does NOT mean the Worker caused the damage.
         public int Damages { get; set; }
 
 
-        // ── DISPLAY HELPERS ─────────────────────────────────
+        // ─────────────────────────────────────────────────────────
+        // DISPLAY HELPERS
+        // ─────────────────────────────────────────────────────────
 
         public string WorkerInitials =>
-            string.IsNullOrWhiteSpace(WorkerName)
+            string.IsNullOrWhiteSpace(
+                WorkerName)
                 ? "?"
                 : WorkerName.Length >= 2
-                    ? WorkerName[..2].ToUpper()
-                    : WorkerName.ToUpper();
+                    ? WorkerName[..2]
+                        .ToUpper()
+                    : WorkerName
+                        .ToUpper();
 
 
         public bool HasDamages =>
             Damages > 0;
 
-        public bool HasTransfers =>
-            TransfersReceived > 0;
 
-
-        // Total equipment-handling activity.
-        // Useful for determining the Most Active Worker.
+        // Used only for determining
+        // the Most Active Worker.
         public int TotalActivity =>
-            Borrows + TransfersReceived;
+            AssignmentsAccepted +
+            Returns;
     }
 }

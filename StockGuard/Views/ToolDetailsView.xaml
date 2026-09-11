@@ -625,34 +625,34 @@
 
                                             <!-- ACCOUNTABILITY -->
                                             <Grid
-    ColumnDefinitions="Auto,*,Auto"
-    ColumnSpacing="6"
-    IsVisible="{Binding HasAccountability}">
+                                                ColumnDefinitions="Auto,*,Auto"
+                                                ColumnSpacing="6"
+                                                IsVisible="{Binding HasAccountability}">
 
                                                 <Label
-        Grid.Column="0"
-        Text="&#xf007;"
-        FontFamily="FontAwesome"
-        FontSize="9"
-        TextColor="{DynamicResource Text3}"
-        WidthRequest="16"
-        VerticalOptions="Center"/>
+                                                    Grid.Column="0"
+                                                    Text="&#xf007;"
+                                                    FontFamily="FontAwesome"
+                                                    FontSize="9"
+                                                    TextColor="{DynamicResource Text3}"
+                                                    WidthRequest="16"
+                                                    VerticalOptions="Center"/>
 
                                                 <Label
-        Grid.Column="1"
-        Text="{Binding AccountablePersonName}"
-        FontSize="10"
-        TextColor="{DynamicResource Text2}"
-        FontAttributes="Bold"
-        LineBreakMode="TailTruncation"/>
+                                                    Grid.Column="1"
+                                                    Text="{Binding AccountablePersonName}"
+                                                    FontSize="10"
+                                                    TextColor="{DynamicResource Text2}"
+                                                    FontAttributes="Bold"
+                                                    LineBreakMode="TailTruncation"/>
 
                                                 <Label
-        Grid.Column="2"
-        Text="{Binding AccountabilityRole,
-                       StringFormat='({0})'}"
-        FontSize="9"
-        TextColor="{DynamicResource Text3}"
-        VerticalOptions="Center"/>
+                                                    Grid.Column="2"
+                                                    Text="{Binding AccountabilityRole,
+                                                                   StringFormat='({0})'}"
+                                                    FontSize="9"
+                                                    TextColor="{DynamicResource Text3}"
+                                                    VerticalOptions="Center"/>
 
                                             </Grid>
 
