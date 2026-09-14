@@ -564,7 +564,7 @@ namespace StockGuard.ViewModels
         // ─────────────────────────────────────────────────────────
 
         private async Task CompleteProjectAsync(
-            Project project)
+    Project project)
         {
             if (project is null ||
                 project.Status == "Completed")
@@ -582,40 +582,26 @@ namespace StockGuard.ViewModels
                             forceRefresh: true);
 
                 /*
-                 * A project cannot be completed while
-                 * workers still physically hold equipment.
-                 *
-                 * End-Day Check-In does NOT affect this.
-                 * Checked-in equipment is still Borrowed.
+                 * A project cannot be completed while a worker
+                 * still has equipment assigned to them.
                  */
                 var outstandingTools =
                     allTools
                         .Where(t =>
                             t.BorrowedProjectId ==
                                 project.ProjectId &&
-                            (
-                                t.Status == "Borrowed" ||
-                                t.Status == "PendingReturn"
-                            ))
+                            t.AccountabilityRole ==
+                                "Worker")
                         .ToList();
 
                 if (outstandingTools.Count > 0)
                 {
-                    int borrowedCount =
-                        outstandingTools.Count(t =>
-                            t.Status == "Borrowed");
-
-                    int pendingReturnCount =
-                        outstandingTools.Count(t =>
-                            t.Status == "PendingReturn");
-
                     await Shell.Current.DisplayAlert(
                         "Cannot Complete Project",
                         $"{project.ProjectName} still has equipment " +
-                        $"that has not been fully returned.\n\n" +
-                        $"Borrowed: {borrowedCount}\n" +
-                        $"Pending Return: {pendingReturnCount}\n\n" +
-                        "Receive and verify all equipment before " +
+                        $"that workers have not returned.\n\n" +
+                        $"Still with workers: {outstandingTools.Count}\n\n" +
+                        "Have all workers return their equipment before " +
                         "completing the project.",
                         "OK");
 
@@ -626,13 +612,89 @@ namespace StockGuard.ViewModels
                     await Shell.Current.DisplayAlert(
                         "Complete Project",
                         $"Mark {project.ProjectName} as completed?\n\n" +
-                        "All assigned equipment has been returned.",
+                        "All equipment has been returned by workers.",
                         "Complete",
                         "Cancel");
 
                 if (!confirm)
                     return;
 
+                /*
+                 * Release all equipment belonging to this project.
+                 *
+                 * Lost equipment remains Lost.
+                 * Other equipment is returned to Available.
+                 */
+                var projectTools =
+                    allTools
+                        .Where(t =>
+                            t.BorrowedProjectId ==
+                            project.ProjectId)
+                        .ToList();
+
+                foreach (var tool in projectTools)
+                {
+                    // Lost equipment remains Lost.
+                    if (tool.Status != "Lost")
+                    {
+                        tool.Status = "Available";
+                    }
+
+                    /*
+                     * Clear current accountability and
+                     * project assignment information.
+                     */
+                    tool.AssignedWorkerId =
+                        string.Empty;
+
+                    tool.AssignedWorkerName =
+                        string.Empty;
+
+                    tool.BorrowedProjectId =
+                        string.Empty;
+
+                    tool.BorrowedProjectName =
+                        string.Empty;
+
+                    tool.AssignedById =
+                        string.Empty;
+
+                    tool.AssignedByName =
+                        string.Empty;
+
+                    tool.PreAssignedWorkerId =
+                        null;
+
+                    tool.PreAssignedWorkerName =
+                        null;
+
+                    tool.IsCheckInPending =
+                        false;
+
+                    /*
+                     * Update the equipment in Firebase.
+                     */
+                    var toolUpdated =
+                        await _firebase
+                            .UpdateToolAsync(tool);
+
+                    if (!toolUpdated)
+                    {
+                        await Shell.Current.DisplayAlert(
+                            "Error",
+                            $"Could not release equipment: " +
+                            $"{tool.ToolName}.\n\n" +
+                            "The project was not completed.",
+                            "OK");
+
+                        return;
+                    }
+                }
+
+                /*
+                 * Only mark the project as completed after
+                 * its equipment has been successfully processed.
+                 */
                 project.Status =
                     "Completed";
 
@@ -648,7 +710,8 @@ namespace StockGuard.ViewModels
                 {
                     await Shell.Current.DisplayAlert(
                         "Error",
-                        "Could not complete the project.",
+                        "The equipment was released, but the " +
+                        "project could not be marked as completed.",
                         "OK");
 
                     return;
@@ -662,7 +725,7 @@ namespace StockGuard.ViewModels
                 await LoadProjectsAsync();
 
                 await Shell.Current.GoToAsync(
-                    $"{nameof(ProjectAnalyticsView)}" +
+                    $"///{nameof(ProjectAnalyticsView)}" +
                     $"?projectId=" +
                     $"{Uri.EscapeDataString(project.ProjectId)}");
             }
@@ -679,6 +742,7 @@ namespace StockGuard.ViewModels
                 IsBusy = false;
             }
         }
+
 
         // ─────────────────────────────────────────────────────────
         // DELETE PROJECT
