@@ -591,7 +591,7 @@
                        
 
 
-                        <!--<Button
+                        <Button
                             IsVisible="{Binding ShowTransfer}"
                             Text="Transfer Tool"
                             Command="{Binding TransferCommand}"
@@ -602,7 +602,7 @@
                             FontSize="13"
                             FontAttributes="Bold"
                             CornerRadius="10"
-                            HeightRequest="48"/>-->
+                            HeightRequest="48"/>
 
 
                         <Button

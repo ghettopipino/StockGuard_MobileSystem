@@ -480,7 +480,7 @@
 
                     <Button
                         x:Name="BtnAnalytics"
-                        Text="Analytics"
+                        Text="Project Analytics"
                         Clicked="OnAnalyticsClicked"
                         Style="{StaticResource FlyoutItemStyle}"/>
 
