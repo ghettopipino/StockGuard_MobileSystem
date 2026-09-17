@@ -1140,11 +1140,48 @@ namespace StockGuard.ViewModels
                 return;
             }
 
-            IsBusy =
-                true;
+            IsBusy = true;
 
             try
             {
+                // A tool must belong to a project before it can be transferred
+                // to another worker.
+                var projectId = Tool.BorrowedProjectId;
+
+                if (string.IsNullOrWhiteSpace(projectId))
+                {
+                    await Shell.Current.DisplayAlert(
+                        "Transfer Unavailable",
+                        "This tool is not currently assigned to a project.",
+                        "OK");
+
+                    return;
+                }
+
+                // Get only the workers who are members of this project.
+                var projectWorkerKeys =
+                    await _firebase
+                        .GetProjectWorkerKeysAsync(projectId);
+
+                if (projectWorkerKeys == null ||
+                    projectWorkerKeys.Count == 0)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "No Workers Available",
+                        "There are no workers assigned to this project.",
+                        "OK");
+
+                    return;
+                }
+
+                // Use a HashSet for fast and case-insensitive membership checking.
+                var projectWorkerKeySet =
+                    new HashSet<string>(
+                        projectWorkerKeys,
+                        StringComparer.OrdinalIgnoreCase);
+
+                // Get users, then restrict them to workers belonging
+                // to the same project.
                 var allUsers =
                     await _firebase
                         .GetAllUsersAsync();
@@ -1161,11 +1198,21 @@ namespace StockGuard.ViewModels
                                 "Worker" &&
 
                             user.AccountStatus ==
-                                "Approved")
+                                "Approved" &&
+
+                            projectWorkerKeySet.Contains(
+                                user.UniqueKey))
                         .ToList();
 
                 if (workers.Count == 0)
+                {
+                    await Shell.Current.DisplayAlert(
+                        "No Workers Available",
+                        "There are no other approved workers assigned to this project.",
+                        "OK");
+
                     return;
+                }
 
                 var selected =
                     await Shell.Current
@@ -1178,10 +1225,8 @@ namespace StockGuard.ViewModels
                                     worker.FullName)
                                 .ToArray());
 
-                if (string.IsNullOrWhiteSpace(
-                        selected) ||
-                    selected ==
-                        "Cancel")
+                if (string.IsNullOrWhiteSpace(selected) ||
+                    selected == "Cancel")
                 {
                     return;
                 }
@@ -1189,8 +1234,7 @@ namespace StockGuard.ViewModels
                 var target =
                     workers
                         .FirstOrDefault(worker =>
-                            worker.FullName ==
-                            selected);
+                            worker.FullName == selected);
 
                 if (target == null)
                     return;
@@ -1223,12 +1267,10 @@ namespace StockGuard.ViewModels
                             target.FullName,
 
                         ProjectId =
-                            Tool.BorrowedProjectId ??
-                            string.Empty,
+                            Tool.BorrowedProjectId,
 
                         ProjectName =
-                            Tool.BorrowedProjectName ??
-                            string.Empty,
+                            Tool.BorrowedProjectName,
 
                         Condition =
                             Tool.Condition,
@@ -1245,8 +1287,7 @@ namespace StockGuard.ViewModels
                         .CreateTransferRequestAsync(
                             request);
 
-                if (string.IsNullOrWhiteSpace(
-                        key))
+                if (string.IsNullOrWhiteSpace(key))
                 {
                     return;
                 }
@@ -1259,8 +1300,7 @@ namespace StockGuard.ViewModels
             }
             finally
             {
-                IsBusy =
-                    false;
+                IsBusy = false;
             }
         }
 

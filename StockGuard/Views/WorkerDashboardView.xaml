@@ -33,7 +33,7 @@
                     <!-- ================================================== -->
 
                     <Grid
-                        ColumnDefinitions="*,Auto"
+                        ColumnDefinitions="*,Auto, Auto"
                         ColumnSpacing="12">
 
                         <VerticalStackLayout
@@ -56,10 +56,25 @@
                         </VerticalStackLayout>
 
 
+                        <!-- THEME -->
+                        <Button
+                             Grid.Column="1"
+                             Text="{Binding ThemeIcon}"
+                             FontFamily="FontAwesome"
+                             Command="{Binding ToggleThemeCommand}"
+                             BackgroundColor="{DynamicResource BgElevated}"
+                             TextColor="{DynamicResource Text2}"
+                             FontSize="16"
+                             CornerRadius="10"
+                             WidthRequest="40"
+                             HeightRequest="40"
+                             Padding="0"/>          
+
+
                         <!-- LOGOUT -->
 
                         <Button
-                            Grid.Column="1"
+                            Grid.Column="2"
                             Text="Logout"
                             Command="{Binding LogoutCommand}"
                             BackgroundColor="Transparent"
@@ -69,6 +84,7 @@
                             HeightRequest="40"
                             Padding="12,0"
                             VerticalOptions="Center"/>
+                        
 
                     </Grid>
 
