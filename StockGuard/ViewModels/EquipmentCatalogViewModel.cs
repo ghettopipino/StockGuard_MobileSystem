@@ -547,7 +547,6 @@ namespace StockGuard.ViewModels
                     "✅ Catalog Created",
                     $"{name} catalog created with {qty} tools.\n\n" +
                     $"Tool IDs: {prefix}-001 to {prefix}-{qty.ToString().PadLeft(3, '0')}\n\n",
-                    $"Print QR codes for each Tool ID and attach them to the physical tools.",
                     "OK");
 
                 await LoadCatalogsAsync();
